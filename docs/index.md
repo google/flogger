@@ -56,14 +56,14 @@ differences between APIs caused confusion and bugs.
 Flogger is the result of an attempt to create a unified logging API, suitable
 for the vast majority of Java projects in Google.
 
-For something of this magnitude it would have been preferrable to use an
+For something of this magnitude it would have been preferable to use an
 existing logging API, rather than creating and maintaining our own. However, the
 Java Core Libraries Team (i.e. Guava maintainers) concluded that Flogger was not
 slightly better than the alternatives, but much better.
 
 By switching the majority of Java code in Google to use Flogger, many thousands
-of bugs have been fixed and cost to developers of learning new logging APIs as
-they move through the codebase has been eliminated. Flogger is now the single
+of bugs have been fixed and the cost to developers of learning new logging APIs
+as they move through the codebase has been eliminated. Flogger is now the sole
 recommended Java logging API within Google.
 
 ## How to use Flogger
@@ -93,7 +93,7 @@ such as `%s`, `%d`, `%016x` etc.
 Note that you may also see code and documentation that references the
 `GoogleLogger` class. This is a minor variant of the default `FluentLogger`
 designed for use in Google's codebase. The `FluentLogger` API is recommended for
-non-Google code, since it's API should remain more stable over time.
+non-Google code, since its API should remain more stable over time.
 
 <a name="more-information"></a>
 ## More information
