@@ -26,6 +26,15 @@ java_library(
     ],
 )
 
+load("//tools:maven.bzl", "pom_file")
+
+pom_file(
+    name = "google_logger_pom",
+    artifact_id = "google-logger",
+    artifact_name = "Google Logger",
+    targets = [":flogger"],
+)
+
 # ---- Tests ----
 
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
