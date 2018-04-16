@@ -42,6 +42,7 @@ java_library(
                   SYSTEM_BACKEND_SRCS,
     ),
     javacopts = ["-source 1.6 -target 1.6"],
+    tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
     exports = [
         ":lazy_args",
         ":stack",
@@ -55,6 +56,24 @@ java_library(
         ":tags",
         "@google_bazel_common//third_party/java/error_prone:annotations",
         "@google_bazel_common//third_party/java/jsr305_annotations",
+    ],
+)
+
+load("//tools:maven.bzl", "pom_file")
+
+pom_file(
+    name = "api_pom",
+    artifact_id = "flogger",
+    artifact_name = "Flogger",
+    targets = [
+        ":api",
+        ":checks",
+        ":lazy_args",
+        ":platform_provider",
+        ":stack",
+        ":tags",
+        # :config should be here, but that causes a circular reference to :api. Thankfully, :config
+        # has no deps itself
     ],
 )
 
@@ -129,6 +148,13 @@ java_library(
     ],
 )
 
+pom_file(
+    name = "system_backend_pom",
+    artifact_id = "flogger-system-backend",
+    artifact_name = "Flogger System Backend",
+    targets = [":system_backend"],
+)
+
 # Utilities to help test Fluent Loggers. This target includes simple fakes for
 # creating injectable test data as well as Truth subjects for asserting things
 # about log statements. This is exported via @google_bazel_common//third_party/java/flogger:testing
@@ -146,6 +172,14 @@ java_library(
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/truth",
     ],
+)
+
+pom_file(
+    name = "testing_pom",
+    testonly = 1,
+    artifact_id = "flogger-testing",
+    artifact_name = "Flogger Testing",
+    targets = [":testing"],
 )
 
 java_binary(

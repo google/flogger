@@ -1,0 +1,11 @@
+.*
+
+*~
+\#*\#
+
+*.iml
+
+Gemfile
+Gemfile.lock
+
+_site
