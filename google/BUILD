@@ -30,7 +30,7 @@ load("//tools:maven.bzl", "pom_file")
 
 pom_file(
     name = "google_logger_pom",
-    artifact_id = "google-logger",
+    artifact_id = "google-extensions",
     artifact_name = "Google Logger",
     targets = [":flogger"],
 )
