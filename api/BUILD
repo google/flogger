@@ -78,6 +78,47 @@ pom_file(
     ],
 )
 
+load("@google_bazel_common//tools/jarjar:jarjar.bzl", "jarjar_library")
+
+jarjar_library(
+    name = "merged_api",
+    jars = [
+        ":api",
+        ":checks",
+        ":config",
+        ":lazy_args",
+        ":platform_provider",
+        ":stack",
+        ":tags",
+    ],
+)
+
+jarjar_library(
+    name = "merged_api_src",
+    jars = [
+        ":libapi-src.jar",
+        ":libchecks-src.jar",
+        ":libconfig-src.jar",
+        ":liblazy_args-src.jar",
+        ":libstack-src.jar",
+        ":libtags-src.jar",
+        # TODO(ronshapiro): consider generating PlatformProvider as a source file so it can be
+        # included here?
+    ],
+)
+
+load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
+
+javadoc_library(
+    name = "api_javadoc",
+    srcs = glob(
+        ["src/main/java/**/*.java"],
+        exclude = SYSTEM_BACKEND_SRCS,
+    ),
+    root_packages = ["com.google.common.flogger"],
+    deps = [":api"],
+)
+
 java_library(
     name = "checks",
     srcs = CHECKS_SRCS,
@@ -157,14 +198,24 @@ pom_file(
     targets = [":system_backend"],
 )
 
+javadoc_library(
+    name = "system_backend_javadoc",
+    srcs = SYSTEM_BACKEND_SRCS,
+    root_packages = ["com.google.common.flogger.backend.system"],
+    deps = [":system_backend"],
+)
+
 # Utilities to help test Fluent Loggers. This target includes simple fakes for
 # creating injectable test data as well as Truth subjects for asserting things
 # about log statements. This is exported via @google_bazel_common//third_party/java/flogger:testing
 # but should only be needed by anyone writing their own fluent logger.
+
+TESTING_SRCS = glob(["src/test/java/com/google/common/flogger/testing/*.java"])
+
 java_library(
     name = "testing",
     testonly = 1,
-    srcs = glob(["src/test/java/com/google/common/flogger/testing/*.java"]),
+    srcs = TESTING_SRCS,
     visibility = ["//visibility:public"],
     deps = [
         ":api",
@@ -183,6 +234,14 @@ pom_file(
     artifact_id = "flogger-testing",
     artifact_name = "Flogger Testing",
     targets = [":testing"],
+)
+
+javadoc_library(
+    name = "testing_javadoc",
+    testonly = 1,
+    srcs = TESTING_SRCS,
+    root_packages = ["com.google.common.flogger.testing"],
+    deps = [":testing"],
 )
 
 java_binary(
