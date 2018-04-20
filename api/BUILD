@@ -43,6 +43,7 @@ java_library(
     ),
     javacopts = ["-source 1.6 -target 1.6"],
     tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
+    visibility = ["//visibility:public"],
     exports = [
         ":lazy_args",
         ":stack",
@@ -141,6 +142,7 @@ java_library(
     name = "system_backend",
     srcs = SYSTEM_BACKEND_SRCS,
     javacopts = ["-source 1.6 -target 1.6"],
+    visibility = ["//visibility:public"],
     deps = [
         ":api",
         ":checks",
@@ -163,6 +165,7 @@ java_library(
     name = "testing",
     testonly = 1,
     srcs = glob(["src/test/java/com/google/common/flogger/testing/*.java"]),
+    visibility = ["//visibility:public"],
     deps = [
         ":api",
         ":checks",
