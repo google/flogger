@@ -13,6 +13,7 @@ GOOGLE_LOGGER_SRCS = glob(["src/main/java/com/google/common/flogger/*.java"])
 java_library(
     name = "flogger",
     srcs = GOOGLE_LOGGER_SRCS,
+    visibility = ["//visibility:public"],
     runtime_deps = [
         "//api:system_backend",
     ],
