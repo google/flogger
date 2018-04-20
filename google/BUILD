@@ -36,6 +36,15 @@ pom_file(
     targets = [":flogger"],
 )
 
+load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
+
+javadoc_library(
+    name = "flogger_javadoc",
+    srcs = GOOGLE_LOGGER_SRCS,
+    root_packages = ["com.google.common.flogger"],
+    deps = [":flogger"],
+)
+
 # ---- Tests ----
 
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
