@@ -75,48 +75,58 @@ import javax.annotation.Nullable;
  * Finally, as the metadata keys should be unique, it is strongly encouraged that all keys are
  * defined as string literals.
  */
-public interface Metadata {
+public abstract class Metadata {
 
-  public static Metadata EMPTY =
-      new Metadata() {
-        @Override
-        public int size() {
-          return 0;
-        }
+  /** Returns an immutable {@link Metadata} that has no items. */
+  public static Metadata empty() {
+    return Empty.INSTANCE;
+  }
 
-        @Override
-        public MetadataKey<?> getKey(int n) {
-          throw new IndexOutOfBoundsException("cannot read from empty metadata");
-        }
+  // This is a static nested class as opposed to an anonymous class assigned to a constant field in
+  // order to decouple it's classload when Metadata is loaded. Android users are particularly
+  // careful about unnecessary class loading, and we've used similar mechanisms in Guava (see
+  // CharMatchers)
+  private static final class Empty extends Metadata {
+    static final Empty INSTANCE = new Empty();
 
-        @Override
-        public Object getValue(int n) {
-          throw new IndexOutOfBoundsException("cannot read from empty metadata");
-        }
+    @Override
+    public int size() {
+      return 0;
+    }
 
-        @Override
-        @Nullable
-        public <T> T findValue(MetadataKey<T> key) {
-          return null;
-        }
-      };
+    @Override
+    public MetadataKey<?> getKey(int n) {
+      throw new IndexOutOfBoundsException("cannot read from empty metadata");
+    }
+
+    @Override
+    public Object getValue(int n) {
+      throw new IndexOutOfBoundsException("cannot read from empty metadata");
+    }
+
+    @Override
+    @Nullable
+    public <T> T findValue(MetadataKey<T> key) {
+      return null;
+    }
+  }
 
   /** Returns the number of key/value pairs for this instance. */
-  int size();
+  public abstract int size();
 
   /**
    * Returns the key for the Nth piece of metadata.
    *
    * @throws IndexOutOfBoundsException if either {@code n < 0} or {n >= getCount()}.
    */
-  MetadataKey<?> getKey(int n);
+  public abstract MetadataKey<?> getKey(int n);
 
   /**
    * Returns the non-null value for the Nth piece of metadata.
    *
    * @throws IndexOutOfBoundsException if either {@code n < 0} or {n >= getCount()}.
    */
-  Object getValue(int n);
+  public abstract Object getValue(int n);
 
   /**
    * Returns the first value for the given metadata key, or null if it does not exist.
@@ -124,5 +134,5 @@ public interface Metadata {
    * @throws NullPointerException if {@code key} is {@code null}.
    */
   @Nullable
-  <T> T findValue(MetadataKey<T> key);
+  public abstract <T> T findValue(MetadataKey<T> key);
 }
