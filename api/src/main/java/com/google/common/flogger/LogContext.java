@@ -132,7 +132,7 @@ public abstract class LogContext<
         MetadataKey.single("stack_size", StackSize.class);
   }
 
-  static final class MutableMetadata implements Metadata {
+  static final class MutableMetadata extends Metadata {
     /**
      * The default number of key/value pairs we initially allocate space for when someone adds
      * metadata to this context.
@@ -403,7 +403,7 @@ public abstract class LogContext<
    */
   @Override
   public final Metadata getMetadata() {
-    return metadata != null ? metadata : Metadata.EMPTY;
+    return metadata != null ? metadata : Metadata.empty();
   }
 
   @Override

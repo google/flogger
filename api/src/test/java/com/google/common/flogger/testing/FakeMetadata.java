@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 
-public final class FakeMetadata implements Metadata {
+public final class FakeMetadata extends Metadata {
 
   private static final class KeyValuePair<T> {
     private final MetadataKey<T> key;
