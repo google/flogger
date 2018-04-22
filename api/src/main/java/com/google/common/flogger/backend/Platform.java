@@ -84,6 +84,11 @@ public abstract class Platform {
         return platform;
       }
 
+      platform = loadPlatformFromServiceLoader();
+      if (platform != null) {
+        return platform;
+      }
+
       // Try the reflection-based approach as a backup, if the provider isn't available.
       for (String clazz : platformClass) {
         try {
@@ -97,7 +102,20 @@ public abstract class Platform {
           errorMessage.insert(0, "No logging platforms found:").toString());
     }
   }
-
+  private static Platform loadPlatformFromServiceLoader() {
+    ServiceLoader<Platform> serviceLoader = ServiceLoader.load(Platform.class);
+    List<Platform > platformList = new ArrayList<>();
+    for (Platform platform : serviceLoader) {
+      platformList.add(platform);
+    }
+    if(platformList.isEmpty()){
+      return null;
+    }
+    if( platformList.size() > 1 ) {
+      throw new IllegalStateException("Multiple " + Platform.class + " providers found: " + platformList );
+    }
+    return platformList.get(0);
+  }
   /**
    * API for determining the logging class and log statement sites, return from
    * {@link #getCallerFinder}. This classes is immutable and thread safe.
