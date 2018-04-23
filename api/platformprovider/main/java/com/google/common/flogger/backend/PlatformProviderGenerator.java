@@ -60,9 +60,6 @@ import org.objectweb.asm.Type;
 public final class PlatformProviderGenerator {
   private static final String[] PLATFORM_CLASSES =
       new String[] {
-        // Note: Order matters. The Android platform should come first, as it may coexist with
-        // GooglePlatform in certain cases.
-        "Lcom/google/common/flogger/backend/android/AndroidPlatform;",
         "Lcom/google/common/flogger/backend/system/DefaultPlatform;",
       };
 

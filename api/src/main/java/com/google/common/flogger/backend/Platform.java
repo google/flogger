@@ -54,8 +54,6 @@ public abstract class Platform {
   // used.
   private static final String[] AVAILABLE_PLATFORMS =
       new String[] {
-        // Look for Android first as reflection is slow on Android, so don't test others first.
-        ANDROID_PLATFORM,
         // The fallback/default platform gives a workable, logging backend.
         DEFAULT_PLATFORM
       };
