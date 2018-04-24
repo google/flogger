@@ -68,19 +68,32 @@ recommended Java logging API within Google.
 
 ## How to use Flogger
 
-### 1. Add an import for [`FluentLogger`]
+### 1. Add the dependencies on Flogger
+
+All code that uses flogger should depend on
+`com.google.flogger:flogger:<version>` and
+`com.google.flogger:flogger-system-backend:<version>`.
+
+> Note: the dependency on `flogger-system-backend` is only required to be
+included when the binary is run. If you have a modularized build, you can
+include this dependency by the root module that builds your app/binary, and can
+be `runtime` scope.
+
+<!-- TODO(user): link to docs for how to specify a backend. -->
+
+### 2. Add an import for [`FluentLogger`]
 
 ```java
 import com.google.common.flogger.FluentLogger;
 ```
 
-### 2. Create a `private static final` instance
+### 3. Create a `private static final` instance
 
 ```java
 private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 ```
 
-### 3. Start logging:
+### 4. Start logging:
 
 ```java
 logger.atInfo().withCause(exception).log("Log message with: %s", argument);
@@ -109,6 +122,8 @@ please see [Anatomy of an API][anatomy].
 *   [File a bug](https://github.com/google/flogger/issues)
 
 [anatomy]: https://google.github.io/flogger/anatomy
+<!-- TODO(ronshapiro): publish javadoc, and point to that instead of source files -->
+[backend]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/backend/LoggerBackend.java
 [effectively free]: https://google.github.io/flogger/benefits#cheap-disabled-logging
 [extensibility]: https://google.github.io/flogger/benefits#extensibility
 [`FluentLogger`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/FluentLogger.java
