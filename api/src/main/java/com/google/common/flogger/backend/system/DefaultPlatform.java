@@ -16,182 +16,151 @@
 
 package com.google.common.flogger.backend.system;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
-import com.google.common.flogger.AbstractLogger;
-import com.google.common.flogger.LogSite;
-import com.google.common.flogger.LoggingApi;
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.backend.Tags;
-import com.google.common.flogger.util.CallerFinder;
-import com.google.common.flogger.util.StackBasedLogSite;
+import com.google.common.flogger.util.Checks;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.annotation.Nullable;
 
 /**
  * The default fluent logger platform for a server-side Java environment. The default platform
  * implements the following behavior:
  * <ul>
  *   <li>It generates {@code SimpleLoggerBackend} logger backends.
- *   <li>It uses a default clock implementation (potential only millisecond precision).
- *   <li>It does not provide support for injected additional metadata into log statements.
- *   <li>It determines call site information via stack analysis (this is unlikely to ever need to
- *       be overridden).
+ *   <li>It uses a default clock implementation (only millisecond precision until Java 8).
+ *   <li>It does not provide support for injecting additional metadata into log statements.
+ *   <li>It determines call site information via stack analysis.
  * </ul>
- * <p>This class is designed to allow subclasses to override default behaviour via the
- * {@link #configure(Configuration)} method.
+ *
+ * <p>This class is designed to allow configuration via system properties. Each aspect of the
+ * platform is configured by providing the name of a static method, in the form
+ * {@code "<package>.<class>#<method>"}, which returns an instance of the appropriate type.
+ *
+ * The namespace for system properties is:
+ * <ul>
+ *   <li>{@code flogger.backend_factory}: Provides an instance of
+ *       {@code com.google.common.flogger.backend.system.BackendFactory}.
+ *   <li>{@code flogger.logging_context}: Provides an instance of
+ *       {@code com.google.common.flogger.backend.system.LoggingContext}.
+ *   <li>{@code flogger.clock}: Provides an instance of
+ *       {@code com.google.common.flogger.backend.system.Clock}.
+ * </ul>
  */
+// Non-final for testing.
 public class DefaultPlatform extends Platform {
-  /** Default factory for creating logger backends. */
-  private static final class SimpleBackendFactory extends BackendFactory {
-    @Override
-    public LoggerBackend create(String loggingClass) {
-      // TODO(b/27920233): Strip inner/nested classes when deriving logger name.
-      Logger logger = Logger.getLogger(loggingClass.replace('$', '.'));
-      return new SimpleLoggerBackend(logger);
-    }
-
-    @Override
-    public String toString() {
-      return "Default logger backend factory";
-    }
-  }
-
-  /** Default caller finder implementation which should work on all recent Java releases. */
-  private static final class StackBasedCallerFinder extends LogCallerFinder {
-    @Override
-    public String findLoggingClass(Class<? extends AbstractLogger<?>> loggerClass) {
-      // We can skip at most only 1 method from the analysis, the inferLoggingClass() method itself.
-      StackTraceElement caller = CallerFinder.findCallerOf(loggerClass, new Throwable(), 1);
-      if (caller != null) {
-        // This might contain '$' for inner/nested classes, but that's okay.
-        return caller.getClassName();
-      }
-      throw new IllegalStateException("no caller found on the stack for: " + loggerClass.getName());
-    }
-
-    @Override
-    public LogSite findLogSite(Class<? extends LoggingApi<?>> loggerApi, int stackFramesToSkip) {
-      // Skip an additional stack frame because we create the Throwable inside this method, not at
-      // the point that this method was invoked (which allows completely alternate implementations
-      // to avoid even constructing the Throwable instance).
-      StackTraceElement caller =
-          CallerFinder.findCallerOf(loggerApi, new Throwable(), stackFramesToSkip + 1);
-      return caller != null ? new StackBasedLogSite(caller) : LogSite.INVALID;
-    }
-
-    @Override
-    public String toString() {
-      return "Default stack-based caller finder";
-    }
-  }
-
-  /** Default millisecond precision clock. */
-  private static final class SystemClock extends Clock {
-    @Override
-    public long getCurrentTimeNanos() {
-      return MILLISECONDS.toNanos(System.currentTimeMillis());
-    }
-
-    @Override
-    public String toString() {
-      return "Default millisecond precision clock";
-    }
-  }
-
-  /** Empty trace context implementation. */
-  private static final class EmptyContext extends LoggingContext {
-    @Override
-    public boolean shouldForceLogging(String loggerName, Level level, boolean isEnabled) {
-      // Never add any debug or logging here (see LoggingContext for details).
-      return false;
-    }
-
-    @Override
-    public Tags getTags() {
-      return Tags.empty();
-    }
-
-    @Override
-    public String toString() {
-      return "Empty logging context";
-    }
-  }
+  private static final String BACKEND_FACTORY = "backend_factory";
+  private static final String LOGGING_CONTEXT = "logging_context";
+  private static final String CLOCK = "clock";
 
   private final BackendFactory backendFactory;
-  private final LogCallerFinder callerFinder;
-  private final Clock clock;
   private final LoggingContext context;
-  private final String configInfo;
+  private final Clock clock;
+  private final LogCallerFinder callerFinder;
 
-  /**
-   * Constructs a logger platform instance which is configured by calling the
-   * {@link #configure(Configuration)} method which can be overridden by subclasses.
-   */
   public DefaultPlatform() {
-    Configuration config = new Configuration();
-    // Invoke subclass specific configuration.
-    configure(config);
-    // Only instantiate default "plugins" if none were supplied by the subclass.
-    this.backendFactory = config.getBackendFactory() != null
-        ? config.getBackendFactory() : new SimpleBackendFactory();
-    this.callerFinder = config.getCallerFinder() != null
-        ? config.getCallerFinder() : new StackBasedCallerFinder();
-    this.clock = config.getClock() != null
-        ? config.getClock() : new SystemClock();
-    this.context = config.getLoggingContext() != null
-        ? config.getLoggingContext() : new EmptyContext();
-    this.configInfo = formatConfigInfo();
+    BackendFactory factory = resolveAttribute(BACKEND_FACTORY, BackendFactory.class);
+    this.backendFactory = (factory != null) ? factory : SimpleBackendFactory.getInstance();
+    LoggingContext context = resolveAttribute(LOGGING_CONTEXT, LoggingContext.class);
+    this.context = (context != null) ? context : EmptyLoggingContext.getInstance();
+    Clock clock = resolveAttribute(CLOCK, Clock.class);
+    this.clock = (clock != null) ? clock : SystemClock.getInstance();
+    // TODO(user): Figure out how to handle StackWalker when it becomes available (Java9).
+    this.callerFinder = StackBasedCallerFinder.getInstance();
   }
 
-  /**
-   * Configures this platform by setting any required aspects of platform behavior. Subclasses
-   * which override this method to apply custom configuration are expected to always invoke
-   * {@code super.configure(config)} at the start of their method.
-   */
-  protected void configure(Configuration config) {
-    // Do nothing since while a subclass should always call super.configure(...) first, we can't
-    // rely on this, so we add the base defaults prior to calling this method at all.
+  // Visible for testing
+  DefaultPlatform(
+      BackendFactory factory, LoggingContext context, Clock clock, LogCallerFinder callerFinder) {
+    this.backendFactory = factory;
+    this.context = context;
+    this.clock = clock;
+    this.callerFinder = callerFinder;
   }
 
   @Override
-  protected final LogCallerFinder getCallerFinderImpl() {
+  protected LogCallerFinder getCallerFinderImpl() {
     return callerFinder;
   }
 
   @Override
-  protected final LoggerBackend getBackendImpl(String className) {
+  protected LoggerBackend getBackendImpl(String className) {
     return backendFactory.create(className);
   }
 
   @Override
-  protected final boolean shouldForceLoggingImpl(String loggerName, Level level, boolean isEnabled) {
+  protected boolean shouldForceLoggingImpl(String loggerName, Level level, boolean isEnabled) {
     return context.shouldForceLogging(loggerName, level, isEnabled);
   }
 
   @Override
-  protected final Tags getInjectedTagsImpl() {
+  protected Tags getInjectedTagsImpl() {
     return context.getTags();
   }
 
   @Override
-  protected final long getCurrentTimeNanosImpl() {
+  protected long getCurrentTimeNanosImpl() {
     return clock.getCurrentTimeNanos();
   }
 
   @Override
-  protected final String getConfigInfoImpl() {
-    return configInfo;
+  protected String getConfigInfoImpl() {
+    return "Platform: " + getClass().getName() + "\n"
+        + "BackendFactory: " + backendFactory + "\n"
+        + "Clock: " + clock + "\n"
+        + "LoggingContext: " + context + "\n"
+        + "LogCallerFinder: " + callerFinder + "\n";
   }
 
-  private String formatConfigInfo() {
-    StringBuilder out = new StringBuilder();
-    out.append("Platform: ").append(getClass().getName()).append("\n");
-    out.append("BackendFactory: \"").append(backendFactory).append("\"\n");
-    out.append("Clock: \"").append(clock).append("\"\n");
-    out.append("LoggingContext: \"").append(context).append("\"\n");
-    out.append("LogCallerFinder: \"").append(callerFinder).append("\"\n");
-    return out.toString();
+  /**
+   * Helper to call a static no-arg getter to obtain an instance of a specified type. This is used
+   * for platform aspects which are optional, but are expected to have a singleton available.
+   *
+   * @return the return value of the specified static no-argument method, or null if the method
+   *     cannot be called or the returned value is of the wrong type.
+   */
+  @Nullable
+  private static <T> T resolveAttribute(String attributeName, Class<T> type) {
+    String getter = readProperty(attributeName);
+    if (getter == null) {
+      return null;
+    }
+    int idx = getter.indexOf('#');
+    if (idx <= 0 || idx == getter.length() - 1) {
+      error("invalid getter (expected <class>#<method>): %s\n", getter);
+      return null;
+    }
+    return callStaticMethod(getter.substring(0, idx), getter.substring(idx + 1), type);
+  }
+
+  private static String readProperty(String attributeName) {
+    Checks.checkNotNull(attributeName, "attribute name");
+    String propertyName = "flogger." + attributeName;
+    try {
+      return System.getProperty(propertyName);
+    } catch (SecurityException e) {
+      error("cannot read property name %s: %s", propertyName, e);
+    }
+    return null;
+  }
+
+  private static <T> T callStaticMethod(String className, String methodName, Class<T> type) {
+    try {
+      return type.cast(Class.forName(className).getMethod(methodName).invoke(null));
+    } catch (ClassNotFoundException e) {
+      // Expected if an optional aspect is not being used (no error).
+    } catch (ClassCastException e) {
+      error("cannot cast result of calling '%s#%s' to '%s': %s\n",
+          className, methodName, type.getName(), e);
+    } catch (Exception e) {
+      // Catches SecurityException *and* ReflexiveOperationException (which doesn't exist in 1.6).
+      error("cannot call expected no-argument static method '%s#%s': %s\n",
+          className, methodName, e);
+    }
+    return null;
+  }
+
+  private static void error(String msg, Object... args) {
+    System.err.println(DefaultPlatform.class + ": " + String.format(msg, args));
   }
 }

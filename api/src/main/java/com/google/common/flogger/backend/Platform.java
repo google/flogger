@@ -20,7 +20,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.flogger.AbstractLogger;
 import com.google.common.flogger.LogSite;
-import com.google.common.flogger.LoggingApi;
+import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 
 /**
@@ -88,6 +88,10 @@ public abstract class Platform {
           return (Platform) Class.forName(clazz).getConstructor().newInstance();
         } catch (Throwable e) {
           // Catch errors so if we can't find _any_ implementations, we can report something useful.
+          // Unwrap any generic wrapper exceptions for readability here (extend this as needed).
+          if (e instanceof InvocationTargetException) {
+            e = e.getCause();
+          }
           errorMessage.append('\n').append(clazz).append(": ").append(e);
         }
       }
@@ -106,7 +110,7 @@ public abstract class Platform {
    * callers to resolve the implementation early and then call an instance directly (this is not an
    * interface), we reduce the number of elements in the stack before the caller is found.
    */
-  public static abstract class LogCallerFinder {
+  public abstract static class LogCallerFinder {
     /**
      * Returns the name of the immediate caller of the given logger class. This is useful when
      * determining the class name with which to create a logger backend.
@@ -128,8 +132,7 @@ public abstract class Platform {
      * @return A log site inferred from the stack, or {@link LogSite#INVALID} if no log site can be
      *     determined.
      */
-    public abstract LogSite findLogSite(
-        Class<? extends LoggingApi<?>> loggerApi, int stackFramesToSkip);
+    public abstract LogSite findLogSite(Class<?> loggerApi, int stackFramesToSkip);
   }
 
   /**
@@ -186,10 +189,13 @@ public abstract class Platform {
   }
 
   /**
-   * Returns the current time from the epoch (00:00 1st Jan, 1970) with microsecond granularity.
+   * Returns the current time from the epoch (00:00 1st Jan, 1970) with nanosecond granularity.
+   * This is a non-negative signed 64-bit value, which must be in the range {@code 0 <= timestamp
+   * < 2^63}, ensuring that the difference between any two timestamps will always yield a valid
+   * signed value.
    * <p>
-   * Warning: Not all Platform implementations will be able to deliver microsecond precision and
-   * user should avoid rely on any implied precision wherever possible.
+   * Warning: Not all Platform implementations will be able to deliver nanosecond precision and
+   * code should avoid relying on any implied precision.
    */
   public static long getCurrentTimeNanos() {
     return LazyHolder.INSTANCE.getCurrentTimeNanosImpl();

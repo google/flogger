@@ -16,10 +16,7 @@
 
 package com.google.common.flogger.backend.system;
 
-import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LoggerBackend;
-import com.google.common.flogger.util.CallerFinder;
-import com.google.common.flogger.util.StackBasedLogSite;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -48,16 +45,6 @@ abstract class AbstractBackend extends LoggerBackend {
   @Override
   public final boolean isLoggable(Level lvl) {
     return logger.isLoggable(lvl);
-  }
-
-  @Override
-  public LogSite inferLogSite(Class<?> loggerClass, int stackFramesToSkip) {
-    // Skip an additional stack frame because we create the Throwable inside this method, not at
-    // the point that this method was invoked (which allows completely alternate implementations
-    // to avoid even constructing the Throwable instance).
-    StackTraceElement caller =
-        CallerFinder.findCallerOf(loggerClass, new Throwable(), stackFramesToSkip + 1);
-    return caller != null ? new StackBasedLogSite(caller) : LogSite.INVALID;
   }
 
   // Q: Why is the code below so complex ?

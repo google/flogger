@@ -287,15 +287,10 @@ public abstract class LogContext<
 
   /**
    * Creates a logging context with the specified level and timestamp. This constructor is provided
-   * only for testing when timestamp need to be injected. In general, subclasses would only need to
-   * call this constructor when testing additional API methods which require timestamps (e.g.
+   * only for testing when timestamps need to be injected. In general, subclasses would only need
+   * to call this constructor when testing additional API methods which require timestamps (e.g.
    * additional rate limiting functionality). Most unit tests for logger subclasses should not
    * test the value of the timestamp at all, since this is already well tested elsewhere.
-   *
-   * <p>Note that the timestamp need not represent "wall time" and could be elapsed time from some
-   * not standard epoch. The timestamp in a log statement may only be used to determine calendar
-   * dates/times if it is know that the logging platform provided a wall-time clock. Timestamps can
-   * be signed, with negative values referring to instants before the epoch.
    *
    * @param level the log level for this log statement.
    * @param isForced whether to force this log statement (see {@link #wasForced()} for details).
@@ -533,7 +528,7 @@ public abstract class LogContext<
     if (logSite == null) {
       // From the point at which we call inferLogSite() we can skip 1 additional method (the
       // shouldLog() method itself) when looking up the stack to find the log() method.
-      logSite = checkNotNull(getLogger().getBackend().inferLogSite(LogContext.class, 1),
+      logSite = checkNotNull(Platform.getCallerFinder().findLogSite(LogContext.class, 1),
           "logger backend must not return a null LogSite");
     }
     LogSiteKey logSiteKey = null;
