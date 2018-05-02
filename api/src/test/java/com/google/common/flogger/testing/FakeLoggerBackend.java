@@ -18,11 +18,8 @@ package com.google.common.flogger.testing;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
-import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
-import com.google.common.flogger.util.CallerFinder;
-import com.google.common.flogger.util.StackBasedLogSite;
 import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,15 +90,5 @@ public final class FakeLoggerBackend extends LoggerBackend {
 
   @Override public void handleError(RuntimeException error, LogData badData) {
     throw error;
-  }
-
-  @Override
-  public LogSite inferLogSite(Class<?> loggerClass, int stackFramesToSkip) {
-    // Skip an additional stack frame because we create the Throwable inside this method, not at
-    // the point that this method was invoked (which allows completely alternate implementations
-    // to avoid even constructing the Throwable instance).
-    StackTraceElement caller =
-        CallerFinder.findCallerOf(loggerClass, new Throwable(), stackFramesToSkip + 1);
-    return caller != null ? new StackBasedLogSite(caller) : LogSite.INVALID;
   }
 }

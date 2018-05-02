@@ -16,7 +16,6 @@
 
 package com.google.common.flogger.backend;
 
-import com.google.common.flogger.LogSite;
 import java.util.logging.Level;
 
 /**
@@ -77,16 +76,4 @@ public abstract class LoggerBackend {
    * @throws LoggingException to indicate an error which should be propagated into user code.
    */
   public abstract void handleError(RuntimeException error, LogData badData);
-
-  /**
-   * Returns a LogSite inferred from the current stack trace for the caller of the log() method on
-   * the given logging class.
-   *
-   * @param loggerClass the class containing the log() methods whose caller we need to find.
-   * @param stackFramesToSkip the number of method calls which exist on the stack between the log()
-   *     method and the point at which this method is invoked.
-   * @return A log site inferred from the stack, or {@link LogSite#INVALID} if no log site can be
-   *     determined.
-   */
-  public abstract LogSite inferLogSite(Class<?> loggerClass, int stackFramesToSkip);
 }

@@ -39,12 +39,7 @@ public interface LogData {
   @Deprecated
   long getTimestampMicros();
 
-  /**
-   * Returns a nanosecond timestamp for the current log statement. Note that it is up to the
-   * backend as to whether this timestamp is wall-time or elapsed time and so should not be used to
-   * determine dates within custom API extensions (though it is fine to use it to measure elapsed
-   * time for things like rate limiting).
-   */
+  /** Returns a nanosecond timestamp for the current log statement. */
   long getTimestampNanos();
 
   /**

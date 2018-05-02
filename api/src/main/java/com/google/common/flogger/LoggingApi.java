@@ -81,10 +81,10 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *
    * A call to {@code atMostEvery()} will emit the current log statement if:
    * <pre>{@code
-   *   currentTimestampMicros >= lastTimestampMicros + unit.toMicros(n)
+   *   currentTimestampNanos >= lastTimestampNanos + unit.toNanos(n)
    * }</pre>
-   * where {@code currentTimestampMicros} is the timestamp of the current log statement and
-   * {@code lastTimestampMicros} is a time stamp of the last log statement that was emitted.
+   * where {@code currentTimestampNanos} is the timestamp of the current log statement and
+   * {@code lastTimestampNanos} is a time stamp of the last log statement that was emitted.
    * <p>
    * The effect of this is that when logging invocation is relatively infrequent, the period
    * between emitted log statements can be higher than the specified duration. For example
@@ -92,31 +92,25 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * <pre>{@code
    *   logger.atFine().atMostEvery(2, SECONDS).log(...);
    * }</pre>
-   * logging would occur after {@code 0ms}, {@code 2400ms} and {@code 4800ms} (not {@code 4200ms}),
-   * giving an effective duration of {@code 2400ms} between log statements over time.
+   * logging would occur after {@code 0s}, {@code 2.4s} and {@code 4.8s} (not {@code 4.2s}),
+   * giving an effective duration of {@code 2.4s} between log statements over time.
    * <p>
    * Providing a zero length duration (ie, {@code n == 0}) disabled rate limiting and makes this
    * method an effective no-op.
    *
    * <h3>Granularity</h3>
    *
-   * Because the implementation of this feature relies on a microsecond timestamp provided by the
+   * Because the implementation of this feature relies on a nanosecond timestamp provided by the
    * backend, the actual granularity of the underlying clock used may vary. Thus it is possible to
    * specify a time period smaller than the smallest visible time increment. If this occurs, then
    * the effective rate limit applied to the log statement will be the smallest available time
    * increment. For example, if the system clock granularity is 1 millisecond, and a
    * log statement is called with {@code atMostEvery(700, MICROSECONDS)}, the effective rate of
-   * logging (even averaged over long periods) will be once every millisecond.
-   * <p>
-   * As the minimum possible granularity of this API is bounded by the microsecond timestamp
-   * available, it makes little sense to pass in {@code TimeUnit.NANOSECONDS} to this method.
-   * If a sub-microsecond period is supplied (assuming it is not zero) then it is always immediately
-   * rounded up to 1 microsecond, but its effective duration may then be further increased due to
-   * the underlying system clock granularity.
+   * logging (even averaged over long periods) could never be more than once every millisecond.
    *
    * <h3>Notes</h3>
    *
-   * Note also that if {@code atMostEvery()} and {@link #every(int)} are invoked for the same log
+   * Note that if {@code atMostEvery()} and {@link #every(int)} are invoked for the same log
    * statement, then the log statement will be emitted when both criteria are satisfied.
    * <p>
    * If this method is called multiple times for a single log statement, the last invocation will
