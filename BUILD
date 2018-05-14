@@ -13,5 +13,6 @@ package_group(
         "//android/...",
         "//api/...",
         "//google/...",
+        "//log4j/...",
     ],
 )
