@@ -21,3 +21,9 @@ http_archive(
 load("@google_bazel_common//:workspace_defs.bzl", "google_common_workspace_rules")
 
 google_common_workspace_rules()
+
+maven_jar(
+    name = "log4j",
+    artifact = "log4j:log4j:1.2.17",
+    sha1 = "5af35056b4d257e4b64b9e8069c0746e8b08629f",
+)
