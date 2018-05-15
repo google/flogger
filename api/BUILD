@@ -276,6 +276,12 @@ filegroup(
     ],
 )
 
+filegroup(
+    name = "javadoc_sources",
+    testonly = 1,
+    srcs = glob(["src/main/java/**"]) + TESTING_SRCS,
+)
+
 # ---- Unit Tests ----
 
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")

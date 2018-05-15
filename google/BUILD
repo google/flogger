@@ -45,6 +45,11 @@ javadoc_library(
     deps = [":flogger"],
 )
 
+filegroup(
+    name = "javadoc_sources",
+    srcs = GOOGLE_LOGGER_SRCS,
+)
+
 # ---- Tests ----
 
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
