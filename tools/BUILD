@@ -15,3 +15,29 @@
 package(default_visibility = ["//:internal"])
 
 exports_files(["pom-template.xml"])
+
+load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
+
+javadoc_library(
+    name = "all_javadoc",
+    testonly = 1,
+    srcs = [
+        "//api:javadoc_sources",
+        "//google:javadoc_sources",
+    ],
+    bottom_text = "Copyright &copy; 2018&ndash; The Flogger Authors. All rights reserved.",
+    doctitle = "Flogger: A Fluent Logging API for Java",
+    exclude_packages = ["com.google.common.flogger.util"],
+    external_javadoc_links = [
+        "https://google.github.io/guava/releases/24.1-jre/api/docs/",
+        "https://google.github.io/truth/api/0.40/",
+        "http://errorprone.info/api/latest/",
+        "https://junit.org/junit4/javadoc/4.11/",
+    ],
+    root_packages = ["com.google.common.flogger"],
+    deps = [
+        "//api",
+        "//api:testing",
+        "//google:flogger",
+    ],
+)
