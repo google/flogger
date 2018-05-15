@@ -272,7 +272,7 @@ filegroup(
     name = "proguard_cfg",
     srcs = ["proguard.cfg"],
     visibility = [
-        "//javatests/com/google/frameworks/client/logging/android/flogger/proguard:__pkg__",
+        "//visibility:public",
     ],
 )
 
