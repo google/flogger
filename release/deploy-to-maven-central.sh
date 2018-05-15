@@ -10,24 +10,9 @@ key=$1
 version_name=$2
 shift 2
 
-if [[ ! "$version_name" =~ ^2\. ]]; then
-  echo 'Version name must begin with "2."'
-  exit 2
-fi
-
 if [[ "$version_name" =~ " " ]]; then
   echo "Version name must not have any spaces"
   exit 3
-fi
-
-#validate key
-keystatus=$(gpg --list-keys | grep ${key} | awk '{print $1}')
-if [ "${keystatus}" != "pub" ]; then
-  echo "Could not find public key with label ${key}"
-  echo -n "Available keys from: "
-  gpg --list-keys | grep --invert-match '^sub'
-
-  exit 64
 fi
 
 bazel test //...
