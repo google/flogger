@@ -58,3 +58,9 @@ deploy_library \
   google/libflogger-src.jar \
   google/flogger_javadoc.jar \
   google/google_logger_pom.xml
+
+deploy_library \
+  log4j/liblog4j_backend.jar \
+  log4j/liblog4j_backend-src.jar \
+  log4j/javadoc.jar \
+  log4j/pom.xml
