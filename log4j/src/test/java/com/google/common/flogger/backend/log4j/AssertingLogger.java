@@ -45,7 +45,7 @@ import org.apache.log4j.spi.LoggingEvent;
  * <pre>
  *   AssertingLogger logger = AssertingLogger.createOrGet("foo");
  *   LoggerBackend backend = new Log4jLoggerBackend(logger);
- *   backend.log(FakeLogData.of("Hello World"));
+ *   backend.log(FakeLogData.withPrintfStyle("Hello World"));
  *   logger.assertLogCount(1);
  *   logger.assertLogEntry(0, INFO, "Hello World");
  * </pre>

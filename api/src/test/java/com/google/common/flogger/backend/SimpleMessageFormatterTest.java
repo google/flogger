@@ -21,7 +21,6 @@ import static com.google.common.flogger.backend.FormatOptions.UNSET;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.flogger.LogContext.Key;
-import com.google.common.flogger.LogFormat;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
 import com.google.common.flogger.testing.FakeLogData;
@@ -92,7 +91,9 @@ public class SimpleMessageFormatterTest {
         try {
           formatter.out()
               .append(String.format("[f=%d,w=%d,p=%d]", flags, width, precision));
-        } catch (IOException impossible) { }
+        } catch (IOException e) {
+          // Impossible since the Appendable is a StringBuilder
+        }
       }
     };
     assertThat(log("%s", arg)).isEqualTo("[f=0,w=-1,p=-1]");
@@ -124,7 +125,9 @@ public class SimpleMessageFormatterTest {
         try {
           // This should be deleted if an error occurs.
           formatter.out().append("UNEXPECTED");
-        } catch (IOException e) { }
+        } catch (IOException e) {
+          // Impossible since the Appendable is a StringBuilder
+        }
         throw new RuntimeException("Badness!!");
       }
     };
@@ -140,13 +143,13 @@ public class SimpleMessageFormatterTest {
 
   private static String log(String message, Object... args) {
     SimpleLogHandler handler = getSimpleLogHandler();
-    SimpleMessageFormatter.format(FakeLogData.of(LogFormat.PRINTF_STYLE, message, args), handler);
+    SimpleMessageFormatter.format(FakeLogData.withPrintfStyle(message, args), handler);
     return handler.toString();
   }
 
   private static String logMetadata(Object... args) {
     SimpleLogHandler handler = getSimpleLogHandler();
-    FakeLogData data = FakeLogData.of(LogFormat.PRINTF_STYLE, "");
+    FakeLogData data = FakeLogData.withPrintfStyle("");
     for (int n = 0; n < args.length / 2; n++) {
       data.addMetadata((MetadataKey<?>) args[2 * n], args[(2 * n) + 1]);
     }

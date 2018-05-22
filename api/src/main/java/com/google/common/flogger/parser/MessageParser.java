@@ -16,16 +16,9 @@
 
 package com.google.common.flogger.parser;
 
-import static com.google.common.flogger.util.Checks.checkNotNull;
-
-import com.google.common.flogger.LogFormat;
-
 /**
- * Base class from which any specific message parsers are derived (ie, {@link PrintfMessageParser}
+ * Base class from which any specific message parsers are derived (e.g. {@link PrintfMessageParser}
  * and {@link BraceStyleMessageParser}).
- * <p>
- * This class cannot be extended directly outside of this package because there are strong
- * assumptions elsewhere in the code regarding which {@link LogFormat}s exist.
  */
 public abstract class MessageParser {
   /**
@@ -34,17 +27,6 @@ public abstract class MessageParser {
    * ambiguous as to which is being parsed).
    */
   public static final int MAX_ARG_COUNT = 1000000;
-
-  private final LogFormat format;
-
-  /**
-   * Package access only because it's not feasible to extend this class without adding a new
-   * {@link LogFormat}, which would require many changes elsewhere in the code and potentially
-   * cause incompatibilities with existing backend implementations.
-   */
-  MessageParser(LogFormat format) {
-    this.format = checkNotNull(format, "log format");
-  }
 
   /**
    * Abstract parse method implemented by specific subclasses to modify parsing behavior.

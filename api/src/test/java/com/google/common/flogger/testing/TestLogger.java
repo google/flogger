@@ -16,14 +16,10 @@
 
 package com.google.common.flogger.testing;
 
-import static com.google.common.flogger.util.Checks.checkNotNull;
-
 import com.google.common.flogger.AbstractLogger;
 import com.google.common.flogger.LogContext;
-import com.google.common.flogger.LogFormat;
 import com.google.common.flogger.LoggingApi;
 import com.google.common.flogger.backend.LoggerBackend;
-import com.google.common.flogger.parser.DefaultBraceStyleMessageParser;
 import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.parser.MessageParser;
 import java.util.logging.Level;
@@ -46,17 +42,9 @@ public final class TestLogger extends AbstractLogger<TestLogger.Api> {
     return new TestLogger(backend);
   }
 
-  private LogFormat format = LogFormat.PRINTF_STYLE;
-
   /** Constructs a test logger with the given backend. */
   private TestLogger(LoggerBackend backend) {
     super(backend);
-  }
-
-  /** */
-  public final TestLogger setFormat(LogFormat format) {
-    this.format = checkNotNull(format, "format");
-    return this;
   }
 
   @Override
@@ -103,14 +91,7 @@ public final class TestLogger extends AbstractLogger<TestLogger.Api> {
 
     @Override
     protected final MessageParser getMessageParser() {
-      switch (format) {
-        case PRINTF_STYLE:
-          return DefaultPrintfMessageParser.getInstance();
-        case BRACE_STYLE:
-          return DefaultBraceStyleMessageParser.getInstance();
-        default:
-          throw new AssertionError("unsupported format type: " + format);
-      }
+      return DefaultPrintfMessageParser.getInstance();
     }
   }
 }

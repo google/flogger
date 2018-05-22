@@ -16,8 +16,6 @@
 
 package com.google.common.flogger.parser;
 
-import com.google.common.flogger.LogFormat;
-
 /**
  * A specialized {@link MessageParser} for processing log messages in printf style, as used by
  * {@link String#format}. This is an abstract parser which knows how to
@@ -46,10 +44,6 @@ public abstract class PrintfMessageParser extends MessageParser {
       // Fall through to default value;
     }
     return "\n";
-  }
-
-  protected PrintfMessageParser() {
-    super(LogFormat.PRINTF_STYLE);
   }
 
   /**

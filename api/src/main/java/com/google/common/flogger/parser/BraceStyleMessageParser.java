@@ -16,8 +16,6 @@
 
 package com.google.common.flogger.parser;
 
-import com.google.common.flogger.LogFormat;
-
 /**
  * A specialized {@link MessageParser} for processing log messages in the "brace style", as used by
  * {@link java.text.MessageFormat MessageFormat}. This is an abstract parser which knows how to
@@ -33,10 +31,6 @@ public abstract class BraceStyleMessageParser extends MessageParser {
    * formatting.
    */
   private static final char BRACE_STYLE_SEPARATOR = ',';
-
-  protected BraceStyleMessageParser() {
-    super(LogFormat.BRACE_STYLE);
-  }
 
   /**
    * Parses a single brace format term from a log message into a message template builder. Note that
