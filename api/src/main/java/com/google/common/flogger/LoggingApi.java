@@ -254,9 +254,8 @@ public interface LoggingApi<API extends LoggingApi<API>> {
 
   /**
    * Logs a formatted representation of the given parameter, using the specified message template.
-   * The message string is expected to contain argument placeholder terms according to the logger's
-   * specified format style (either {@link LogFormat#PRINTF_STYLE} or {@link LogFormat#BRACE_STYLE})
-   * appropriate for the logger's choice of parser.
+   * The message string is expected to contain argument placeholder terms appropriate to the
+   * logger's choice of parser.
    * <p>
    * Note that printf-style loggers are always expected to accept the standard Java printf
    * formatting characters (e.g. "%s", "%d" etc...) and all flags unless otherwise stated.

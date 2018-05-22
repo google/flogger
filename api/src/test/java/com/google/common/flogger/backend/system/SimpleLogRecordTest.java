@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.flogger.LogContext;
-import com.google.common.flogger.LogFormat;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.parser.ParseException;
@@ -65,7 +64,7 @@ public class SimpleLogRecordTest {
 
   @Test
   public void testWithArguments() {
-    LogData data = FakeLogData.of(LogFormat.BRACE_STYLE, "Answer={0}", 42).setLevel(Level.FINE);
+    LogData data = FakeLogData.withBraceStyle("Answer={0}", 42).setLevel(Level.FINE);
 
     LogRecord record = SimpleLogRecord.create(data);
 
@@ -76,7 +75,7 @@ public class SimpleLogRecordTest {
 
   @Test
   public void testWithPrintfFormatting() {
-    LogData data = FakeLogData.of(LogFormat.PRINTF_STYLE, "Hex=%#08x, Int=%1$d", 0xC0DE);
+    LogData data = FakeLogData.withPrintfStyle("Hex=%#08x, Int=%1$d", 0xC0DE);
 
     LogRecord record = SimpleLogRecord.create(data);
 
@@ -89,7 +88,7 @@ public class SimpleLogRecordTest {
   public void testWithThrown() {
     Throwable cause = new Throwable("Goodbye World");
     LogData data =
-        FakeLogData.of(LogFormat.PRINTF_STYLE, "Hello World")
+        FakeLogData.withPrintfStyle("Hello World")
             .addMetadata(LogContext.Key.LOG_CAUSE, cause);
 
     LogRecord record = SimpleLogRecord.create(data);
@@ -101,7 +100,7 @@ public class SimpleLogRecordTest {
   public void testErrorHandling() {
     Throwable cause = new Throwable("Original Cause");
     LogData data =
-        FakeLogData.of(LogFormat.PRINTF_STYLE, "Hello World")
+        FakeLogData.withPrintfStyle("Hello World")
             .addMetadata(LogContext.Key.LOG_CAUSE, cause);
 
     RuntimeException error = new RuntimeException("Runtime Error");
@@ -119,7 +118,7 @@ public class SimpleLogRecordTest {
   @Test
   public void testWithArgumentsAndMetadata() {
     LogData data =
-        FakeLogData.of(LogFormat.PRINTF_STYLE, "Foo='%s'", "bar")
+        FakeLogData.withPrintfStyle("Foo='%s'", "bar")
             .setTimestampNanos(123456789000L)
             .addMetadata(COUNT_KEY, 23)
             .addMetadata(ID_KEY, "test ID");
@@ -152,14 +151,14 @@ public class SimpleLogRecordTest {
 
   @Test
   public void testNullArgs() {
-    LogData data = FakeLogData.of(LogFormat.PRINTF_STYLE, "value=%s", new Object[] { null });
+    LogData data = FakeLogData.withPrintfStyle("value=%s", new Object[] { null });
     LogRecord record = SimpleLogRecord.create(data);
     assertThat(record.getMessage()).isEqualTo("value=null");
   }
 
   @Test
   public void testMissingArgs() {
-    LogData data = FakeLogData.of(LogFormat.PRINTF_STYLE, "foo=%s, bar=%s", "FOO");
+    LogData data = FakeLogData.withPrintfStyle("foo=%s, bar=%s", "FOO");
     LogRecord record = SimpleLogRecord.create(data);
     assertThat(record.getMessage()).isEqualTo("foo=FOO, bar=[ERROR: MISSING LOG ARGUMENT]");
   }
@@ -167,7 +166,7 @@ public class SimpleLogRecordTest {
   @Test
   public void testUnusedArgs() {
     LogData data =
-        FakeLogData.of(LogFormat.PRINTF_STYLE, "%2$s %s %<s %s", "a", "b", "c", "d"); // "b a a b"
+        FakeLogData.withPrintfStyle("%2$s %s %<s %s", "a", "b", "c", "d"); // "b a a b"
     LogRecord record = SimpleLogRecord.create(data);
     assertThat(record.getMessage()).isEqualTo("b a a b [ERROR: UNUSED LOG ARGUMENTS]");
   }
@@ -176,8 +175,7 @@ public class SimpleLogRecordTest {
   public void testTrailingArgsAbove32AreCaught() {
     // 33 arguments with the 33rd argument unreferenced.
     LogData data =
-        FakeLogData.of(
-            LogFormat.PRINTF_STYLE,
+        FakeLogData.withPrintfStyle(
             "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s "
                 + "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
             new Object[33]);
@@ -189,8 +187,7 @@ public class SimpleLogRecordTest {
   public void testGapsInArgsUpTo32AreCaught() {
     // 33 arguments with the 32rd argument unreferenced.
     LogData data =
-        FakeLogData.of(
-            LogFormat.PRINTF_STYLE,
+        FakeLogData.withPrintfStyle(
             "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s "
                 + "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %33$s",
             new Object[33]);
@@ -208,8 +205,7 @@ public class SimpleLogRecordTest {
     Object[] args = new Object[34];
     args[33] = "UNUSED";
     LogData data =
-        FakeLogData.of(
-            LogFormat.PRINTF_STYLE,
+        FakeLogData.withPrintfStyle(
             "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s "
                 + "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %34$s",
             new Object[34]);
@@ -220,7 +216,7 @@ public class SimpleLogRecordTest {
   @Test
   public void testToString_b31405251() {
     // Test once with arguments and once without (LogData behaves differently in each case).
-    LogData data = FakeLogData.of(LogFormat.PRINTF_STYLE, "Answer=%d", 42);
+    LogData data = FakeLogData.withPrintfStyle("Answer=%d", 42);
     String toString = SimpleLogRecord.create(data).toString();
     // From the SimpleLogRecord point of view, we don't have arguments after formatting.
     assertThat(toString).contains("  message: Answer=42");

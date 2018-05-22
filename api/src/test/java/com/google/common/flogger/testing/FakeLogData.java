@@ -58,9 +58,24 @@ public class FakeLogData implements LogData {
   /**
    * Creates a fake {@code LogData} instance representing a log statement of the specified format
    * with the given message and arguments.
+   *
+   * @deprecated Scheduled for removal.
    */
+  @Deprecated
   public static FakeLogData of(LogFormat logFormat, String message, Object... arguments) {
-    return new FakeLogData(logFormat, message, arguments);
+    MessageParser parser = logFormat == LogFormat.PRINTF_STYLE
+        ? DefaultPrintfMessageParser.getInstance() : DefaultBraceStyleMessageParser.getInstance();
+    return new FakeLogData(parser, message, arguments);
+  }
+
+  /** Creates a fake {@code LogData} instance for a log statement with printf style formatting. */
+  public static FakeLogData withPrintfStyle(String message, Object... arguments) {
+    return new FakeLogData(DefaultPrintfMessageParser.getInstance(), message, arguments);
+  }
+
+  /** Creates a fake {@code LogData} instance for a log statement with brace style formatting. */
+  public static FakeLogData withBraceStyle(String message, Object... arguments) {
+    return new FakeLogData(DefaultBraceStyleMessageParser.getInstance(), message, arguments);
   }
 
   private Level level = Level.INFO;
@@ -74,9 +89,7 @@ public class FakeLogData implements LogData {
     this.literalArgument = literalArgument;
   }
 
-  private FakeLogData(LogFormat logFormat, String message, Object... arguments) {
-    MessageParser parser = logFormat == LogFormat.PRINTF_STYLE
-        ? DefaultPrintfMessageParser.getInstance() : DefaultBraceStyleMessageParser.getInstance();
+  private FakeLogData(MessageParser parser, String message, Object... arguments) {
     this.context = new TemplateContext(parser, message);
     this.arguments = arguments;
   }
