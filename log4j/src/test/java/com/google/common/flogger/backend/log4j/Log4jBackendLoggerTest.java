@@ -16,7 +16,6 @@
 
 package com.google.common.flogger.backend.log4j;
 
-import static com.google.common.flogger.LogFormat.PRINTF_STYLE;
 import static com.google.common.truth.Truth.assertThat;
 import static org.apache.log4j.Level.DEBUG;
 import static org.apache.log4j.Level.ERROR;
@@ -69,7 +68,7 @@ public class Log4jBackendLoggerTest {
     LoggerBackend backend = newBackend(logger);
 
     backend.log(FakeLogData.of("Hello World"));
-    backend.log(FakeLogData.of(PRINTF_STYLE, "Hello %s %s", "Foo", "Bar"));
+    backend.log(FakeLogData.withPrintfStyle("Hello %s %s", "Foo", "Bar"));
 
     logger.assertLogCount(2);
     logger.assertLogEntry(0, INFO, "Hello World");
@@ -82,7 +81,7 @@ public class Log4jBackendLoggerTest {
     LoggerBackend backend = newBackend(logger);
 
     backend.log(
-        FakeLogData.of(PRINTF_STYLE, "Foo='%s'", "bar")
+        FakeLogData.withPrintfStyle("Foo='%s'", "bar")
             .addMetadata(COUNT_KEY, 23)
             .addMetadata(ID_KEY, "test ID"));
 
@@ -118,7 +117,7 @@ public class Log4jBackendLoggerTest {
     AssertingLogger logger = getAssertingLogger();
     LoggerBackend backend = newBackend(logger);
 
-    LogData data = FakeLogData.of(PRINTF_STYLE, "Hello %?X World", "ignored");
+    LogData data = FakeLogData.withPrintfStyle("Hello %?X World", "ignored");
     try {
       backend.log(data);
       fail("expected ParseException");

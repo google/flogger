@@ -16,7 +16,6 @@
 
 package com.google.common.flogger.backend.log4j;
 
-import static com.google.common.flogger.LogFormat.PRINTF_STYLE;
 import static com.google.common.truth.Truth.assertThat;
 import static org.apache.log4j.Level.DEBUG;
 import static org.apache.log4j.Level.ERROR;
@@ -91,7 +90,7 @@ public class SimpleLogEventTest {
     SimpleLogEvent logEvent = newSimpleLogEvent(FakeLogData.of("Hello World"));
     assertThat(logEvent.asLoggingEvent().getMessage()).isEqualTo("Hello World");
 
-    logEvent = newSimpleLogEvent(FakeLogData.of(PRINTF_STYLE, "Hello %s %s", "Foo", "Bar"));
+    logEvent = newSimpleLogEvent(FakeLogData.withPrintfStyle("Hello %s %s", "Foo", "Bar"));
     assertThat(logEvent.asLoggingEvent().getMessage()).isEqualTo("Hello Foo Bar");
   }
 
@@ -99,7 +98,7 @@ public class SimpleLogEventTest {
   public void testWithThrown() {
     Throwable cause = new Throwable("Goodbye World");
     LogData data =
-        FakeLogData.of(PRINTF_STYLE, "Hello World").addMetadata(LogContext.Key.LOG_CAUSE, cause);
+        FakeLogData.withPrintfStyle("Hello World").addMetadata(LogContext.Key.LOG_CAUSE, cause);
     SimpleLogEvent logEvent = newSimpleLogEvent(data);
     assertThat(logEvent.asLoggingEvent().getThrowableInformation().getThrowable()).isSameAs(cause);
   }
@@ -108,7 +107,7 @@ public class SimpleLogEventTest {
   public void testErrorHandling() {
     Throwable cause = new Throwable("Original Cause");
     LogData data =
-        FakeLogData.of(PRINTF_STYLE, "Hello World").addMetadata(LogContext.Key.LOG_CAUSE, cause);
+        FakeLogData.withPrintfStyle("Hello World").addMetadata(LogContext.Key.LOG_CAUSE, cause);
 
     RuntimeException error = new RuntimeException("Runtime Error");
     SimpleLogEvent logEvent = newSimpleLogEvent(error, data);
@@ -127,7 +126,7 @@ public class SimpleLogEventTest {
 
   @Test
   public void testTimestamp() {
-    LogData data = FakeLogData.of(PRINTF_STYLE, "Foo='%s'", "bar").setTimestampNanos(123456000000L);
+    LogData data = FakeLogData.withPrintfStyle("Foo='%s'", "bar").setTimestampNanos(123456000000L);
     SimpleLogEvent logEvent = newSimpleLogEvent(data);
     assertThat(logEvent.asLoggingEvent().getTimeStamp()).isEqualTo(123456L);
   }
@@ -135,7 +134,7 @@ public class SimpleLogEventTest {
   @Test
   public void testMetadata() {
     LogData data =
-        FakeLogData.of(PRINTF_STYLE, "Foo='%s'", "bar")
+        FakeLogData.withPrintfStyle("Foo='%s'", "bar")
             .addMetadata(COUNT_KEY, 23)
             .addMetadata(ID_KEY, "test ID");
 
@@ -147,7 +146,7 @@ public class SimpleLogEventTest {
   @Test
   public void testToStringWithArgumentsAndMetadata() {
     LogData data =
-        FakeLogData.of(PRINTF_STYLE, "Foo='%s'", "bar")
+        FakeLogData.withPrintfStyle("Foo='%s'", "bar")
             .setTimestampNanos(123456789000L)
             .addMetadata(COUNT_KEY, 23)
             .addMetadata(ID_KEY, "test ID");

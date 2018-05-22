@@ -16,7 +16,6 @@
 
 package com.google.common.flogger.backend.log4j;
 
-import static com.google.common.flogger.LogFormat.PRINTF_STYLE;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.flogger.LogContext;
@@ -39,7 +38,7 @@ public class LogDataFormatterTest {
   public void testFormatBadLogData() {
     Throwable cause = new Throwable("Original Cause");
     LogData data =
-        FakeLogData.of(PRINTF_STYLE, "Hello World").addMetadata(LogContext.Key.LOG_CAUSE, cause);
+        FakeLogData.withPrintfStyle("Hello World").addMetadata(LogContext.Key.LOG_CAUSE, cause);
 
     SimpleLogHandler handler = getSimpleLogHandler();
     RuntimeException error = new RuntimeException("Runtime Error");
@@ -54,7 +53,7 @@ public class LogDataFormatterTest {
   @Test
   public void testAppendLogData() {
     LogData data =
-        FakeLogData.of(PRINTF_STYLE, "Foo='%s'", "bar")
+        FakeLogData.withPrintfStyle("Foo='%s'", "bar")
             .setTimestampNanos(123456789000L)
             .addMetadata(COUNT_KEY, 23)
             .addMetadata(ID_KEY, "test ID");
