@@ -20,7 +20,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import com.google.common.base.Preconditions;
 import com.google.common.flogger.LogContext;
-import com.google.common.flogger.LogFormat;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
@@ -53,19 +52,6 @@ public class FakeLogData implements LogData {
    */
   public static FakeLogData of(Object literalArgument) {
     return new FakeLogData(literalArgument);
-  }
-
-  /**
-   * Creates a fake {@code LogData} instance representing a log statement of the specified format
-   * with the given message and arguments.
-   *
-   * @deprecated Scheduled for removal.
-   */
-  @Deprecated
-  public static FakeLogData of(LogFormat logFormat, String message, Object... arguments) {
-    MessageParser parser = logFormat == LogFormat.PRINTF_STYLE
-        ? DefaultPrintfMessageParser.getInstance() : DefaultBraceStyleMessageParser.getInstance();
-    return new FakeLogData(parser, message, arguments);
   }
 
   /** Creates a fake {@code LogData} instance for a log statement with printf style formatting. */
