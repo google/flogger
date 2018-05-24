@@ -19,8 +19,11 @@ package com.google.common.flogger;
 import static com.google.common.flogger.LazyArgs.lazy;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Supplier;
+import com.google.common.flogger.backend.KeyValueHandler;
+import com.google.common.truth.StringSubject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Handler;
@@ -40,6 +43,32 @@ import org.junit.runners.JUnit4;
 // TODO(user): Make this use a fake/test backend rather than relying on the system one.
 @RunWith(JUnit4.class)
 public class GoogleLoggerTest {
+  // Metadata keys (single keys will be the most common).
+  private static final MetadataKey<String> ID = MetadataKey.single("id", String.class);
+  private static final MetadataKey<Integer> FLAG = MetadataKey.repeated("flags", Integer.class);
+
+  // A simple composite value for testing custom metadata keys.
+  private static final class Point {
+    final int x;
+    final int y;
+
+    Point(int x, int y) {
+      this.x = x;
+      this.y = y;
+    }
+  }
+
+  // An example of a metadata key subclass which can decompose a composite value (perhaps to avoid
+  // expensive or unwanted processing in the toString() method).
+  private static final MetadataKey<Point> POINT =
+      new MetadataKey<Point>("point", Point.class, false) {
+    @Override
+    public void emit(Object value, KeyValueHandler out) {
+      Point p = cast(value);
+      out.handle("point.x", p.x);
+      out.handle("point.y", p.y);
+    }
+  };
 
   private GoogleLogger logger;
   private AssertingHandler assertingHandler;
@@ -63,13 +92,13 @@ public class GoogleLoggerTest {
   @Test
   public void testSimpleLogging() {
     logger.atInfo().log("Hello World");
-    assertingHandler.assertLogged("Hello World");
+    assertingHandler.assertOnlyLog().contains("Hello World");
   }
 
   @Test
   public void testArrayLogging() {
     logger.atInfo().log("Hello %s World", new Object[] {"foo", "bar"});
-    assertingHandler.assertLogged("Hello [foo, bar] World");
+    assertingHandler.assertOnlyLog().contains("Hello [foo, bar] World");
   }
 
   // The LazyArgs mechanism is also tested in the core "api" package, but those tests cannot use
@@ -93,7 +122,63 @@ public class GoogleLoggerTest {
     for (int n = 0; n < 5; n++) {
       logger.atInfo().every(10).log("Hello %s %s", lazy(expensive::get), "World");
     }
-    assertingHandler.assertLogged("Hello Expensive World");
+    assertingHandler.assertOnlyLog().contains("Hello Expensive World");
+  }
+
+  @Test
+  public void testWithMethod() {
+    // Adding a key/value pair.
+    logger.atInfo().with(ID, "bar").log("With metadata");
+    assertingHandler.assertOnlyLog().containsMatch("With metadata.*\\[CONTEXT.*id=\"bar\".*\\]");
+
+    // Null values are a no-op
+    logger.atInfo().with(ID, null).log("With metadata");
+    assertingHandler.assertOnlyLog().doesNotContain("id");
+
+    // But null keys throw.
+    assertThrows(NullPointerException.class, () -> logger.atInfo().with(null, "").log("Nope!"));
+    assertThrows(NullPointerException.class, () -> logger.atInfo().with(null, null).log("Nope!"));
+
+    // And the no-op implementation also throws (rather than not logging anything).
+    logger.atFinest().log("Should be disabled for test");
+    assertingHandler.assertNoLogs();
+    assertThrows(NullPointerException.class, () -> logger.atFinest().with(null, "").log("Nope!"));
+    assertThrows(NullPointerException.class, () -> logger.atFinest().with(null, null).log("Nope!"));
+  }
+
+  @Test
+  public void testWithMethod_repeated() {
+    // Not-repeatable keys have "last one wins" semantics.
+    logger.atInfo().with(ID, "bar").with(ID, "baz").log("Last one wins");
+    assertingHandler.assertOnlyLog().doesNotContain("bar");
+
+    logger.atInfo().with(ID, "bar").with(ID, "baz").log("Last one wins");
+    assertingHandler.assertOnlyLog().contains("id=\"baz\"");
+
+    // Repeated keys preserve the order the with() methods are called in the log statement.
+    logger.atInfo().with(FLAG, 1).with(FLAG, 2).log("Allow both");
+    assertingHandler.assertOnlyLog().contains("flags=1 flags=2");
+  }
+
+  @Test
+  public void testWithMethod_custom() {
+    logger
+        .atInfo()
+        .with(POINT, new Point(17, 29))
+        .log("¯\\_(ツ)_//¯");
+    assertingHandler.assertOnlyLog().contains("point.x=17 point.y=29");
+  }
+
+  @Test
+  public void testWithMethod_mixed() {
+    // Output order is the same as statement order.
+    logger
+        .atInfo()
+        .with(FLAG, 42)
+        .with(POINT, new Point(17, 29))
+        .with(FLAG, 23)
+        .log("¯\\_(ツ)_//¯");
+    assertingHandler.assertOnlyLog().contains("flags=42 point.x=17 point.y=29 flags=23");
   }
 
   @Test
@@ -102,7 +187,7 @@ public class GoogleLoggerTest {
     logger.atInfo().log("Hello First World");
     LoggerConfig.of(logger).setLevel(Level.INFO);
     logger.atInfo().log("Hello Second World");
-    assertingHandler.assertLogged("Hello Second World");
+    assertingHandler.assertOnlyLog().contains("Hello Second World");
   }
 
   // Ensure that forEnclosingClass() creates a logger with the expected name, either by
@@ -143,11 +228,15 @@ public class GoogleLoggerTest {
       }
     }
 
-    void assertLogged(String expected) {
-      assertWithMessage("no logs recorded").that(logRecords).isNotEmpty();
-      assertWithMessage("more than one log recorded").that(logRecords.size()).isLessThan(2);
-      assertThat(logRecordToString(logRecords.get(0))).contains(expected);
-      logRecords.clear();
+    StringSubject assertOnlyLog() {
+      assertThat(logRecords).hasSize(1);
+      LogRecord logRecord = logRecords.get(0);
+      flush();
+      return assertThat(logRecordToString(logRecord));
+    }
+
+    public void assertNoLogs() {
+      assertWithMessage("unexpected log recorded").that(logRecords).isEmpty();
     }
 
     private String logRecordToString(LogRecord logRecord) {
@@ -159,7 +248,6 @@ public class GoogleLoggerTest {
       if (thrown != null) {
         sb.append(thrown);
       }
-
       return sb.toString().trim();
     }
 
