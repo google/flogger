@@ -505,8 +505,7 @@ public abstract class LogContext<
           new LogSiteStackTrace(
               getMetadata().findValue(LogContext.Key.LOG_CAUSE),
               stackSize,
-              // Skip 2 method calls during stack analysis; the postProcess() method and shouldLog()
-              getStackForCallerOf(LogContext.class, new Throwable(), 2, stackSize.getMaxDepth()));
+              getStackForCallerOf(LogContext.class, new Throwable(), stackSize.getMaxDepth()));
       // The "cause" is a unique metadata key, we must replace any existing value.
       addMetadata(LogContext.Key.LOG_CAUSE, context);
     }
