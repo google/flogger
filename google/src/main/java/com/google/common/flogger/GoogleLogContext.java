@@ -18,8 +18,10 @@ package com.google.common.flogger;
 
 import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.parser.MessageParser;
+import com.google.common.flogger.util.Checks;
 import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.logging.Level;
+import javax.annotation.Nullable;
 
 /**
  * Implementation of any Google specific extensions to the default fluent logging API. This could
@@ -50,5 +52,19 @@ public abstract class GoogleLogContext<
   @Override
   protected final MessageParser getMessageParser() {
     return DefaultPrintfMessageParser.getInstance();
+  }
+
+  @Override
+  public final <T> API with(MetadataKey<T> key, @Nullable T value) {
+    // Null keys are always bad (even if the value is also null). This is one of the few places
+    // where the logger API will throw a runtime exception (and as such it's important to ensure
+    // the NoOp implementation also does the check). The reasoning for this is that the metadata
+    // key is never expected to be passed user data, and should always be a static constant.
+    // Because of this it's always going to be an obvious code error if we get a null here.
+    Checks.checkNotNull(key, "metadata key");
+    if (value != null) {
+      addMetadata(key, value);
+    }
+    return api();
   }
 }

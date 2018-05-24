@@ -20,20 +20,23 @@ import static com.google.common.flogger.util.Checks.checkMetadataIdentifier;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.backend.KeyValueHandler;
-import com.google.common.flogger.backend.Metadata;
 
 /**
- * Key for a piece of logged metadata. This class encapsulates the idea of unique keys for logging
- * additional {@link Metadata} along with log messages. Its role is to allow logger backends to
- * uniquely identify metadata values when processing log statements. One example of this is
- * identifying the Throwable "cause" of a log statement.
- * <p>
- * Logger backends can act upon metadata present in log statements to modify behaviour. Any
- * metadata entries that are not handled by a backend explicitly should be rendered into the log
- * output in some human readable form.
- * <p>
- * Note that some metadata entries are handled prior to being processed by the backend (e.g. rate
- * limiting) but a metadata entry remains present to log the fact that rate limiting is active.
+ * Key for logging semi-structured metadata values.
+ *
+ * <p>Metadata keys can be used to provide log statements with strongly typed values which can be
+ * read and interpreted by logging backends or other logs related tools. This mechanism is
+ * intended for values with specific semantics and should not be seen as a replacement for logging
+ * arguments as part of a formatted log message.
+ *
+ *
+ * <p>Logger backends can act upon metadata present in log statements to modify behaviour. Any
+ * metadata entries that are not handled by a backend explicitly are, by default, rendered as part
+ * of the log statement in a default format.
+ *
+ * <p>Note that some metadata entries are handled prior to being processed by the backend (e.g.
+ * rate limiting), but a metadata entry remains present to record the fact that rate limiting was
+ * enabled.
  */
 public class MetadataKey<T> {
   /**
@@ -42,8 +45,8 @@ public class MetadataKey<T> {
    * will be ignored (although callers should never rely on this behavior).
    * <p>
    * Key instances behave like singletons, and two key instances with the same label will still
-   * be considered distinct. The recommended approach is to always assign Key instances to static
-   * final constant for use by callers.
+   * be considered distinct. The recommended approach is to always assign {@code MetadataKey}
+   * instances to static final constants.
    */
   public static <T> MetadataKey<T> single(String label, Class<T> clazz) {
     return new MetadataKey<T>(label, clazz, false);
@@ -51,12 +54,12 @@ public class MetadataKey<T> {
 
   /**
    * Creates a key for a repeated piece of metadata. If metadata is added more than once using
-   * this key for a log statement, all values will be retained as key/value pairs in the metadata
-   * structure in the order they were added.
+   * this key for a log statement, all values will be retained as key/value pairs in the order
+   * they were added.
    * <p>
    * Key instances behave like singletons, and two key instances with the same label will still
-   * be considered distinct. The recommended approach is to always assign Key instances to static
-   * final constant for use by callers.
+   * be considered distinct. The recommended approach is to always assign {@code MetadataKey}
+   * instances to static final constants.
    */
   public static <T> MetadataKey<T> repeated(String label, Class<T> clazz) {
     return new MetadataKey<T>(label, clazz, true);

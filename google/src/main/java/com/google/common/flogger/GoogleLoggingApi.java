@@ -16,7 +16,9 @@
 
 package com.google.common.flogger;
 
+import com.google.common.flogger.util.Checks;
 import com.google.errorprone.annotations.CheckReturnValue;
+import javax.annotation.Nullable;
 
 /**
  * Google specific extensions to the fluent logging API.
@@ -37,5 +39,42 @@ public interface GoogleLoggingApi<API extends GoogleLoggingApi<API>> extends Log
    * An implementation of {@link GoogleLoggingApi} which does nothing and discards all parameters.
    */
   public static class NoOp<API extends GoogleLoggingApi<API>> extends LoggingApi.NoOp<API>
-      implements GoogleLoggingApi<API> {}
+      implements GoogleLoggingApi<API> {
+
+    @Override
+    public final <T> API with(MetadataKey<T> key, @Nullable T value) {
+      // Identical to the check in GoogleLogContext for consistency.
+      Checks.checkNotNull(key, "metadata key");
+      return noOp();
+    }
+  }
+
+  /**
+   * Associates a metadata key constant with a runtime value for this log statement in a structured
+   * way that is accessible to logger backends.
+   *
+   * <p>This method is not a replacement for general parameter passing in the {@link #log()} method
+   * and should be reserved for keys/values with specific semantics. Examples include:
+   * <ul>
+   *   <li>Keys that are recognised by specific logger backends (typically to control logging
+   *       behaviour in some way).
+   *   <li>Key value pairs which are explicitly extracted from logs by tools.
+   * </ul>
+   *
+   * <p>Metadata keys can support repeated values (see {@link MetadataKey#canRepeat()}), and if a
+   * repeatable key is used multiple times in the same log statement, the effect is to collect all
+   * the given values in order. If a non-repeatable key is passed multiple times, only the last
+   * value is retained (though callers should not rely on this behavior and should simply avoid
+   * repeating non-repeatable keys).
+   *
+   * <p>If {@code value} is {@code null}, this method is a no-op. This is useful for specifying
+   * conditional values (e.g. via {@code logger.atInfo().with(MY_KEY, getValueOrNull()).log(...)}).
+   *
+   * @param key the metadata key (expected to be a static constant)
+   * @param value a value to be associated with the key in this log statement. Null values are
+   *        allowed, but the effect is always a no-op
+   * @throws NullPointerException if the given key is null
+   * @see MetadataKey
+   */
+  <T> API with(MetadataKey<T> key, @Nullable T value);
 }
