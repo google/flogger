@@ -19,7 +19,7 @@ package com.google.common.flogger;
 import static com.google.common.flogger.LazyArgs.lazy;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
 
 import com.google.common.base.Supplier;
 import com.google.common.flogger.backend.KeyValueHandler;
@@ -259,6 +259,16 @@ public class GoogleLoggerTest {
     @Override
     public void close() {
       logRecords = null;
+    }
+  }
+
+  // Hack version of the JUnit 4.13 assertThrows() method that's not available everywhere.
+  private static void assertThrows(Class<? extends RuntimeException> err, Runnable fn) {
+    try {
+      fn.run();
+      fail("expected exception of type " + err.getName());
+    } catch (RuntimeException e) {
+      assertThat(e).isInstanceOf(err);
     }
   }
 }
