@@ -148,6 +148,7 @@ logger's configuration, but this is confusing and should be unnecessary.
 (Perhaps such code should instead throw an exception, after which the caller can
 catch and log it in the normal way?)
 
+
 ## Don't create a `Throwable` just to log it {#stack-trace}
 
 There is no need to do this:
