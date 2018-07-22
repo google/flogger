@@ -71,7 +71,18 @@ public enum StackSize {
    * Requesting a full stack trace for any log statement which can occur under normal circumstances
    * is not recommended.
    */
-  FULL(-1);
+  FULL(-1),
+
+  /**
+   * Provides no stack trace, making the {@code withStackTrace()} method an effective no-op. This is
+   * useful when your stack size is conditional. For example:
+   * <pre> {@code
+   *   logger.atWarning()
+   *       .withStackTrace(showTrace ? StackSize.MEDIUM : StackSize.NONE)
+   *       .log("message");
+   * }</pre>
+   */
+  NONE(0);
 
   private final int maxDepth;
 
@@ -83,8 +94,8 @@ public enum StackSize {
    * Returns the maximum stack depth to create when adding contextual stack information to a log
    * statement.
    * <p>
-   * Note that the precise value returned by this method may change over time, but it can be
-   * assumed that {@code SMALL <= MEDIUM <= LARGE <= FULL}.
+   * Note that the precise number of stack elements emitted for the enum values might change over
+   * time, but it can be assumed that {@code NONE < SMALL <= MEDIUM <= LARGE <= FULL}.
    */
   int getMaxDepth() {
     return maxDepth;

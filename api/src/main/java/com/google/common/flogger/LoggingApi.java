@@ -16,6 +16,7 @@
 
 package com.google.common.flogger;
 
+import com.google.common.flogger.util.Checks;
 import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -593,7 +594,8 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     }
 
     @Override
-    public API withStackTrace(StackSize stackSize) {
+    public API withStackTrace(StackSize size) {
+      Checks.checkNotNull(size, "stack size");
       return noOp();
     }
 
