@@ -257,6 +257,7 @@ This is never needed, since any fluent methods expected to be conditional accept
 *   `atMostEvery(0, unit)`
 *   `every(1)`
 *   `withCause(null)`
+*   `withStackTrace(StackSize.NONE)`
 
 Thus the above example can be written as:
 

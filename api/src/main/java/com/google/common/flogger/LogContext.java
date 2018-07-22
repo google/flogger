@@ -401,12 +401,6 @@ public abstract class LogContext<
     return metadata != null ? metadata : Metadata.empty();
   }
 
-  @Override
-  public API withStackTrace(StackSize size) {
-    addMetadata(Key.CONTEXT_STACK_SIZE, size);
-    return api();
-  }
-
   // ---- Mutable Metadata ----
 
   /**
@@ -606,6 +600,14 @@ public abstract class LogContext<
   public final API withCause(Throwable cause) {
     if (cause != null) {
       addMetadata(Key.LOG_CAUSE, cause);
+    }
+    return api();
+  }
+
+  @Override
+  public API withStackTrace(StackSize size) {
+    if (checkNotNull(size, "stack size") != StackSize.NONE) {
+      addMetadata(Key.CONTEXT_STACK_SIZE, size);
     }
     return api();
   }
