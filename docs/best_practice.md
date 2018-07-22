@@ -215,3 +215,55 @@ LoggerConfig.of(logger).setLevel(Level.FINE);
 See [`LoggerConfig`] for details.
 
 [`LoggerConfig`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LoggerConfig.java
+
+## Don't split log statements {#no-split}
+
+Flogger's "fluent" API is designed for log statements to exist as a single
+statement. The `Api` instance returned by a logger is not safe to use on its
+own.
+
+```java {.bad}
+// **** NEVER DO THIS ****
+GoogleLogger.Api api = logger.atInfo();
+...
+api.log("message");
+```
+
+Splitting a log statement causes several issues such as:
+
+* Incorrect timestamps in log statements
+* Incorrect or even broken log site injection
+* Errors due to accidental reuse (the `Api` is a one-use instance)
+* Errors due to concurrent logging in different threads
+
+Flogger's API is designed to never need you to split the `Api` out like this,
+so if you think you really need to do it, please contact g/flogger-discuss.
+
+One misconception is that you need to do this to make conditional calls on
+fluent methods, such as:
+
+```java {.bad}
+// **** NEVER DO THIS ****
+GoogleLogger.Api api = logger.atInfo();
+if (wantRateLimiting) {
+  api.atMostEvery(5, SECONDS);
+}
+api.log("message");
+```
+
+This is never needed, since any fluent methods expected to be conditional accept
+"no-op" parameters. The below examples have no effect in log statements:
+
+*   `atMostEvery(0, unit)`
+*   `every(1)`
+*   `withCause(null)`
+
+Thus the above example can be written as:
+
+```java {.good}
+logger.atInfo()
+    .atMostEvery(wantRateLimiting ? 5 : 0, SECONDS)
+    .log("message");
+```
+
+Or you can add a helper method to return the log period if used in many places.
