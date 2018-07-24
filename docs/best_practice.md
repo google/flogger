@@ -41,7 +41,7 @@ logger.atFine().log("stats=%s", createSummaryOf(stats));
 `createSummaryOf` will now be called every time, regardless of configured log
 levels or rate limiting.
 
-Here's how to fix this problem, **in order of preferrence**.
+Here's how to fix this problem, **in order of preference**.
 
 ### 1. Use `lazy` (Java 8+):
 
@@ -223,7 +223,6 @@ statement. The `Api` instance returned by a logger is not safe to use on its
 own.
 
 ```java {.bad}
-// **** NEVER DO THIS ****
 GoogleLogger.Api api = logger.atInfo();
 ...
 api.log("message");
@@ -243,7 +242,6 @@ One misconception is that you need to do this to make conditional calls on
 fluent methods, such as:
 
 ```java {.bad}
-// **** NEVER DO THIS ****
 GoogleLogger.Api api = logger.atInfo();
 if (wantRateLimiting) {
   api.atMostEvery(5, SECONDS);
@@ -268,3 +266,67 @@ logger.atInfo()
 ```
 
 Or you can add a helper method to return the log period if used in many places.
+
+## Use `logSite()` to implement non-trivial logging helper methods {#log-site}
+
+While it is generally unnecessary and bad practice to implement lots of logging
+helper methods, one legitimate use-case (which has lead to people wanting to
+split the logging API out) is the desire to implement project specific logging
+behaviour. The naïve way to write such a method might be:
+
+```java {.bad}
+/** Call this whenever a FooException is caught and handled. */
+public static void logFooFailure(FooException error, String message) {
+  logger.at(getLogLevelFor(error))
+      .atMostEvery(FAILURE_RATE_LIMIT_SECONDS, SECONDS)
+      .withCause(error.shouldAlert() ? error : null)
+      .log("Foo failure[%s]: %s", error.getStatus(), message);
+}
+```
+
+The trouble with this approach is that now, all logs appear to come from the
+same location, and the rate limiting happens across all calls.
+
+Developers sometimes attempt to work around this problem by splitting the log
+statement and returning the logging `Api` from the helper so the `log()` method
+can be invoked on the caller's side. This works only by accident, since log
+site determination is currently done in the `log()` method, but that's not
+guaranteed and it could easily enough be implemented in the logger.
+
+Relying on specific implementation details like this makes code very fragile
+(which is why splitting log statements is such a bad idea).
+
+The way to handle this issue properly is to have the calling code invoke the
+[`logSite()`] method at the point where the helper is called.
+
+```java {.good}
+public static void logFooFailure(LogSite logSite, FooException error, String message) {
+  logger.at(getLogLevelFor(error))
+      .withInjectedLogSite(logSite)
+      .atMostEvery(FAILURE_RATE_LIMIT_SECONDS, SECONDS)
+      .withCause(error.shouldAlert() ? error : null)
+      .log("Foo failure[%s]: %s", error.getStatus(), message);
+```
+
+And the calling code would do:
+
+```java {.good}
+// Failure in code path A
+logFooFailure(logSite(), errA, "bad things happened");
+...
+// Failure in code path B
+logFooFailure(logSite(), errB, "more bad things happened");
+```
+
+Now the rate limiting would be per-caller of the helper method and the logs
+would show that location instead of the eventual logging call. It's as if the
+helper method were part of the fluent logger's API.
+
+One significant caveat here is that the determination of the log site might be
+"expensive" (requiring stack trace analysis) so it's not a great idea to use it
+for logging that's typically going to be disabled by default (e.g. `FINE` or
+below). This often isn't an issue however since the typical use case for this
+approach is to handle complex logging, which usually means logging failure and
+errors, which are almost always enabled and already doing significant work.
+
+[`logSite()`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LogSite.java

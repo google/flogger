@@ -546,7 +546,7 @@ public abstract class LogContext<
    * varargs array and doing any necessary auto-boxing.
    */
   @SuppressWarnings("ReferenceEquality")
-  private final void logImpl(String message, Object... args) {
+  private void logImpl(String message, Object... args) {
     this.args = args;
     // Evaluate any (rare) LazyArg instances early. This may throw exceptions from user code, but
     // it seems reasonable to propagate them in this case (they would have been thrown if the
@@ -565,11 +565,15 @@ public abstract class LogContext<
     getLogger().write(this);
   }
 
-  // ---- Private logging API (for use by pre-processors only) ----
+  // ---- Log site injection (used by pre-processors and special cases) ----
 
   @Override
   public final API withInjectedLogSite(LogSite logSite) {
-    this.logSite = logSite;
+    // First call wins (since auto-injection will typically target the log() method at the end of
+    // the chain and might not check for previous explicit injection).
+    if (this.logSite == null) {
+      this.logSite = checkNotNull(logSite, "log site");
+    }
     return api();
   }
 
@@ -580,9 +584,8 @@ public abstract class LogContext<
       String methodName,
       int encodedLineNumber,
       @Nullable String sourceFileName) {
-    this.logSite =
-        LogSite.injectedLogSite(internalClassName, methodName, encodedLineNumber, sourceFileName);
-    return api();
+    return withInjectedLogSite(
+        LogSite.injectedLogSite(internalClassName, methodName, encodedLineNumber, sourceFileName));
   }
 
   // ---- Public logging API ----

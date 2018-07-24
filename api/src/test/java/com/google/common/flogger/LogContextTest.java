@@ -16,6 +16,7 @@
 
 package com.google.common.flogger;
 
+import static com.google.common.flogger.LogSites.logSite;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -489,7 +490,7 @@ public class LogContextTest {
     backend.assertLogged(0).metadata().keys().contains(Key.LOG_CAUSE);
 
     Throwable cause = backend.getLogged(0).getMetadata().findValue(Key.LOG_CAUSE);
-    assertThat(cause).hasMessage("FULL");
+    assertThat(cause).hasMessageThat().isEqualTo("FULL");
     assertThat(cause.getCause()).isNull();
 
     List<StackTraceElement> actualStack = Arrays.asList(cause.getStackTrace());
@@ -517,12 +518,12 @@ public class LogContextTest {
     backend.assertLogged(0).metadata().keys().contains(Key.LOG_CAUSE);
 
     Throwable cause = backend.getLogged(0).getMetadata().findValue(Key.LOG_CAUSE);
-    assertThat(cause).hasMessage("SMALL");
+    assertThat(cause).hasMessageThat().isEqualTo("SMALL");
     assertThat(cause.getStackTrace().length).isEqualTo(StackSize.SMALL.getMaxDepth());
     assertThat(cause.getCause()).isEqualTo(badness);
   }
 
-  // See b/27310448. Urgh, this was an unpleasant surprise.
+  // See b/27310448.
   @Test
   public void testStackTraceFormatting() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
@@ -534,7 +535,7 @@ public class LogContextTest {
 
     // Print the stack trace via the expected method (ie, printStackTrace()).
     Throwable cause = backend.getLogged(0).getMetadata().findValue(Key.LOG_CAUSE);
-    assertThat(cause).hasMessage("SMALL");
+    assertThat(cause).hasMessageThat().isEqualTo("SMALL");;
     StringWriter out = new StringWriter();
     cause.printStackTrace(new PrintWriter(out));
     Iterable<String> actualStackLines = Splitter.on('\n').trimResults().split(out.toString());
@@ -582,5 +583,29 @@ public class LogContextTest {
         caller.getMethodName(),
         caller.getFileName(),
         caller.getLineNumber() + 1);
+  }
+
+  @Test
+  public void testExplicitLogSiteInjection() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    FluentLogger logger = new FluentLogger(backend);
+    for (int i = 0; i <= 6; i++) {
+      logHelper(logger, logSite(), 2, "Foo: " + i);
+      logHelper(logger, logSite(), 3, "Bar: " + i);
+    }
+    // Expect: Foo -> 0, 2, 4, 6 and Bar -> 0, 3, 6 (but not in that order)
+    assertThat(backend.getLoggedCount()).isEqualTo(7);
+    backend.assertLogged(0).hasMessage("Foo: 0");
+    backend.assertLogged(1).hasMessage("Bar: 0");
+    backend.assertLogged(2).hasMessage("Foo: 2");
+    backend.assertLogged(3).hasMessage("Bar: 3");
+    backend.assertLogged(4).hasMessage("Foo: 4");
+    backend.assertLogged(5).hasMessage("Foo: 6");
+    backend.assertLogged(6).hasMessage("Bar: 6");
+  }
+
+  // In normal use, the logger would never need to be passed in and you'd use logVarargs().
+  private static void logHelper(FluentLogger logger, LogSite logSite, int n, String message) {
+    logger.atInfo().withInjectedLogSite(logSite).every(n).log(message);
   }
 }
