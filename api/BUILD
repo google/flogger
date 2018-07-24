@@ -26,6 +26,13 @@ STACK_SRCS = [
 
 CONFIG_SRCS = ["src/main/java/com/google/common/flogger/LoggerConfig.java"]
 
+LOG_SITE_SRCS = [
+    "src/main/java/com/google/common/flogger/LogSite.java",
+    "src/main/java/com/google/common/flogger/LogSiteKey.java",
+]
+
+LOG_SITE_HELPER_SRCS = ["src/main/java/com/google/common/flogger/LogSites.java"]
+
 SYSTEM_BACKEND_SRCS = glob(["src/main/java/com/google/common/flogger/backend/system/**/*.java"])
 
 # The core 'frontend' Flogger library.
@@ -37,6 +44,8 @@ java_library(
         exclude = CHECKS_SRCS +
                   TAGS_SRCS +
                   LAZY_ARGS_SRCS +
+                  LOG_SITE_SRCS +
+                  LOG_SITE_HELPER_SRCS +
                   STACK_SRCS +
                   CONFIG_SRCS +
                   SYSTEM_BACKEND_SRCS,
@@ -46,12 +55,14 @@ java_library(
     visibility = ["//visibility:public"],
     exports = [
         ":lazy_args",
+        ":log_site",
         ":stack",
         ":tags",
     ],
     deps = [
         ":checks",
         ":lazy_args",
+        ":log_site",
         ":platform_provider",
         ":stack",
         ":tags",
@@ -177,6 +188,36 @@ java_library(
     ],
 )
 
+# A separate library for exposing just the 'LogSite' class. This is exported as
+# part of the core library.
+java_library(
+    name = "log_site",
+    srcs = LOG_SITE_SRCS,
+    javacopts = ["-source 1.6 -target 1.6"],
+    deps = [
+        ":checks",
+        "@google_bazel_common//third_party/java/error_prone:annotations",
+        "@google_bazel_common//third_party/java/jsr305_annotations",
+    ],
+)
+
+# A separate helper for manual log site injection. To avoid circular
+# dependencies in the build graph, this is a separate target from the
+# LogSite class, since the log_site target cannot depend on platform
+# classes (but this target does).
+java_library(
+    name = "log_sites",
+    srcs = LOG_SITE_HELPER_SRCS,
+    javacopts = ["-source 1.6 -target 1.6"],
+    exports = [":log_site"],
+    deps = [
+        ":api",
+        ":log_site",
+        "@google_bazel_common//third_party/java/error_prone:annotations",
+        "@google_bazel_common//third_party/java/jsr305_annotations",
+    ],
+)
+
 # Core library to implement a JDK compatible backend for Flogger.
 #
 java_library(
@@ -187,6 +228,7 @@ java_library(
     deps = [
         ":api",
         ":checks",
+        ":log_site",
         "@google_bazel_common//third_party/java/jsr305_annotations",
     ],
 )
@@ -297,6 +339,7 @@ gen_java_tests(
     deps = [
         ":api",
         ":config",
+        ":log_sites",
         ":system_backend",
         ":testing",
         "@google_bazel_common//third_party/java/auto:service",
