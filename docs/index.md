@@ -79,7 +79,7 @@ included when the binary is run. If you have a modularized build, you can
 include this dependency by the root module that builds your app/binary, and can
 be `runtime` scope.
 
-<!-- TODO(user): link to docs for how to specify a backend. -->
+<!-- TODO(dbeaumont): link to docs for how to specify a backend. -->
 
 ### 2. Add an import for [`FluentLogger`]
 

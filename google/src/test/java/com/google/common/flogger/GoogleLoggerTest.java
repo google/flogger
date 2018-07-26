@@ -40,7 +40,7 @@ import org.junit.runners.JUnit4;
 /**
  * Tests for the Google specific extensions to Fluent Logger.
  */
-// TODO(user): Make this use a fake/test backend rather than relying on the system one.
+// TODO(dbeaumont): Make this use a fake/test backend rather than relying on the system one.
 @RunWith(JUnit4.class)
 public class GoogleLoggerTest {
   // Metadata keys (single keys will be the most common).

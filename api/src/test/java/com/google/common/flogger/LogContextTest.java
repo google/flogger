@@ -316,7 +316,7 @@ public class LogContextTest {
   // arguments to a log statement the message is a literal, which makes this situation very
   // unlikely and probably a code bug (but even then throwing an exception is something that will
   // only happen when the log statement is enabled).
-  // TODO(user): Consider allowing this case to work without throwing a runtime exception.
+  // TODO(dbeaumont): Consider allowing this case to work without throwing a runtime exception.
   @Test
   public void testNullMessageAndArgument() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
