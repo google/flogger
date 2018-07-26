@@ -59,7 +59,7 @@ public final class LoggerConfig {
    * The number of loggers on which configuration occurs should be small and effectively bounded
    * in all expected use cases, so it should be okay to retain all of them for the life of a task.
    */
-  // TODO(user): Reassess the risk of memory leaks here and decide what to do about it.
+  // TODO(dbeaumont): Reassess the risk of memory leaks here and decide what to do about it.
   private static final Map<String, LoggerConfig> strongRefMap =
       new ConcurrentHashMap<String, LoggerConfig>();
 
@@ -75,7 +75,7 @@ public final class LoggerConfig {
    * @param fluentLogger the name of the logger to be configured via this API.
    */
   public static LoggerConfig of(AbstractLogger<?> fluentLogger) {
-    // TODO(user): Revisit if/when Flogger supports anonymous loggers.
+    // TODO(dbeaumont): Revisit if/when Flogger supports anonymous loggers.
     checkArgument(fluentLogger.getName() != null,
         "cannot obtain configuration for an anonymous logger");
     return getConfig(fluentLogger.getName());
@@ -120,7 +120,7 @@ public final class LoggerConfig {
     LoggerConfig config = strongRefMap.get(checkNotNull(name, "logger name"));
     if (config == null) {
       // Ignore race condition of multiple put as all instances are equivalent.
-      // TODO(user): Add a check and warn if the map grows "too large".
+      // TODO(dbeaumont): Add a check and warn if the map grows "too large".
       config = new LoggerConfig(name);
       strongRefMap.put(name, config);
     }

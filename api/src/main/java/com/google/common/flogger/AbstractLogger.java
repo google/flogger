@@ -107,7 +107,7 @@ public abstract class AbstractLogger<API extends LoggingApi<API>> {
   // backend API to be flexible enough _not_ to admit the existence of the JDK logger, we will
   // need to push the LoggerConfig API down into the backend and expose it from there.
   // See b/14878562
-  // TODO(user): Make anonymous loggers work with the config() method and the LoggerConfig API.
+  // TODO(dbeaumont): Make anonymous loggers work with the config() method and the LoggerConfig API.
   protected String getName() {
     return backend.getLoggerName();
   }

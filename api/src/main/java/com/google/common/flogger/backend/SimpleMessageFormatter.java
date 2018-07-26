@@ -178,7 +178,7 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
         new SimpleMessageFormatter(logData.getTemplateContext(), logData.getArguments());
     StringBuilder out = formatter.build();
     if (logData.getArguments().length > formatter.getExpectedArgumentCount()) {
-      // TODO(user): Do better and look at adding formatted values or maybe just a count?
+      // TODO(dbeaumont): Do better and look at adding formatted values or maybe just a count?
       out.append(EXTRA_ARGUMENT_MESSAGE);
     }
     return out;

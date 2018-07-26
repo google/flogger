@@ -207,7 +207,7 @@ public abstract class LogSite implements LogSiteKey {
     @Override
     public int hashCode() {
       if (hashcode == 0) {
-        // TODO(user): Revisit the algorithm when looking at b/22753674.
+        // TODO(dbeaumont): Revisit the algorithm when looking at b/22753674.
         // If the log statement uses metadata, the log site will be used as a key to look up the
         // current value. In most cases the hashcode is never needed, but in others it may be used
         // multiple times in different data structures.

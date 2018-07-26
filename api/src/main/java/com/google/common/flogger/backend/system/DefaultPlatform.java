@@ -65,7 +65,7 @@ public class DefaultPlatform extends Platform {
     this.context = (context != null) ? context : EmptyLoggingContext.getInstance();
     Clock clock = resolveAttribute(CLOCK, Clock.class);
     this.clock = (clock != null) ? clock : SystemClock.getInstance();
-    // TODO(user): Figure out how to handle StackWalker when it becomes available (Java9).
+    // TODO(dbeaumont): Figure out how to handle StackWalker when it becomes available (Java9).
     this.callerFinder = StackBasedCallerFinder.getInstance();
   }
 
