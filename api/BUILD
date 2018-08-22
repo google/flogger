@@ -73,6 +73,9 @@ java_library(
 
 load("//tools:maven.bzl", "pom_file")
 
+# This pom file and the two jarjar libraries below must contain the targets/jars for anything
+# that's released in open-source. If new targets are refactored out in the main codebase, they
+# must be included here.
 pom_file(
     name = "api_pom",
     artifact_id = "flogger",
@@ -81,6 +84,7 @@ pom_file(
         ":api",
         ":checks",
         ":lazy_args",
+        ":log_site",
         ":platform_provider",
         ":stack",
         ":tags",
@@ -98,6 +102,7 @@ jarjar_library(
         ":checks",
         ":config",
         ":lazy_args",
+        ":log_site",
         ":platform_provider",
         ":stack",
         ":tags",
@@ -111,6 +116,7 @@ jarjar_library(
         ":libchecks-src.jar",
         ":libconfig-src.jar",
         ":liblazy_args-src.jar",
+        ":liblog_site-src.jar",
         ":libstack-src.jar",
         ":libtags-src.jar",
         # TODO(ronshapiro): consider generating PlatformProvider as a source file so it can be
