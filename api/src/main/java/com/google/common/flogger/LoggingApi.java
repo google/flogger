@@ -97,7 +97,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * logging would occur after {@code 0s}, {@code 2.4s} and {@code 4.8s} (not {@code 4.2s}),
    * giving an effective duration of {@code 2.4s} between log statements over time.
    * <p>
-   * Providing a zero length duration (ie, {@code n == 0}) disabled rate limiting and makes this
+   * Providing a zero length duration (ie, {@code n == 0}) disables rate limiting and makes this
    * method an effective no-op.
    *
    * <h3>Granularity</h3>
