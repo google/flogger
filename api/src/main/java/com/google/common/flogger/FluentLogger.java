@@ -78,14 +78,16 @@ public final class FluentLogger extends AbstractLogger<FluentLogger.Api> {
 
   @Override
   public Api at(Level level) {
-    return isLoggable(level) ? new Context(level) : NO_OP;
+    boolean isLoggable = isLoggable(level);
+    boolean isForced = Platform.shouldForceLogging(getName(), level, isLoggable);
+    return (isLoggable || isForced) ? new Context(level, isForced) : NO_OP;
   }
 
   /** Logging context implementing the fully specified API for this logger. */
   // VisibleForTesting
   final class Context extends LogContext<FluentLogger, Api> implements Api {
-    private Context(Level level) {
-      super(level, false /* default fluent logger does not support 'forcing' yet */);
+    private Context(Level level, boolean isForced) {
+      super(level, isForced);
     }
 
     @Override

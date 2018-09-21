@@ -19,7 +19,7 @@ java_library(
     ],
     deps = [
         "@google_bazel_common//third_party/java/error_prone:annotations",
-        # TODO(user): Split this so truly public things can be exported
+        # TODO(dbeaumont): Split this so truly public things can be exported
         # without needing implementation to be visible to the world.
         "@google_bazel_common//third_party/java/jsr305_annotations",
         "//api",

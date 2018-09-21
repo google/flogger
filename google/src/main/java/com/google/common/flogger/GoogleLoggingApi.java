@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
  * @param <API> The api returned during method chaining (possibly an extension of this interface).
  */
 // NOTE: new methods to this interface should be coordinated with google-java-format
-// TODO(user): Now that this class offers no additional methods, consider removing it.
+// TODO(dbeaumont): Now that this class offers no additional methods, consider removing it.
 @CheckReturnValue
 public interface GoogleLoggingApi<API extends GoogleLoggingApi<API>> extends LoggingApi<API> {
   /**

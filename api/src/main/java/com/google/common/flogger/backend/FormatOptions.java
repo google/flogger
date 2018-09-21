@@ -289,7 +289,7 @@ public final class FormatOptions {
     // This check would be faster if we encoded the entire state into a long value. It's also
     // entirely possible we should just allocate a new instance and be damned (especially as
     // having anything other than the default instance is rare).
-    // TODO(user): Measure performance and see about removing this code, almost certainly fine.
+    // TODO(dbeaumont): Measure performance and see about removing this code, almost certainly fine.
     if (newFlags == flags && newWidth == width && newPrecision == precision) {
       return this;
     }

@@ -70,7 +70,7 @@ public final class CallerFinder {
       // This should only happen is the caller was not found on the stack (getting exceptions from
       // the stack trace method should never happen) and it should only be an
       // IndexOutOfBoundsException, however we don't want _anything_ to be thrown from here.
-      // TODO(user): Change to only catch IndexOutOfBoundsException and test _everything_.
+      // TODO(dbeaumont): Change to only catch IndexOutOfBoundsException and test _everything_.
       return null;
     }
   }

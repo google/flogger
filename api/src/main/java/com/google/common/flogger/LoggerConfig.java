@@ -34,12 +34,19 @@ import javax.annotation.Nullable;
  * reference to the corresponding underlying logger to prevent accidental garbage collection.
  * This class is needed to help avoid bugs caused by the premature garbage collection of logger
  * instances (which are only weakly referenced when returned by {@link Logger#getLogger}).
- * <p>
- * All methods in this API simply delegate to the equivalent {@link Logger} method without
+ *
+ * <p>It is important to note that while this class is in the Flogger package, it's not actually
+ * a part of the core logging API and will only have any effect if you are using a JDK based logging
+ * backend. In general Flogger avoids the issue of defining how logging is configured, but the
+ * issues around weakly referenced JDK loggers are so common, and so hard to debug, it was felt
+ * necessary to provide an easily available solution for that problem.
+ *
+ * <p>All methods in this API simply delegate to the equivalent {@link Logger} method without
  * any additional checking.
- * <p>
- * A small number of small differences exist between using this class and using a Logger
+ *
+ * <p>A small number of small differences exist between using this class and using a Logger
  * instance directly, but these are deliberate and seek to avoid misuse.
+ *
  * <ul>
  * <li>The {@code LoggerConfig} API has no "setParent()" method (this should never be called
  *     by application code anyway).
@@ -51,15 +58,16 @@ import javax.annotation.Nullable;
  *     appropriate.
  * </ul>
  */
+// TODO(dbeaumont): Move this to a new package so it's clear it's NOT part of the core Flogger API.
 @CheckReturnValue
 public final class LoggerConfig {
   /**
    * Unbounded strong reference cache of all loggers used for configuration purposes.
-   * <p>
-   * The number of loggers on which configuration occurs should be small and effectively bounded
+   *
+   * <p>The number of loggers on which configuration occurs should be small and effectively bounded
    * in all expected use cases, so it should be okay to retain all of them for the life of a task.
    */
-  // TODO(user): Reassess the risk of memory leaks here and decide what to do about it.
+  // TODO(dbeaumont): Reassess the risk of memory leaks here and decide what to do about it.
   private static final Map<String, LoggerConfig> strongRefMap =
       new ConcurrentHashMap<String, LoggerConfig>();
 
@@ -68,14 +76,14 @@ public final class LoggerConfig {
 
   /**
    * Returns a configuration instance suitable for the given (non anonymous) fluent logger.
-   * <p>
-   * This method obtains and wraps the underlying logger associated with the given logger,
+   *
+   * <p>This method obtains and wraps the underlying logger associated with the given logger,
    * retaining a strong reference and making it safe to use for persistent configuration changes.
    *
    * @param fluentLogger the name of the logger to be configured via this API.
    */
   public static LoggerConfig of(AbstractLogger<?> fluentLogger) {
-    // TODO(user): Revisit if/when Flogger supports anonymous loggers.
+    // TODO(dbeaumont): Revisit if/when Flogger supports anonymous loggers.
     checkArgument(fluentLogger.getName() != null,
         "cannot obtain configuration for an anonymous logger");
     return getConfig(fluentLogger.getName());
@@ -83,8 +91,8 @@ public final class LoggerConfig {
 
 /**
    * Returns a configuration instance suitable for configuring the logger of the specified class.
-   * <p>
-   * This method obtains and wraps the underlying logger for the given class, retaining a strong
+   *
+   * <p>This method obtains and wraps the underlying logger for the given class, retaining a strong
    * reference and making it safe to use for persistent configuration changes.
    *
    * @param clazz the class whose logger is to be configured via this API.
@@ -96,9 +104,9 @@ public final class LoggerConfig {
   /**
    * Returns a configuration instance suitable for configuring loggers in the same package as the
    * specified class.
-   * <p>
-   * This method obtains and wraps the underlying logger for the given package, retaining a strong
-   * reference and making it safe to use for persistent configuration changes.
+   *
+   * <p>This method obtains and wraps the underlying logger for the given package, retaining a
+   * string reference and making it safe to use for persistent configuration changes.
    *
    * @param clazz a class defining the package for which logger configuration should occur.
    */
@@ -108,8 +116,8 @@ public final class LoggerConfig {
 
   /**
    * Returns a configuration instance suitable for configuring a logger with the same name.
-   * <p>
-   * This method obtains and wraps the underlying logger with the given name, retaining a strong
+   *
+   * <p>This method obtains and wraps the underlying logger with the given name, retaining a strong
    * reference and making it safe to use for persistent configuration changes. Note that as it makes
    * very little sense to have a logger configuration object which wraps (and hides) an anonymous
    * logger instance, {@code null} names are disallowed.
@@ -120,7 +128,7 @@ public final class LoggerConfig {
     LoggerConfig config = strongRefMap.get(checkNotNull(name, "logger name"));
     if (config == null) {
       // Ignore race condition of multiple put as all instances are equivalent.
-      // TODO(user): Add a check and warn if the map grows "too large".
+      // TODO(dbeaumont): Add a check and warn if the map grows "too large".
       config = new LoggerConfig(name);
       strongRefMap.put(name, config);
     }

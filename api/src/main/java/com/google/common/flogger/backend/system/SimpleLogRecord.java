@@ -41,7 +41,7 @@ public final class SimpleLogRecord extends AbstractLogRecord implements SimpleLo
 
   private SimpleLogRecord(LogData data) {
     super(data);
-    // TODO(user): Maybe we do want to do formatting on demand.
+    // TODO(dbeaumont): Maybe we do want to do formatting on demand.
     // This would avoid formatting when the caller will just get the structured data via the
     // LogData API, or when the record is filtered. However neither of these are happening at the
     // moment and when structured data is required, a different log record should be used.
