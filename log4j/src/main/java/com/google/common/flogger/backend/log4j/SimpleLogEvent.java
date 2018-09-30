@@ -16,11 +16,12 @@
 
 package com.google.common.flogger.backend.log4j;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
 import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LocationInfo;
@@ -108,7 +109,7 @@ final class SimpleLogEvent implements SimpleLogHandler {
     // We could include this data here by doing 'MDC.getContext()', but we don't want to encourage
     // people using the log4j specific MDC. Instead this should be supported by a LoggingContext and
     // usage of Flogger tags.
-    ImmutableMap<String, String> mdcProperties = ImmutableMap.of();
+    Map<String, String> mdcProperties = Collections.emptyMap();
 
     return new LoggingEvent(
         fqnOfCategoryClass,

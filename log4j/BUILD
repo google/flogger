@@ -16,7 +16,6 @@ java_library(
     deps = [
         "//api",
         "//api:system_backend",
-        "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/jsr305_annotations",
         "@google_bazel_common//third_party/java/log4j",
     ],
