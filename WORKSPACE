@@ -14,8 +14,8 @@
 
 http_archive(
     name = "google_bazel_common",
-    strip_prefix = "bazel-common-e7580d1db7466e6c8403f7826b7558ea5e99bbfd",
-    urls = ["https://github.com/google/bazel-common/archive/e7580d1db7466e6c8403f7826b7558ea5e99bbfd.zip"],
+    strip_prefix = "bazel-common-8ec161dbc1c86ee97e6731f642f57adcd7efeda7",
+    urls = ["https://github.com/google/bazel-common/archive/8ec161dbc1c86ee97e6731f642f57adcd7efeda7.zip"],
 )
 
 load("@google_bazel_common//:workspace_defs.bzl", "google_common_workspace_rules")
