@@ -303,11 +303,9 @@ genrule(
     name = "gen_platform_provider",
     outs = ["platform_provider.jar"],
     cmd = "$(location :platform_provider_generator) com/google/common/flogger/backend/PlatformProvider.class" +
-          " && $(location @google_bazel_common//third_party/java/jdk/jar) cf $@ com/google/common/flogger/backend/PlatformProvider.class",
-    tools = [
-        ":platform_provider_generator",
-        "@google_bazel_common//third_party/java/jdk/jar",
-    ],
+          " && $(JAVABASE)/bin/jar cf $@ com/google/common/flogger/backend/PlatformProvider.class",
+    toolchains = ["@bazel_tools//tools/jdk:current_host_java_runtime"],
+    tools = [":platform_provider_generator"],
 )
 
 java_import(
