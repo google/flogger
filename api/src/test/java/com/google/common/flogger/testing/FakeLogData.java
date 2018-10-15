@@ -80,6 +80,7 @@ public class FakeLogData implements LogData {
     this.arguments = arguments;
   }
 
+  @SuppressWarnings("GoodTime") // should accept a java.time.Instant
   public FakeLogData setTimestampNanos(long timestampNanos) {
     this.timestampNanos = timestampNanos;
     return this;

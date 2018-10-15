@@ -27,5 +27,6 @@ public abstract class Clock {
    * though not necessarily nanosecond precision. This clock measures UTC and is not required to
    * handle leap seconds.
    */
+  @SuppressWarnings("GoodTime") // should return a java.time.Instant
   public abstract long getCurrentTimeNanos();
 }

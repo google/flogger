@@ -53,6 +53,7 @@ public final class TestLogger extends AbstractLogger<TestLogger.Api> {
   }
 
   /** Logs at the given level, with the specified nanosecond timestamp. */
+  @SuppressWarnings("GoodTime") // should accept a java.time.Instant
   public Api at(Level level, long timestampNanos) {
     return new TestContext(level, false, timestampNanos);
   }
@@ -63,6 +64,7 @@ public final class TestLogger extends AbstractLogger<TestLogger.Api> {
   }
 
   /** Forces logging at the given level, with the specified nanosecond timestamp. */
+  @SuppressWarnings("GoodTime") // should accept a java.time.Instant
   public Api forceAt(Level level, long timestampNanos) {
     return new TestContext(level, true, timestampNanos);
   }

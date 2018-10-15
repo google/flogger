@@ -197,6 +197,7 @@ public abstract class Platform {
    * Warning: Not all Platform implementations will be able to deliver nanosecond precision and
    * code should avoid relying on any implied precision.
    */
+  @SuppressWarnings("GoodTime") // should return a java.time.Instant
   public static long getCurrentTimeNanos() {
     return LazyHolder.INSTANCE.getCurrentTimeNanosImpl();
   }
