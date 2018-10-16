@@ -39,6 +39,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -107,7 +109,14 @@ public final class PlatformProviderGenerator {
     // Write the class to the output file.
     Path path = Paths.get(args[0]);
     Files.createDirectories(path.getParent());
-    Files.write(path, classWriter.toByteArray(), StandardOpenOption.CREATE_NEW);
+    try (JarOutputStream jar =
+        new JarOutputStream(Files.newOutputStream(path, StandardOpenOption.CREATE_NEW))) {
+      ZipEntry entry = new ZipEntry("com/google/common/flogger/backend/PlatformProvider.class");
+      entry.setTime(0); // clear timestamp to ensure JAR is deterministic for cache during builds.
+      jar.putNextEntry(entry);
+      jar.write(classWriter.toByteArray());
+      jar.closeEntry();
+    }
   }
 
   private static void tryBlockForPlatform(MethodVisitor methodVisitor, String platformType) {
