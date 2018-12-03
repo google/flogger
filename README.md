@@ -82,9 +82,39 @@ All code that uses flogger should depend on:
       <groupId>com.google.flogger</groupId>
       <artifactId>flogger-log4j-backend</artifactId>
       <version>${flogger.version}</version>
+      <scope>runtime</scope>
     </dependency>
 ```
 
+Optionally
+
+```xml
+    <dependency>
+      <groupId>com.google.flogger</groupId>
+      <artifactId>flogger-log4j-backend</artifactId>
+      <version>${google.flogger.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>${log4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.sun.jmx</groupId>
+          <artifactId>jmxri</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jdmk</groupId>
+          <artifactId>jmxtools</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.jms</groupId>
+          <artifactId>jms</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+```
 
 > Note: the dependency on `flogger-system-backend` is only required to be
 included when the binary is run. If you have a modularized build, you can
