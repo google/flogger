@@ -1,2 +1,3 @@
 # Include debug info in the compiled jars
+build --javacopt=-g
 build --host_javacopt=-g
