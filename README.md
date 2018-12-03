@@ -65,9 +65,26 @@ recommended Java logging API within Google.
 
 ### 1. Add the dependencies on Flogger
 
-All code that uses flogger should depend on
-`com.google.flogger:flogger:<version>` and
-`com.google.flogger:flogger-system-backend:<version>`.
+All code that uses flogger should depend on:
+
+* `com.google.flogger:flogger:<version>`
+* `com.google.flogger:flogger-system-backend:<version>`
+
+**Maven**
+
+```xml
+    <dependency>
+      <groupId>com.google.flogger</groupId>
+      <artifactId>flogger</artifactId>
+      <version>${flogger.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.flogger</groupId>
+      <artifactId>flogger-log4j-backend</artifactId>
+      <version>${flogger.version}</version>
+    </dependency>
+```
+
 
 > Note: the dependency on `flogger-system-backend` is only required to be
 included when the binary is run. If you have a modularized build, you can
