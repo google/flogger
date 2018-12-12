@@ -665,14 +665,6 @@ public abstract class LogContext<
   }
 
   @Override
-  public final void logVarargs(String message, Object[] params) {
-    if (shouldLog()) {
-      // Copy the varargs array (because we didn't create it and this is quite a rare case).
-      logImpl(message, Arrays.copyOf(params, params.length));
-    }
-  }
-
-  @Override
   public final void log(String message, @Nullable Object p1) {
     if (shouldLog()) logImpl(message, p1);
   }
@@ -1234,5 +1226,13 @@ public abstract class LogContext<
   @Override
   public final void log(String message, double p1, double p2) {
     if (shouldLog()) logImpl(message, p1, p2);
+  }
+
+  @Override
+  public final void logVarargs(String message, Object[] params) {
+    if (shouldLog()) {
+      // Copy the varargs array (because we didn't create it and this is quite a rare case).
+      logImpl(message, Arrays.copyOf(params, params.length));
+    }
   }
 }
