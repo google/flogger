@@ -27,12 +27,12 @@ import org.slf4j.LoggerFactory;
  *
  * <ul>
  * <li>{@code flogger.backend_factory=
- * com.google.common.flogger.backend.slf4j.Slf4JBackendFactory#getInstance}.
+ * com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance}.
  * </ul>
  */
-public final class Slf4JBackendFactory extends BackendFactory {
+public final class Slf4jBackendFactory extends BackendFactory {
 
-  private static Slf4JBackendFactory INSTANCE = new Slf4JBackendFactory();
+  private static Slf4jBackendFactory INSTANCE = new Slf4jBackendFactory();
 
   /**
    * This method is expected to be called via reflection (and might otherwise be unused).
@@ -51,6 +51,6 @@ public final class Slf4JBackendFactory extends BackendFactory {
     return "SLF4J backend";
   }
 
-  private Slf4JBackendFactory() {
+  private Slf4jBackendFactory() {
   }
 }
