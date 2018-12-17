@@ -18,15 +18,14 @@ package com.google.common.flogger.backend.slf4j;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
-import com.sun.istack.internal.Nullable;
 import org.slf4j.Logger;
 
 import java.util.logging.Level;
 
 /**
- * A logging backend that uses log4j to output log statements.
+ * A logging backend that uses slf4j to output log statements.
  */
-final class SLF4JLoggerBackend extends LoggerBackend implements
+final class Slf4jLoggerBackend extends LoggerBackend implements
     SimpleMessageFormatter.SimpleLogHandler {
 
   private final Logger logger;
@@ -105,7 +104,7 @@ final class SLF4JLoggerBackend extends LoggerBackend implements
     mappedLevels[Level.SEVERE.intValue()] = ERROR_LEVEL;
   }
 
-  SLF4JLoggerBackend(Logger logger) {
+  Slf4jLoggerBackend(Logger logger) {
     if (logger == null) {
       throw new NullPointerException("logger is required");
     }
@@ -122,8 +121,8 @@ final class SLF4JLoggerBackend extends LoggerBackend implements
   }
 
   @Override
-  public boolean isLoggable(Level lvl) {
-    return mapLevel(lvl).isLoggable(logger);
+  public boolean isLoggable(Level level) {
+    return mapLevel(level).isLoggable(logger);
   }
 
   @Override
@@ -132,13 +131,13 @@ final class SLF4JLoggerBackend extends LoggerBackend implements
   }
 
   @Override
-  public void handleError(RuntimeException error, LogData badData) {
+  public void handleError(RuntimeException exception, LogData badData) {
     // log at WARN to ensure visibility
-    logger.warn(String.format("LOGGING ERROR: %s", error.getMessage()));
+    logger.warn(String.format("LOGGING ERROR: %s", exception.getMessage()));
   }
 
   @Override
-  public void handleFormattedLogMessage(Level level, String message, @Nullable Throwable thrown) {
+  public void handleFormattedLogMessage(Level level, String message, Throwable thrown) {
     mapLevel(level).log(logger, message, thrown);
   }
 

@@ -1,5 +1,4 @@
 # Copyright 2018 Google Inc. All Rights Reserved.
-# Author: ekempin@google.com (Edwin Kempin)
 #
 # Description:
 #   Flogger slf4j backend (google.github.io/flogger).

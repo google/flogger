@@ -32,13 +32,13 @@ import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
 
 @RunWith(JUnit4.class)
-public class SLF4JBackendLoggerTest {
+public class Slf4jBackendLoggerTest {
 
   private static final MetadataKey<Integer> COUNT_KEY = MetadataKey.single("count", Integer.class);
   private static final MetadataKey<String> ID_KEY = MetadataKey.single("id", String.class);
 
   private static LoggerBackend newBackend(Logger logger) {
-    return new SLF4JLoggerBackend(logger);
+    return new Slf4jLoggerBackend(logger);
   }
 
   @Test
