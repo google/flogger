@@ -329,4 +329,4 @@ below). This often isn't an issue however since the typical use case for this
 approach is to handle complex logging, which usually means logging failure and
 errors, which are almost always enabled and already doing significant work.
 
-[`logSite()`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LogSite.java
+[`logSite()`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LogSites.java
