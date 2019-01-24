@@ -30,19 +30,6 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
 
   private final Logger logger;
 
-  private static final MappedLevel OFF_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
-
-    @Override
-    public boolean test(Logger logger) {
-      return false;
-    }
-  }, new MappedLevel.LogAdapter() {
-    @Override
-    public void log(Logger logger, String message, Throwable thrown) {
-      // no-op
-    }
-  });
-
   private static final MappedLevel TRACE_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
 
     @Override
