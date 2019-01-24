@@ -30,6 +30,19 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
 
   private final Logger logger;
 
+  private static final MappedLevel OFF_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
+
+    @Override
+    public boolean test(Logger logger) {
+      return false;
+    }
+  }, new MappedLevel.LogAdapter() {
+    @Override
+    public void log(Logger logger, String message, Throwable thrown) {
+      // no-op
+    }
+  });
+
   private static final MappedLevel TRACE_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
 
     @Override
@@ -92,18 +105,6 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
     }
   });
 
-  private static final MappedLevel[] mappedLevels = new MappedLevel[Level.SEVERE.intValue() + 1];
-
-  static {
-    mappedLevels[Level.FINEST.intValue()] = TRACE_LEVEL;
-    mappedLevels[Level.FINER.intValue()] = TRACE_LEVEL;
-    mappedLevels[Level.FINE.intValue()] = DEBUG_LEVEL;
-    mappedLevels[Level.CONFIG.intValue()] = DEBUG_LEVEL;
-    mappedLevels[Level.INFO.intValue()] = INFO_LEVEL;
-    mappedLevels[Level.WARNING.intValue()] = WARN_LEVEL;
-    mappedLevels[Level.SEVERE.intValue()] = ERROR_LEVEL;
-  }
-
   Slf4jLoggerBackend(Logger logger) {
     if (logger == null) {
       throw new NullPointerException("logger is required");
@@ -112,7 +113,28 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
   }
 
   private static MappedLevel mapLevel(Level level) {
-    return mappedLevels[level.intValue()];
+    int requestedLevel = level.intValue();
+    if( requestedLevel < Level.FINE.intValue() ) {
+      return TRACE_LEVEL;
+    }
+
+    if( requestedLevel < Level.INFO.intValue() ) {
+      return DEBUG_LEVEL;
+    }
+
+    if( requestedLevel < Level.WARNING.intValue() ) {
+      return INFO_LEVEL;
+    }
+
+    if( requestedLevel < Level.SEVERE.intValue() ) {
+      return WARN_LEVEL;
+    }
+
+    if( requestedLevel < Level.OFF.intValue() ) {
+      return ERROR_LEVEL;
+    }
+
+    return OFF_LEVEL;
   }
 
   @Override
