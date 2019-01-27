@@ -30,68 +30,6 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
 
   private final Logger logger;
 
-  private static final MappedLevel TRACE_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
-
-    @Override
-    public boolean test(Logger logger) {
-      return logger.isTraceEnabled();
-    }
-  }, new MappedLevel.LogAdapter() {
-    @Override
-    public void log(Logger logger, String message, Throwable thrown) {
-      logger.trace(message, thrown);
-    }
-  });
-
-  private static final MappedLevel DEBUG_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
-
-    @Override
-    public boolean test(Logger logger) {
-      return logger.isDebugEnabled();
-    }
-  }, new MappedLevel.LogAdapter() {
-    @Override
-    public void log(Logger logger, String message, Throwable thrown) {
-      logger.debug(message, thrown);
-    }
-  });
-  private static final MappedLevel INFO_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
-
-    @Override
-    public boolean test(Logger logger) {
-      return logger.isInfoEnabled();
-    }
-  }, new MappedLevel.LogAdapter() {
-    @Override
-    public void log(Logger logger, String message, Throwable thrown) {
-      logger.info(message, thrown);
-    }
-  });
-  private static final MappedLevel WARN_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
-
-    @Override
-    public boolean test(Logger logger) {
-      return logger.isWarnEnabled();
-    }
-  }, new MappedLevel.LogAdapter() {
-    @Override
-    public void log(Logger logger, String message, Throwable thrown) {
-      logger.warn(message, thrown);
-    }
-  });
-  private static final MappedLevel ERROR_LEVEL = new MappedLevel(new MappedLevel.Predicate() {
-
-    @Override
-    public boolean test(Logger logger) {
-      return logger.isErrorEnabled();
-    }
-  }, new MappedLevel.LogAdapter() {
-    @Override
-    public void log(Logger logger, String message, Throwable thrown) {
-      logger.error(message, thrown);
-    }
-  });
-
   Slf4jLoggerBackend(Logger logger) {
     if (logger == null) {
       throw new NullPointerException("logger is required");
@@ -99,8 +37,13 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
     this.logger = logger;
   }
 
+  // represents the log levels supported by SLF4J, used internally to dispatch calls accordingly
+  private enum Slf4jLogLevel {
+    TRACE, DEBUG, INFO, WARN, ERROR
+  }
+
   /**
-   * Adapts the JUL level to SLF4J level per the below table:
+   * Adapts the JUL level to SLF4J level per the below mapping:
    *
    * <table>
    * <tr>
@@ -133,7 +76,7 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
    * </table>
    *
    * <p>Custom JUL levels are mapped to the next-lowest standard JUL level; for example, a custom
-   * level at 750 (between INFO:800 and CONFIG:700) would map to DEBUG.</p>
+   * level at 750 (between INFO:800 and CONFIG:700) would map to the same as CONFIG (DEBUG).</p>
    *
    * <p>It isn't expected that the JUL levels 'ALL' or 'OFF' are passed into this method;
    * doing so will throw an IllegalArgumentException, as those levels are for configuration, not
@@ -143,7 +86,7 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
    * @return the MappedLevel object representing the SLF4J adapters appropriate for the requested
    * log level; never null.
    */
-  private static MappedLevel mapLevel(Level level) {
+  private static Slf4jLogLevel mapToSlf4jLogLevel(Level level) {
     int requestedLevel = level.intValue();
 
     if (requestedLevel == Level.ALL.intValue() || requestedLevel == Level.OFF.intValue()) {
@@ -154,30 +97,30 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
     // FINEST, FINER -> TRACE
     // custom JUL levels less than FINE -> TRACE
     if (requestedLevel < Level.FINE.intValue()) {
-      return TRACE_LEVEL;
+      return Slf4jLogLevel.TRACE;
     }
 
     // FINE, CONFIG -> DEBUG
     // custom JUL levels less than INFO -> DEBUG
     if (requestedLevel < Level.INFO.intValue()) {
-      return DEBUG_LEVEL;
+      return Slf4jLogLevel.DEBUG;
     }
 
     // INFO -> INFO
     // custom JUL levels less than WARNING -> INFO
     if (requestedLevel < Level.WARNING.intValue()) {
-      return INFO_LEVEL;
+      return Slf4jLogLevel.INFO;
     }
 
     // WARNING -> WARN
     // custom JUL levels less than SEVERE -> WARN
     if (requestedLevel < Level.SEVERE.intValue()) {
-      return WARN_LEVEL;
+      return Slf4jLogLevel.WARN;
     }
 
     // SEVERE -> ERROR
     // custom JUL levels greater than SEVERE -> ERROR
-    return ERROR_LEVEL;
+    return Slf4jLogLevel.ERROR;
   }
 
   @Override
@@ -187,7 +130,23 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
 
   @Override
   public boolean isLoggable(Level level) {
-    return mapLevel(level).isLoggable(logger);
+    Slf4jLogLevel slf4jLogLevel = mapToSlf4jLogLevel(level);
+
+    // dispatch to each level-specific method as SLF4J doesn't expose a logger.log( level, ... )
+    switch (slf4jLogLevel) {
+      case TRACE:
+        return logger.isTraceEnabled();
+      case DEBUG:
+        return logger.isDebugEnabled();
+      case INFO:
+        return logger.isInfoEnabled();
+      case WARN:
+        return logger.isWarnEnabled();
+      case ERROR:
+        return logger.isErrorEnabled();
+      default:
+        throw new AssertionError("Unknown SLF4J log level: " + slf4jLogLevel);
+    }
   }
 
   @Override
@@ -203,55 +162,27 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
 
   @Override
   public void handleFormattedLogMessage(Level level, String message, Throwable thrown) {
-    mapLevel(level).log(logger, message, thrown);
-  }
+    Slf4jLogLevel slf4jLogLevel = mapToSlf4jLogLevel(level);
 
-  /**
-   * <p>Abstraction for dispatching to SLF4j back-end methods, as SLF4J doesn't have isEnabled(
-   * level ) or log( level, ...) methods; pattern is isTraceEnabled, trace( ... ) etc.</p>
-   *
-   * <p>Holds the adapters to invoked the appropriate SLF4J isXXXEnabled or XXX(...) (e.g.
-   * trace)</p>
-   *
-   * <p>There are two adapters used:</p>
-   * <ul>
-   * <li>Predicate to determine whether logging is enabled</li>
-   * <li>Adapter to invoke the appropriate-level log method</li>
-   * </ul>
-   */
-  private static class MappedLevel {
-
-    private final Predicate loggingEnabledPredicate;
-    private final LogAdapter logAdapter;
-
-    private MappedLevel(Predicate loggingEnabledPredicate, LogAdapter logAdapter) {
-      if (loggingEnabledPredicate == null) {
-        throw new NullPointerException("loggingEnabledPredicate required");
-      }
-      if (logAdapter == null) {
-        throw new NullPointerException("logAdapter required");
-      }
-      this.loggingEnabledPredicate = loggingEnabledPredicate;
-      this.logAdapter = logAdapter;
-    }
-
-    boolean isLoggable(Logger logger) {
-      return loggingEnabledPredicate.test(logger);
-    }
-
-    void log(Logger logger, String message, Throwable thrown) {
-      logAdapter.log(logger, message, thrown);
-    }
-
-    interface LogAdapter {
-
-      void log(Logger logger, String message, Throwable thrown);
-    }
-
-    interface Predicate {
-
-      boolean test(Logger logger);
+    // dispatch to each level-specific method, as SLF4J doesn't expose a logger.log( level, ... )
+    switch (slf4jLogLevel) {
+      case TRACE:
+        logger.trace(message, thrown);
+        break;
+      case DEBUG:
+        logger.debug(message, thrown);
+        break;
+      case INFO:
+        logger.info(message, thrown);
+        break;
+      case WARN:
+        logger.warn(message, thrown);
+        break;
+      case ERROR:
+        logger.error(message, thrown);
+        break;
+      default:
+        throw new AssertionError("Unknown SLF4J log level: " + slf4jLogLevel);
     }
   }
-
 }
