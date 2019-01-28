@@ -17,6 +17,7 @@ package com.google.common.flogger.backend.slf4j;
 
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
+import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
 import org.slf4j.Logger;
 
@@ -87,39 +88,34 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
    * log level; never null.
    */
   private static Slf4jLogLevel mapToSlf4jLogLevel(Level level) {
+    // Performance consideration: mapToSlf4jLogLevel is a very hot method, called even when
+    // logging is disabled. Allocations (and other latency-introducing constructs) should be avoided
     int requestedLevel = level.intValue();
 
+    // Flogger shouldn't allow ALL or OFF to be used for logging
+    // if Flogger does add this check to the core library it can be removed here (and should be,
+    // as this method is on the critical performance path for determining whether log statements
+    // are disabled, hence called for all log statements)
     if (requestedLevel == Level.ALL.intValue() || requestedLevel == Level.OFF.intValue()) {
-      // Flogger doesn't allow ALL or OFF to be used for logging, only for configuration
       throw new IllegalArgumentException("Unsupported log level: " + level);
     }
 
-    // FINEST, FINER -> TRACE
-    // custom JUL levels less than FINE -> TRACE
     if (requestedLevel < Level.FINE.intValue()) {
       return Slf4jLogLevel.TRACE;
     }
 
-    // FINE, CONFIG -> DEBUG
-    // custom JUL levels less than INFO -> DEBUG
     if (requestedLevel < Level.INFO.intValue()) {
       return Slf4jLogLevel.DEBUG;
     }
 
-    // INFO -> INFO
-    // custom JUL levels less than WARNING -> INFO
     if (requestedLevel < Level.WARNING.intValue()) {
       return Slf4jLogLevel.INFO;
     }
 
-    // WARNING -> WARN
-    // custom JUL levels less than SEVERE -> WARN
     if (requestedLevel < Level.SEVERE.intValue()) {
       return Slf4jLogLevel.WARN;
     }
 
-    // SEVERE -> ERROR
-    // custom JUL levels greater than SEVERE -> ERROR
     return Slf4jLogLevel.ERROR;
   }
 
@@ -130,6 +126,8 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
 
   @Override
   public boolean isLoggable(Level level) {
+    // Performance consideration: isLoggable is a very hot method, called even when logging is
+    // disabled.  Allocations (and any other latency-introducing constructs) should be avoided
     Slf4jLogLevel slf4jLogLevel = mapToSlf4jLogLevel(level);
 
     // dispatch to each level-specific method as SLF4J doesn't expose a logger.log( level, ... )
@@ -156,8 +154,42 @@ final class Slf4jLoggerBackend extends LoggerBackend implements
 
   @Override
   public void handleError(RuntimeException exception, LogData badData) {
-    // log at WARN to ensure visibility
-    logger.warn(String.format("LOGGING ERROR: %s", exception.getMessage()));
+    StringBuilder errorMsg = new StringBuilder(200);
+    errorMsg.append("LOGGING ERROR: ");
+    errorMsg.append(exception.getMessage());
+    errorMsg.append('\n');
+    formatBadLogData(badData, errorMsg);
+
+    // log at ERROR to ensure visibility
+    logger.error(errorMsg.toString(), exception);
+  }
+
+  // based on com.google.common.flogger.backend.system.AbstractLogRecord.safeAppend
+  private static void formatBadLogData(LogData data, StringBuilder out) {
+    out.append("  original message: ");
+    if (data.getTemplateContext() == null) {
+      out.append(data.getLiteralArgument());
+    } else {
+      // We know that there's at least one argument to display here.
+      out.append(data.getTemplateContext().getMessage());
+      out.append("\n  original arguments:");
+      for (Object arg : data.getArguments()) {
+        out.append("\n    ").append(SimpleMessageFormatter.safeToString(arg));
+      }
+    }
+    Metadata metadata = data.getMetadata();
+    if (metadata.size() > 0) {
+      out.append("\n  metadata:");
+      for (int n = 0; n < metadata.size(); n++) {
+        out.append("\n    ");
+        out.append(metadata.getKey(n).getLabel()).append(": ").append(metadata.getValue(n));
+      }
+    }
+    out.append("\n  level: ").append(data.getLevel());
+    out.append("\n  timestamp (nanos): ").append(data.getTimestampNanos());
+    out.append("\n  class: ").append(data.getLogSite().getClassName());
+    out.append("\n  method: ").append(data.getLogSite().getMethodName());
+    out.append("\n  line number: ").append(data.getLogSite().getLineNumber());
   }
 
   @Override

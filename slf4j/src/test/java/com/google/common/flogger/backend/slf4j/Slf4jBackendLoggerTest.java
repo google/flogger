@@ -105,7 +105,15 @@ public class Slf4jBackendLoggerTest {
     } catch (ParseException expected) {
       verifyZeroInteractions(logger);
       backend.handleError(expected, data);
-      verify(logger).warn("LOGGING ERROR: invalid flag: Hello %[?]X World");
+      verify(logger).error("LOGGING ERROR: invalid flag: Hello %[?]X World\n"
+          + "  original message: Hello %?X World\n"
+          + "  original arguments:\n"
+          + "    ignored\n"
+          + "  level: INFO\n"
+          + "  timestamp (nanos): 0\n"
+          + "  class: com.google.FakeClass\n"
+          + "  method: fakeMethod\n"
+          + "  line number: 123", expected);
       verifyNoMoreInteractions(logger);
     }
   }
