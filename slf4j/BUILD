@@ -7,7 +7,6 @@ package(default_visibility = ["//:internal"])
 
 SLF4J_BACKEND_SRCS = glob(["src/main/java/**/*.java"])
 
-
 java_library(
     name = "slf4j_backend",
     srcs = SLF4J_BACKEND_SRCS,
@@ -17,7 +16,7 @@ java_library(
         "//api",
         "//api:system_backend",
         "@google_bazel_common//third_party/java/jsr305_annotations",
-        "@slf4j_api_artifact//jar"
+        "@org_slf4j_slf4j_api//jar"
     ],
 )
 
@@ -50,12 +49,11 @@ gen_java_tests(
         ":slf4j_backend",
         "//api",
         "//api:testing",
-        "@google_bazel_common//third_party/java/auto:service",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/guava:testlib",
         "@google_bazel_common//third_party/java/jsr305_annotations",
         "@google_bazel_common//third_party/java/junit",
-        "@slf4j_api_artifact//jar",
+        "@org_slf4j_slf4j_api//jar",
         "@google_bazel_common//third_party/java/mockito",
         "@google_bazel_common//third_party/java/truth",
     ],

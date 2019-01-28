@@ -23,6 +23,6 @@ load("@google_bazel_common//:workspace_defs.bzl", "google_common_workspace_rules
 google_common_workspace_rules()
 
 maven_jar(
-    name = "slf4j_api_artifact",
+    name = "org_slf4j_slf4j_api",
     artifact= "org.slf4j:slf4j-api:1.7.25",
 )
