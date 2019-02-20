@@ -71,8 +71,8 @@ public final class TestLogger extends AbstractLogger<TestLogger.Api> {
 
   /** Logging context implementing the basic logging API. */
   private final class TestContext extends LogContext<TestLogger, Api> implements Api {
-    private TestContext(Level level, boolean isForced, long timestampMicros) {
-      super(level, isForced, timestampMicros);
+    private TestContext(Level level, boolean isForced, long timestampNanos) {
+      super(level, isForced, timestampNanos);
     }
 
     @Override
