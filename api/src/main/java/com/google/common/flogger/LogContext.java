@@ -557,8 +557,9 @@ public abstract class LogContext<
       }
     }
     // Using "!=" is fast and sufficient here because the only real case this should be skipping
-    // is when we called log(String) or log() which got converted to "log("%s", String) using this
-    // constant.
+    // is when we called log(String) or log(), which should not result in a template being created.
+    // DO NOT replace this with a string instance which can be interned, or use equals() here,
+    // since that could mistakenly treat other calls to log(String, Object...) incorrectly.
     if (message != LITERAL_VALUE_MESSAGE) {
       this.templateContext = new TemplateContext(getMessageParser(), message);
     }
