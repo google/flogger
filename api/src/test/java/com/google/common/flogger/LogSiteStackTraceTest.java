@@ -34,7 +34,7 @@ public class LogSiteStackTraceTest {
   @Test
   public void testGetMessage() {
     LogSiteStackTrace trace = new LogSiteStackTrace(null, StackSize.FULL, new StackTraceElement[0]);
-    assertThat(trace).hasMessage("FULL");
+    assertThat(trace).hasMessageThat().isEqualTo("FULL");
     assertThat(trace.getCause()).isNull();
   }
 
