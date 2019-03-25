@@ -230,6 +230,7 @@ java_library(
     name = "system_backend",
     srcs = SYSTEM_BACKEND_SRCS,
     javacopts = ["-source 1.6 -target 1.6"],
+    tags = ["maven_coordinates=com.google.flogger:flogger-system-backend:${project.version}"],
     visibility = ["//visibility:public"],
     deps = [
         ":api",
@@ -264,6 +265,7 @@ java_library(
     name = "testing",
     testonly = 1,
     srcs = TESTING_SRCS,
+    tags = ["maven_coordinates=com.google.flogger:flogger-testing:${project.version}"],
     visibility = ["//visibility:public"],
     deps = [
         ":api",
