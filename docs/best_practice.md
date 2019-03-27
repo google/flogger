@@ -8,7 +8,7 @@
 It's good to remember that a logging backend might not necessarily be outputting
 only plain text files. For a statement such as
 
-```java
+```java {.good}
 logger.atInfo().log("Received message is: %s", proto)
 ```
 
@@ -17,7 +17,7 @@ its original, structured form.
 
 On the other hand, with either of these calls:
 
-```java
+```java {.bad}
 logger.atInfo().log("Received message is: %s", proto.toString())
 logger.atInfo().log("Received message is: " + proto);
 ```
@@ -34,7 +34,7 @@ Flogger is designed to make disabled logging statements virtually free, so that
 more of them can be left intact in the code without harm. This is a great
 advantage, but unfortunately it can be defeated easily:
 
-```java
+```java {.bad}
 logger.atFine().log("stats=%s", createSummaryOf(stats));
 ```
 
@@ -47,7 +47,7 @@ Here's how to fix this problem, **in order of preference**.
 
 Import this method from the [`LazyArgs`] class.
 
-```java
+```java {.good}
 // Almost no work done at the log site and structure is preserved.
 logger.atFine().log("stats=%s", lazy(() -> createSummaryOf(stats)));
 ```
@@ -199,7 +199,7 @@ creating the misleading impression that multiple issues need investigating.
 
 A call such as:
 
-```java
+```java {.bad}
 Logger.getLogger(loggerName).setLevel(Level.FINE);
 ```
 
