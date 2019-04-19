@@ -50,7 +50,7 @@ public final class LogDataSubject extends Subject<LogDataSubject, LogData> {
 
   /** Asserts about the metadata of this log entry. */
   public MetadataSubject metadata() {
-    return check().about(MetadataSubject.metadata()).that(actual().getMetadata());
+    return check("getMetadata()").about(MetadataSubject.metadata()).that(actual().getMetadata());
   }
 
   /**
