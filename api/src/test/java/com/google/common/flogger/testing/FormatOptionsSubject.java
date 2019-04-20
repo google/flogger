@@ -49,15 +49,11 @@ public final class FormatOptionsSubject extends Subject<FormatOptionsSubject, Fo
   }
 
   public void hasPrecision(int precision) {
-    if (actual().getPrecision() != precision) {
-      fail("has precision", precision);
-    }
+    check("getPrecision()").that(actual().getPrecision()).isEqualTo(precision);
   }
 
   public void hasWidth(int width) {
-    if (actual().getWidth() != width) {
-      fail("has width", width);
-    }
+    check("getWidth()").that(actual().getWidth()).isEqualTo(width);
   }
 
   public void hasNoFlags() {
