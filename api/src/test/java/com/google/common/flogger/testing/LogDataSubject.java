@@ -18,7 +18,6 @@ package com.google.common.flogger.testing;
 
 import static com.google.common.truth.Truth.assertAbout;
 
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.truth.FailureMetadata;
@@ -61,14 +60,12 @@ public final class LogDataSubject extends Subject<LogDataSubject, LogData> {
   public void hasMessage(Object messageOrLiteral) {
     if (actual().getTemplateContext() == null) {
       // Expect literal argument (possibly null).
-      if (!Objects.equal(actual().getLiteralArgument(), messageOrLiteral)) {
-        fail("has literal", messageOrLiteral);
-      }
+      check("getLiteralArgument()").that(actual().getLiteralArgument()).isEqualTo(messageOrLiteral);
     } else {
       // Expect message string (non null).
-      if (!actual().getTemplateContext().getMessage().equals(messageOrLiteral)) {
-        fail("has format message", messageOrLiteral);
-      }
+      check("getTemplateContext().getMessage()")
+          .that(actual().getTemplateContext().getMessage())
+          .isEqualTo(messageOrLiteral);
     }
   }
 
