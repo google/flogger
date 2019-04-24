@@ -55,13 +55,15 @@ public final class FormatTypeSubject extends Subject<FormatTypeSubject, FormatTy
   }
 
   public void isNumeric() {
-    assertWithMessage("Expected " + getSubject() + " to be numeric but wasn't")
+    check("isNumeric()")
+        .withMessage("Expected " + getSubject() + " to be numeric but wasn't")
         .that(getSubject().isNumeric())
         .isTrue();
   }
 
   public void isNotNumeric() {
-    assertWithMessage("Expected " + getSubject() + " to not be numeric but was")
+    check("isNumeric()")
+        .withMessage("Expected " + getSubject() + " to not be numeric but was")
         .that(getSubject().isNumeric())
         .isFalse();
   }
