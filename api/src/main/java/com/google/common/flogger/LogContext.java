@@ -601,6 +601,20 @@ public abstract class LogContext<
   }
 
   @Override
+  public final <T> API with(MetadataKey<T> key, @Nullable T value) {
+    // Null keys are always bad (even if the value is also null). This is one of the few places
+    // where the logger API will throw a runtime exception (and as such it's important to ensure
+    // the NoOp implementation also does the check). The reasoning for this is that the metadata
+    // key is never expected to be passed user data, and should always be a static constant.
+    // Because of this it's always going to be an obvious code error if we get a null here.
+    checkNotNull(key, "metadata key");
+    if (value != null) {
+      addMetadata(key, value);
+    }
+    return api();
+  }
+
+  @Override
   public final API withCause(Throwable cause) {
     if (cause != null) {
       addMetadata(Key.LOG_CAUSE, cause);
