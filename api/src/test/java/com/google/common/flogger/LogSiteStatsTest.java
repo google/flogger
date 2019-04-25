@@ -41,7 +41,7 @@ public class LogSiteStatsTest {
 
     assertThat(stats1).isNotNull();
     assertThat(stats2).isNotNull();
-    assertThat(stats2).isNotSameAs(stats1);
+    assertThat(stats2).isNotSameInstanceAs(stats1);
     assertThat(map.getStatsForKey(logSite1)).isEqualTo(stats1);
     assertThat(map.getStatsForKey(logSite2)).isEqualTo(stats2);
   }

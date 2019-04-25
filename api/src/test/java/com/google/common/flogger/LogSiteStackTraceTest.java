@@ -50,7 +50,7 @@ public class LogSiteStackTraceTest {
   public void testGetStackTrace() {
     StackTraceElement[] stack = FAKE_STACK.toArray(new StackTraceElement[0]);
     LogSiteStackTrace trace = new LogSiteStackTrace(null, StackSize.SMALL, stack);
-    assertThat(trace.getStackTrace()).isNotSameAs(stack);
+    assertThat(trace.getStackTrace()).isNotSameInstanceAs(stack);
     assertThat(trace.getStackTrace()).asList().isEqualTo(FAKE_STACK);
   }
 }

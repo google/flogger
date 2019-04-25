@@ -42,13 +42,13 @@ public class SimpleParameterTest {
     }
     // Different indices do not return the same instances.
     assertThat(SimpleParameter.of(1, FormatChar.DECIMAL, FormatOptions.getDefault()))
-        .isNotSameAs(SimpleParameter.of(0, FormatChar.DECIMAL, FormatOptions.getDefault()));
+        .isNotSameInstanceAs(SimpleParameter.of(0, FormatChar.DECIMAL, FormatOptions.getDefault()));
     // Different format chars do not return the same instances.
     assertThat(SimpleParameter.of(0, FormatChar.FLOAT, FormatOptions.getDefault()))
-        .isNotSameAs(SimpleParameter.of(0, FormatChar.DECIMAL, FormatOptions.getDefault()));
+        .isNotSameInstanceAs(SimpleParameter.of(0, FormatChar.DECIMAL, FormatOptions.getDefault()));
     // Different formatting options do not return the same instances.
     assertThat(SimpleParameter.of(0, FormatChar.DECIMAL, FormatOptions.parse("-10", 0, 3, false)))
-        .isNotSameAs(SimpleParameter.of(0, FormatChar.DECIMAL, FormatOptions.getDefault()));
+        .isNotSameInstanceAs(SimpleParameter.of(0, FormatChar.DECIMAL, FormatOptions.getDefault()));
   }
 
   @Test

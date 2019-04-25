@@ -259,7 +259,7 @@ public class LogContextTest {
     backend.assertLastLogged().hasArguments("foo", "bar", "baz");
     // Make sure we took a copy of the arguments rather than risk re-using them.
     assertThat(backend.getLoggedCount()).isEqualTo(1);
-    assertThat(backend.getLogged(0).getArguments()).isNotSameAs(args);
+    assertThat(backend.getLogged(0).getArguments()).isNotSameInstanceAs(args);
   }
 
   @Test
