@@ -52,11 +52,11 @@ public class FluentLoggerTest {
     backend.setLevel(Level.INFO);
 
     // Down to and including the configured log level are not the no-op instance.
-    assertThat(logger.atSevere()).isNotSameAs(FluentLogger.NO_OP);
+    assertThat(logger.atSevere()).isNotSameInstanceAs(FluentLogger.NO_OP);
     assertThat(logger.atSevere()).isInstanceOf(Context.class);
-    assertThat(logger.atWarning()).isNotSameAs(FluentLogger.NO_OP);
+    assertThat(logger.atWarning()).isNotSameInstanceAs(FluentLogger.NO_OP);
     assertThat(logger.atWarning()).isInstanceOf(Context.class);
-    assertThat(logger.atInfo()).isNotSameAs(FluentLogger.NO_OP);
+    assertThat(logger.atInfo()).isNotSameInstanceAs(FluentLogger.NO_OP);
     assertThat(logger.atInfo()).isInstanceOf(Context.class);
 
     // Below the configured log level you only get the singleton no-op instance.
@@ -78,6 +78,6 @@ public class FluentLoggerTest {
     assertThat(logger.atSevere()).isSameAs(FluentLogger.NO_OP);
 
     backend.setLevel(Level.ALL);
-    assertThat(logger.atFinest()).isNotSameAs(FluentLogger.NO_OP);
+    assertThat(logger.atFinest()).isNotSameInstanceAs(FluentLogger.NO_OP);
   }
 }

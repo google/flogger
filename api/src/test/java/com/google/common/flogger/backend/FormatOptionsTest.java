@@ -48,7 +48,7 @@ public class FormatOptionsTest {
     assertThat(FormatOptions.parse("%x", 1, 1, false)).isSameAs(FormatOptions.getDefault());
     // Upper-case options are not the same as the default, but are the same if case is filtered out.
     FormatOptions upperDefault = FormatOptions.parse("%X", 1, 1, true);
-    assertThat(upperDefault).isNotSameAs(FormatOptions.getDefault());
+    assertThat(upperDefault).isNotSameInstanceAs(FormatOptions.getDefault());
   }
 
   @Test
