@@ -143,6 +143,35 @@ public interface LoggingApi<API extends LoggingApi<API>> {
   API withStackTrace(StackSize size);
 
   /**
+   * Associates a metadata key constant with a runtime value for this log statement in a structured
+   * way that is accessible to logger backends.
+   *
+   * <p>This method is not a replacement for general parameter passing in the {@link #log()} method
+   * and should be reserved for keys/values with specific semantics. Examples include:
+   * <ul>
+   *   <li>Keys that are recognised by specific logger backends (typically to control logging
+   *       behaviour in some way).
+   *   <li>Key value pairs which are explicitly extracted from logs by tools.
+   * </ul>
+   *
+   * <p>Metadata keys can support repeated values (see {@link MetadataKey#canRepeat()}), and if a
+   * repeatable key is used multiple times in the same log statement, the effect is to collect all
+   * the given values in order. If a non-repeatable key is passed multiple times, only the last
+   * value is retained (though callers should not rely on this behavior and should simply avoid
+   * repeating non-repeatable keys).
+   *
+   * <p>If {@code value} is {@code null}, this method is a no-op. This is useful for specifying
+   * conditional values (e.g. via {@code logger.atInfo().with(MY_KEY, getValueOrNull()).log(...)}).
+   *
+   * @param key the metadata key (expected to be a static constant)
+   * @param value a value to be associated with the key in this log statement. Null values are
+   *        allowed, but the effect is always a no-op
+   * @throws NullPointerException if the given key is null
+   * @see MetadataKey
+   */
+  <T> API with(MetadataKey<T> key, @Nullable T value);
+
+  /**
    * Sets the log site for the current log statement. Explicit log site injection is very rarely
    * necessary, since either the log site is injected automatically, or it is determined at runtime
    * via stack analysis. The one use case where calling this method explicitly may be useful is
@@ -614,6 +643,13 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     @Override
     public final boolean isEnabled() {
       return false;
+    }
+
+    @Override
+    public final <T> API with(MetadataKey<T> key, @Nullable T value) {
+      // Identical to the check in LogContext for consistency.
+      checkNotNull(key, "metadata key");
+      return noOp();
     }
 
     @Override
