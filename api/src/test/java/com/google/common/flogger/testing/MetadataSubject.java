@@ -86,7 +86,7 @@ public final class MetadataSubject extends Subject<MetadataSubject, Metadata> {
       // The key must exist, so neither method will return -1.
       List<MetadataKey<?>> keys = keyList();
       if (keys.indexOf(key) != keys.lastIndexOf(key)) {
-        fail("has unique key", key);
+        failWithActual("expected to have unique key", key);
       }
     }
   }

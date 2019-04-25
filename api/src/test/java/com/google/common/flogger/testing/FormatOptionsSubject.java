@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.testing;
 
+import static com.google.common.truth.Fact.simpleFact;
 import static com.google.common.truth.Truth.assertAbout;
 
 import com.google.common.flogger.backend.FormatChar;
@@ -44,7 +45,7 @@ public final class FormatOptionsSubject extends Subject<FormatOptionsSubject, Fo
 
   public void isDefault() {
     if (!actual().isDefault()) {
-      fail("is default");
+      failWithActual(simpleFact("expected to be default"));
     }
   }
 
@@ -58,7 +59,7 @@ public final class FormatOptionsSubject extends Subject<FormatOptionsSubject, Fo
 
   public void hasNoFlags() {
     if (actual().getFlags() != 0) {
-      fail("has no flags");
+      failWithActual(simpleFact("expected to have no flags"));
     }
   }
 
@@ -148,13 +149,13 @@ public final class FormatOptionsSubject extends Subject<FormatOptionsSubject, Fo
 
   public void areValidFor(FormatChar formatChar) {
     if (!actual().areValidFor(formatChar)) {
-      fail("%s should be valid", formatChar);
+      failWithActual("expected to be valid for", formatChar);
     }
   }
 
   public void areNotValidFor(FormatChar formatChar) {
     if (actual().areValidFor(formatChar)) {
-      fail("%s should not be valid", formatChar);
+      failWithActual("expected not to be valid for", formatChar);
     }
   }
 }
