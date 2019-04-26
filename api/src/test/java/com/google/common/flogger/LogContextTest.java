@@ -573,7 +573,7 @@ public class LogContextTest {
     // This doesn't check anything about the message that's printed before the stack lines,
     // but that's not the point of this test.
     assertThat(expectedLines).hasSize(syntheticStackSize);
-    assertThat(actualStackLines).containsAllIn(expectedLines).inOrder();
+    assertThat(actualStackLines).containsAtLeastElementsIn(expectedLines).inOrder();
   }
 
   private static StackTraceElement getCallerInfoFollowingLine() {
