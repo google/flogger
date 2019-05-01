@@ -63,7 +63,7 @@ public class ParameterTest {
   public void testGetOptions() throws ParseException {
     FormatOptions options = FormatOptions.parse("-2.2", 0, 4, false);
     Parameter p = new TestParameter(options, 0);
-    assertThat(p.getFormatOptions()).isSameAs(options);
+    assertThat(p.getFormatOptions()).isSameInstanceAs(options);
   }
 
   @Test

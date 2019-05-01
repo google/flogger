@@ -100,7 +100,8 @@ public class SimpleLogEventTest {
     LogData data =
         FakeLogData.withPrintfStyle("Hello World").addMetadata(LogContext.Key.LOG_CAUSE, cause);
     SimpleLogEvent logEvent = newSimpleLogEvent(data);
-    assertThat(logEvent.asLoggingEvent().getThrowableInformation().getThrowable()).isSameAs(cause);
+    assertThat(logEvent.asLoggingEvent().getThrowableInformation().getThrowable())
+        .isSameInstanceAs(cause);
   }
 
   @Test

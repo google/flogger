@@ -43,7 +43,7 @@ public class LogSiteStackTraceTest {
     Throwable cause = new RuntimeException();
     LogSiteStackTrace trace =
         new LogSiteStackTrace(cause, StackSize.SMALL, new StackTraceElement[0]);
-    assertThat(trace.getCause()).isSameAs(cause);
+    assertThat(trace.getCause()).isSameInstanceAs(cause);
   }
 
   @Test

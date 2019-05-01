@@ -60,9 +60,9 @@ public class FluentLoggerTest {
     assertThat(logger.atInfo()).isInstanceOf(Context.class);
 
     // Below the configured log level you only get the singleton no-op instance.
-    assertThat(logger.atFine()).isSameAs(FluentLogger.NO_OP);
-    assertThat(logger.atFiner()).isSameAs(FluentLogger.NO_OP);
-    assertThat(logger.atFinest()).isSameAs(FluentLogger.NO_OP);
+    assertThat(logger.atFine()).isSameInstanceAs(FluentLogger.NO_OP);
+    assertThat(logger.atFiner()).isSameInstanceAs(FluentLogger.NO_OP);
+    assertThat(logger.atFinest()).isSameInstanceAs(FluentLogger.NO_OP);
 
     // Just verify that logs below the current log level are discarded.
     logger.atFine().log("DISCARDED");
@@ -75,7 +75,7 @@ public class FluentLoggerTest {
     assertThat(backend.getLoggedCount()).isEqualTo(1);
 
     backend.setLevel(Level.OFF);
-    assertThat(logger.atSevere()).isSameAs(FluentLogger.NO_OP);
+    assertThat(logger.atSevere()).isSameInstanceAs(FluentLogger.NO_OP);
 
     backend.setLevel(Level.ALL);
     assertThat(logger.atFinest()).isNotSameInstanceAs(FluentLogger.NO_OP);

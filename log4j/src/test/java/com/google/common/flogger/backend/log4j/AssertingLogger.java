@@ -123,6 +123,6 @@ final class AssertingLogger extends Logger {
   }
 
   void assertThrown(int index, Throwable thrown) {
-    assertThat(entries.get(index).thrown).isSameAs(thrown);
+    assertThat(entries.get(index).thrown).isSameInstanceAs(thrown);
   }
 }

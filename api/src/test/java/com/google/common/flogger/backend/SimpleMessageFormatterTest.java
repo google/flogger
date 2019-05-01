@@ -57,7 +57,7 @@ public class SimpleMessageFormatterTest {
 
   @Test
   public void testToStringFormatsCorrectly() {
-    assertThat(SimpleMessageFormatter.toString("Hello World")).isSameAs("Hello World");
+    assertThat(SimpleMessageFormatter.toString("Hello World")).isSameInstanceAs("Hello World");
     assertThat(SimpleMessageFormatter.toString(10)).isEqualTo("10");
     assertThat(SimpleMessageFormatter.toString(false)).isEqualTo("false");
     // Not what you'd normally get from Object#toString() ...

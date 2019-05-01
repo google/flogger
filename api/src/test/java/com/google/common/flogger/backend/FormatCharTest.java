@@ -37,7 +37,7 @@ public class FormatCharTest {
 
   private static void assertFormatType(FormatType type, FormatChar... formatChars) {
     for (FormatChar fc : formatChars) {
-      assertThat(fc.getType()).isSameAs(type);
+      assertThat(fc.getType()).isSameInstanceAs(type);
     }
   }
 

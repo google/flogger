@@ -45,7 +45,7 @@ public class FormatOptionsTest {
 
   @Test
   public void testParsingDefault() throws ParseException {
-    assertThat(FormatOptions.parse("%x", 1, 1, false)).isSameAs(FormatOptions.getDefault());
+    assertThat(FormatOptions.parse("%x", 1, 1, false)).isSameInstanceAs(FormatOptions.getDefault());
     // Upper-case options are not the same as the default, but are the same if case is filtered out.
     FormatOptions upperDefault = FormatOptions.parse("%X", 1, 1, true);
     assertThat(upperDefault).isNotSameInstanceAs(FormatOptions.getDefault());
@@ -200,7 +200,7 @@ public class FormatOptionsTest {
 
     FormatOptions options = parse("+- #0,123.456", true);
     assertThat(options.filter(0, false, false)).isDefault();
-    assertThat(options.filter(ALL_FLAGS, true, true)).isSameAs(options);
+    assertThat(options.filter(ALL_FLAGS, true, true)).isSameInstanceAs(options);
 
     int flags = FLAG_LEFT_ALIGN | FLAG_SHOW_ALT_FORM | FLAG_SHOW_GROUPING | FLAG_SHOW_LEADING_ZEROS;
     FormatOptions filtered = options.filter(flags, true, false);

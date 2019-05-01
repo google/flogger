@@ -37,7 +37,7 @@ public class TagsTest {
 
   @Test
   public void testEmpty() {
-    assertThat(Tags.builder().build()).isSameAs(Tags.empty());
+    assertThat(Tags.builder().build()).isSameInstanceAs(Tags.empty());
   }
 
   @Test
@@ -100,9 +100,9 @@ public class TagsTest {
   public void testTagMerging_empty() {
     // It is important to not create new instances when merging.
     Tags tags = Tags.builder().addTag("foo").build();
-    assertThat(tags.merge(Tags.empty())).isSameAs(tags);
-    assertThat(Tags.empty().merge(tags)).isSameAs(tags);
-    assertThat(Tags.empty().merge(Tags.empty())).isSameAs(Tags.empty());
+    assertThat(tags.merge(Tags.empty())).isSameInstanceAs(tags);
+    assertThat(Tags.empty().merge(tags)).isSameInstanceAs(tags);
+    assertThat(Tags.empty().merge(Tags.empty())).isSameInstanceAs(Tags.empty());
   }
 
   @Test
