@@ -93,7 +93,7 @@ public class SimpleLogRecordTest {
 
     LogRecord record = SimpleLogRecord.create(data);
 
-    assertThat(record.getThrown()).isSameAs(cause);
+    assertThat(record.getThrown()).isSameInstanceAs(cause);
   }
 
   @Test

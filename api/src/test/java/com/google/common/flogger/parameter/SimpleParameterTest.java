@@ -37,7 +37,7 @@ public class SimpleParameterTest {
     for (FormatChar c : FormatChar.values()) {
       for (int n = 0; n < 10; n++) {
         assertThat(SimpleParameter.of(n, c, FormatOptions.getDefault()))
-            .isSameAs(SimpleParameter.of(n, c, FormatOptions.getDefault()));
+            .isSameInstanceAs(SimpleParameter.of(n, c, FormatOptions.getDefault()));
       }
     }
     // Different indices do not return the same instances.
