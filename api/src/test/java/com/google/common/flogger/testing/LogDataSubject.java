@@ -79,7 +79,7 @@ public final class LogDataSubject extends Subject<LogDataSubject, LogData> {
     if (actual().getTemplateContext() != null) {
       actualArgs = Arrays.asList(actual().getArguments());
     }
-    check().that(actualArgs).containsExactly(args).inOrder();
+    check("getArguments()").that(actualArgs).containsExactly(args).inOrder();
   }
 
   /** Asserts that this log entry was forced. */

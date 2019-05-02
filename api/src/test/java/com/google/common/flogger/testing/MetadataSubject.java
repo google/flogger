@@ -92,11 +92,11 @@ public final class MetadataSubject extends Subject<MetadataSubject, Metadata> {
   }
 
   public IterableSubject keys() {
-    return check().that(keyList());
+    return check("keys()").that(keyList());
   }
 
   public IterableSubject values() {
-    return check().that(valueList());
+    return check("values()").that(valueList());
   }
 }
 
