@@ -31,7 +31,7 @@ logging APIs:
 *   Flogger also has very high [performance] for enabled log statements.
 *   A fluent API accommodates a variety of [present and future
     features][extensibility] without combinatorial explosion, and without
-    requiring separate logging façades.
+    requiring separate logging facades.
 *   Less reliance on long parameter lists makes it harder to misuse and yields
     more [self-documenting][readability] code.
 
