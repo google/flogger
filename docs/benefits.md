@@ -33,7 +33,7 @@ This adds to code "clutter" and introduces more chance for simple errors.
 Consider the difference between:
 
 ```java
-public static final AtomicInteger logCounter = new AtomicInteger();
+private static final AtomicInteger logCounter = new AtomicInteger();
 ...
 if ((logCounter.incrementAndGet() % 100) == 0) {
   logger.info("My log message {0} [every 100]", arg);
