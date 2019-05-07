@@ -65,85 +65,85 @@ public final class FormatOptionsSubject extends Subject<FormatOptionsSubject, Fo
 
   public void shouldUpperCase() {
     if (!actual().shouldUpperCase()) {
-      fail("should upper case");
+      failWithActual(simpleFact("expected to upper case"));
     }
   }
 
   public void shouldntUpperCase() {
     if (actual().shouldUpperCase()) {
-      fail("shouldn't upper case");
+      failWithActual(simpleFact("expected not to upper case"));
     }
   }
 
   public void shouldLeftAlign() {
     if (!actual().shouldLeftAlign()) {
-      fail("should left align");
+      failWithActual(simpleFact("expected to left align"));
     }
   }
 
   public void shouldntLeftAlign() {
     if (actual().shouldLeftAlign()) {
-      fail("shouldn't left align");
+      failWithActual(simpleFact("expected not to left align"));
     }
   }
 
   public void shouldShowAltForm() {
     if (!actual().shouldShowAltForm()) {
-      fail("should show alt form");
+      failWithActual(simpleFact("expected to show alt form"));
     }
   }
 
   public void shouldntShowAltForm() {
     if (actual().shouldShowAltForm()) {
-      fail("shouldn't show alt form");
+      failWithActual(simpleFact("expected not to show alt form"));
     }
   }
 
   public void shouldShowGrouping() {
     if (!actual().shouldShowGrouping()) {
-      fail("should show grouping");
+      failWithActual(simpleFact("expected to show grouping"));
     }
   }
 
   public void shouldntShowGrouping() {
     if (actual().shouldShowGrouping()) {
-      fail("shouldn't show grouping");
+      failWithActual(simpleFact("expected not to show grouping"));
     }
   }
 
   public void shouldShowLeadingZeros() {
     if (!actual().shouldShowLeadingZeros()) {
-      fail("should show leading zeros");
+      failWithActual(simpleFact("expected to show leading zeros"));
     }
   }
 
   public void shouldntShowLeadingZeros() {
     if (actual().shouldShowLeadingZeros()) {
-      fail("shouldn't show leading zeros");
+      failWithActual(simpleFact("expected not to show leading zeros"));
     }
   }
 
   public void shouldPrefixSpaceForPositiveValues() {
     if (!actual().shouldPrefixSpaceForPositiveValues()) {
-      fail("should prefix space for positive values");
+      failWithActual(simpleFact("expected to prefix space for positive values"));
     }
   }
 
   public void shouldntPrefixSpaceForPositiveValues() {
     if (actual().shouldPrefixSpaceForPositiveValues()) {
-      fail("shouldn't prefix space for positive values");
+      failWithActual(simpleFact("expected not to prefix space for positive values"));
     }
   }
 
   public void shouldPrefixPlusForPositiveValues() {
     if (!actual().shouldPrefixPlusForPositiveValues()) {
-      fail("should prefix plus for positive values");
+      failWithActual(simpleFact("expected to prefix plus for positive values"));
     }
   }
 
   public void shouldntPrefixPlusForPositiveValues() {
     if (actual().shouldPrefixPlusForPositiveValues()) {
-      fail("shouldn't prefix plus for positive values");
+      failWithActual(simpleFact("expected not to prefix plus for positive values"));
     }
   }
 
