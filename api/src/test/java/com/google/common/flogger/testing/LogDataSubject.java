@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.testing;
 
+import static com.google.common.truth.Fact.simpleFact;
 import static com.google.common.truth.Truth.assertAbout;
 
 import com.google.common.collect.ImmutableList;
@@ -85,7 +86,7 @@ public final class LogDataSubject extends Subject<LogDataSubject, LogData> {
   /** Asserts that this log entry was forced. */
   public void wasForced() {
     if (!actual().wasForced()) {
-      fail("was forced");
+      failWithActual(simpleFact("expected to be forced"));
     }
   }
 }

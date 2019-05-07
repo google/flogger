@@ -68,10 +68,7 @@ public final class MetadataSubject extends Subject<MetadataSubject, Metadata> {
 
   public void hasSize(int expectedSize) {
     checkArgument(expectedSize >= 0, "expectedSize(%s) must be >= 0", expectedSize);
-    int actualSize = actual().size();
-    if (actualSize != expectedSize) {
-      failWithBadResults("has a size of", expectedSize, "is", actualSize);
-    }
+    check("size()").that(actual().size()).isEqualTo(expectedSize);
   }
 
   public <T> void containsUniqueEntry(MetadataKey<T> key, T value) {
@@ -79,10 +76,9 @@ public final class MetadataSubject extends Subject<MetadataSubject, Metadata> {
     checkNotNull(value, "value must not be null");
     T actual = actual().findValue(key);
     if (actual == null) {
-      fail("contained value for key", key);
-    } else if (!value.equals(actual)) {
-      failWithBadResults("contained mapping '" + key + "':", value, "was", actual);
+      failWithActual("expected to contain value for key", key);
     } else {
+      check("findValue(%s)", key).that(actual).isEqualTo(value);
       // The key must exist, so neither method will return -1.
       List<MetadataKey<?>> keys = keyList();
       if (keys.indexOf(key) != keys.lastIndexOf(key)) {
