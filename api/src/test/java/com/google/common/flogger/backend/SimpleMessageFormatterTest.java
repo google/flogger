@@ -21,7 +21,9 @@ import static com.google.common.flogger.backend.FormatOptions.UNSET;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.flogger.LogContext.Key;
+import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
+import com.google.common.flogger.backend.SimpleMessageFormatter.Option;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
 import com.google.common.flogger.testing.FakeLogData;
 import java.io.IOException;
@@ -107,6 +109,16 @@ public class SimpleMessageFormatterTest {
   }
 
   @Test
+  public void testFormatWithOption() {
+    assertThat(logWithOption(Option.DEFAULT, "Hello World")).isEqualTo("Hello World");
+    assertThat(logWithOption(Option.WITH_LOG_SITE, "Hello World"))
+        .isEqualTo("com.google.FakeClass.fakeMethod:123 Hello World");
+    assertThat(logWithOptionInvalidLogSite(Option.DEFAULT, "Hello World")).isEqualTo("Hello World");
+    assertThat(logWithOptionInvalidLogSite(Option.WITH_LOG_SITE, "Hello World"))
+        .isEqualTo("Hello World");
+  }
+
+  @Test
   public void testToStringError() {
     Object arg = new Object() {
       @Override
@@ -144,6 +156,20 @@ public class SimpleMessageFormatterTest {
   private static String log(String message, Object... args) {
     SimpleLogHandler handler = getSimpleLogHandler();
     SimpleMessageFormatter.format(FakeLogData.withPrintfStyle(message, args), handler);
+    return handler.toString();
+  }
+
+  private static String logWithOption(Option option, String message, Object... args) {
+    SimpleLogHandler handler = getSimpleLogHandler();
+    SimpleMessageFormatter.format(FakeLogData.withPrintfStyle(message, args), handler, option);
+    return handler.toString();
+  }
+
+  private static String logWithOptionInvalidLogSite(Option option, String message, Object... args) {
+    SimpleLogHandler handler = getSimpleLogHandler();
+    FakeLogData fakeLogData = FakeLogData.withPrintfStyle(message, args);
+    fakeLogData.setLogSite(LogSite.INVALID);
+    SimpleMessageFormatter.format(fakeLogData, handler, option);
     return handler.toString();
   }
 

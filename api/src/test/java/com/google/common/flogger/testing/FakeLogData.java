@@ -36,7 +36,7 @@ import java.util.logging.Level;
  * This helps decouple the testing of the backend from the frontend, and makes the intent of the
  * tests clearer.
  */
-public class FakeLogData implements LogData {
+public final class FakeLogData implements LogData {
   public static final String FAKE_LOGGER_NAME = "com.google.LoggerName";
 
   public static final String FAKE_LOGGING_CLASS = "com.google.FakeClass";
@@ -70,6 +70,7 @@ public class FakeLogData implements LogData {
   private Object literalArgument = null;
   private long timestampNanos = 0L;
   private FakeMetadata metadata = new FakeMetadata();
+  private LogSite logSite = FAKE_LOG_SITE;
 
   private FakeLogData(Object literalArgument) {
     this.literalArgument = literalArgument;
@@ -88,6 +89,11 @@ public class FakeLogData implements LogData {
 
   public FakeLogData setLevel(Level level) {
     this.level = level;
+    return this;
+  }
+
+  public FakeLogData setLogSite(LogSite logSite) {
+    this.logSite = logSite;
     return this;
   }
 
@@ -119,7 +125,7 @@ public class FakeLogData implements LogData {
 
   @Override
   public LogSite getLogSite() {
-    return FAKE_LOG_SITE;
+    return logSite;
   }
 
   @Override
