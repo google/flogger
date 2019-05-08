@@ -23,6 +23,7 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LogContext.Key;
+import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.parameter.DateTimeFormat;
 import com.google.common.flogger.parameter.Parameter;
@@ -63,6 +64,16 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
     void handleFormattedLogMessage(Level level, String message, @Nullable Throwable thrown);
   }
 
+  /**
+   * Format options.
+   */
+  enum Option {
+    // Default option.
+    DEFAULT,
+    // Prepend log site information in the form of [class].[methodName]:[lineNumber] [Message]
+    WITH_LOG_SITE
+  }
+
   // Literal string to be inlined whenever a placeholder references a non-existent argument.
   private static final String MISSING_ARGUMENT_MESSAGE = "[ERROR: MISSING LOG ARGUMENT]";
 
@@ -78,6 +89,14 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
    * receiver object with the results.
    */
   public static void format(LogData logData, SimpleLogHandler receiver) {
+    format(logData, receiver, Option.DEFAULT);
+  }
+
+  /**
+   * Formats the log message and any metadata for the given {@link LogData}, calling the supplied
+   * receiver object with the results with a given option.
+   */
+  static void format(LogData logData, SimpleLogHandler receiver, Option option) {
     Metadata metadata = logData.getMetadata();
     Throwable thrown = metadata.findValue(LogContext.Key.LOG_CAUSE);
     // Either no metadata, or exactly one "cause" means we don't need to do additional formatting.
@@ -87,18 +106,13 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
     TemplateContext ctx = logData.getTemplateContext();
     String message;
     if (ctx == null) {
-      // If a literal message (no arguments) is logged and no metadata exists, just use the string.
-      // Having no format arguments is fairly common and this avoids allocating StringBuilders and
-      // formatter instances in a lot of situations.
-      message = safeToString(logData.getLiteralArgument());
-      if (!hasOnlyKnownMetadata) {
-        // If unknown metadata exists we have to append it to the message (this is not that common
-        // because a Throwable "cause" is already handled separately).
-        message = appendContext(new StringBuilder(message), metadata);
-      }
+      message = formatLiteralMessage(logData, option, hasOnlyKnownMetadata);
     } else {
-      StringBuilder buffer = formatMessage(logData);
-      message = hasOnlyKnownMetadata ? buffer.toString() : appendContext(buffer, metadata);
+      StringBuilder buffer = formatMessage(logData, option);
+      if (!hasOnlyKnownMetadata) {
+        appendContext(buffer, metadata);
+      }
+      message = buffer.toString();
     }
     receiver.handleFormattedLogMessage(logData.getLevel(), message, thrown);
   }
@@ -171,9 +185,10 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
 
   /**
    * Formats a log message which contains placeholders (i.e. when a template context exists). This
-   * does not format only metadata, only the message and its arguments.
+   * does not format only metadata, only the message and its arguments. It may also prepend the
+   * message with the log site information (depending on the given formatting option).
    */
-  private static StringBuilder formatMessage(LogData logData) {
+  private static StringBuilder formatMessage(LogData logData, Option option) {
     SimpleMessageFormatter formatter =
         new SimpleMessageFormatter(logData.getTemplateContext(), logData.getArguments());
     StringBuilder out = formatter.build();
@@ -181,10 +196,13 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
       // TODO(dbeaumont): Do better and look at adding formatted values or maybe just a count?
       out.append(EXTRA_ARGUMENT_MESSAGE);
     }
+    if (option == Option.WITH_LOG_SITE) {
+      prependLogSite(out, logData.getLogSite());
+    }
     return out;
   }
 
-  private static String appendContext(StringBuilder out, Metadata metadata) {
+  private static void appendContext(StringBuilder out, Metadata metadata) {
     KeyValueFormatter kvf = new KeyValueFormatter("[CONTEXT ", " ]", out);
     Tags tags = null;
     for (int n = 0; n < metadata.size(); n++) {
@@ -201,7 +219,6 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
       tags.emitAll(kvf);
     }
     kvf.done();
-    return out.toString();
   }
 
   // Input argument array reference (not copied).
@@ -385,6 +402,42 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
         .append(", value=")
         .append(safeToString(value))
         .append("]");
+  }
+
+  private static String formatLiteralMessage(
+      LogData logData, Option option, boolean hasOnlyKnownMetadata) {
+    // If a literal message (no arguments) is logged and no metadata exists, just use the string.
+    // Having no format arguments is fairly common and this avoids allocating StringBuilders and
+    // formatter instances in a lot of situations.
+    String message = safeToString(logData.getLiteralArgument());
+    if (option == Option.DEFAULT && hasOnlyKnownMetadata) {
+      return message;
+    }
+
+    StringBuilder builder = new StringBuilder(message);
+    if (option == Option.WITH_LOG_SITE) {
+      prependLogSite(builder, logData.getLogSite());
+    }
+    if (!hasOnlyKnownMetadata) {
+      // If unknown metadata exists we have to append it to the message (this is not that common
+      // because a Throwable "cause" is already handled separately).
+      appendContext(builder, logData.getMetadata());
+    }
+    return builder.toString();
+  }
+
+  private static void prependLogSite(StringBuilder out, LogSite logSite) {
+    if (logSite == LogSite.INVALID) {
+      return;
+    }
+
+    int originalLength = out.length();
+    out.insert(0, logSite.getClassName());
+    out.insert(out.length() - originalLength, '.');
+    out.insert(out.length() - originalLength, logSite.getMethodName());
+    out.insert(out.length() - originalLength, ':');
+    out.insert(out.length() - originalLength, logSite.getLineNumber());
+    out.insert(out.length() - originalLength, ' ');
   }
 
   /**
