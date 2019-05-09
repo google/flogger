@@ -178,7 +178,7 @@ The following code fails with a `NullPointerException`:
 
 ```java
 private static final Data data = initStaticData();
-private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
 
 private static Data initStaticData() {
   logger.atInfo().log("Initializing static data");
