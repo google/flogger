@@ -235,6 +235,38 @@ public final class Tags {
     return EMPTY_TAGS;
   }
 
+  /**
+   * Returns a single tag without needing to use the builder API. Where multiple tags are needed,
+   * it is always better to use the builder directly.
+   */
+  public static Tags of(String name, String value) {
+    return builder().addTag(name, value).build();
+  }
+
+  /**
+   * Returns a single tag without needing to use the builder API. Where multiple tags are needed,
+   * it is always better to use the builder directly.
+   */
+  public static Tags of(String name, boolean value) {
+    return builder().addTag(name, value).build();
+  }
+
+  /**
+   * Returns a single tag without needing to use the builder API. Where multiple tags are needed,
+   * it is always better to use the builder directly.
+   */
+  public static Tags of(String name, long value) {
+    return builder().addTag(name, value).build();
+  }
+
+  /**
+   * Returns a single tag without needing to use the builder API. Where multiple tags are needed,
+   * it is always better to use the builder directly.
+   */
+  public static Tags of(String name, double value) {
+    return builder().addTag(name, value).build();
+  }
+
   private final SortedMap<String, SortedSet<Object>> map;
   private Integer hashCode = null;
   private String toString = null;
