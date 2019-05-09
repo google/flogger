@@ -38,33 +38,36 @@ public final class FormatTypeSubject extends Subject<FormatTypeSubject, FormatTy
   private static final Subject.Factory<FormatTypeSubject, FormatType> FORMAT_TYPE_SUBJECT_FACTORY =
       FormatTypeSubject::new;
 
+  private final FormatType actual;
+
   private FormatTypeSubject(FailureMetadata failureMetadata, @Nullable FormatType subject) {
     super(failureMetadata, subject);
+    this.actual = subject;
   }
 
   public void canFormat(Object arg) {
-    assertWithMessage("Unable to format " + arg + " using " + getSubject())
-        .that(getSubject().canFormat(arg))
+    assertWithMessage("Unable to format " + arg + " using " + actual)
+        .that(actual.canFormat(arg))
         .isTrue();
   }
 
   public void cannotFormat(Object arg) {
-    assertWithMessage("Expected error when formatting " + arg + " using " + getSubject())
-        .that(getSubject().canFormat(arg))
+    assertWithMessage("Expected error when formatting " + arg + " using " + actual)
+        .that(actual.canFormat(arg))
         .isFalse();
   }
 
   public void isNumeric() {
     check("isNumeric()")
-        .withMessage("Expected " + getSubject() + " to be numeric but wasn't")
-        .that(getSubject().isNumeric())
+        .withMessage("Expected " + actual + " to be numeric but wasn't")
+        .that(actual.isNumeric())
         .isTrue();
   }
 
   public void isNotNumeric() {
     check("isNumeric()")
-        .withMessage("Expected " + getSubject() + " to not be numeric but was")
-        .that(getSubject().isNumeric())
+        .withMessage("Expected " + actual + " to not be numeric but was")
+        .that(actual.isNumeric())
         .isFalse();
   }
 }

@@ -44,13 +44,16 @@ public final class LogDataSubject extends Subject<LogDataSubject, LogData> {
     return assertAbout(logData()).that(logData);
   }
 
+  private final LogData actual;
+
   private LogDataSubject(FailureMetadata failureMetadata, @Nullable LogData subject) {
     super(failureMetadata, subject);
+    this.actual = subject;
   }
 
   /** Asserts about the metadata of this log entry. */
   public MetadataSubject metadata() {
-    return check("getMetadata()").about(MetadataSubject.metadata()).that(actual().getMetadata());
+    return check("getMetadata()").about(MetadataSubject.metadata()).that(actual.getMetadata());
   }
 
   /**
@@ -59,13 +62,13 @@ public final class LogDataSubject extends Subject<LogDataSubject, LogData> {
    * {@code assertLogData(e).hasMessage(value);}.
    */
   public void hasMessage(Object messageOrLiteral) {
-    if (actual().getTemplateContext() == null) {
+    if (actual.getTemplateContext() == null) {
       // Expect literal argument (possibly null).
-      check("getLiteralArgument()").that(actual().getLiteralArgument()).isEqualTo(messageOrLiteral);
+      check("getLiteralArgument()").that(actual.getLiteralArgument()).isEqualTo(messageOrLiteral);
     } else {
       // Expect message string (non null).
       check("getTemplateContext().getMessage()")
-          .that(actual().getTemplateContext().getMessage())
+          .that(actual.getTemplateContext().getMessage())
           .isEqualTo(messageOrLiteral);
     }
   }
@@ -77,15 +80,15 @@ public final class LogDataSubject extends Subject<LogDataSubject, LogData> {
    */
   public void hasArguments(Object... args) {
     List<Object> actualArgs = ImmutableList.of();
-    if (actual().getTemplateContext() != null) {
-      actualArgs = Arrays.asList(actual().getArguments());
+    if (actual.getTemplateContext() != null) {
+      actualArgs = Arrays.asList(actual.getArguments());
     }
     check("getArguments()").that(actualArgs).containsExactly(args).inOrder();
   }
 
   /** Asserts that this log entry was forced. */
   public void wasForced() {
-    if (!actual().wasForced()) {
+    if (!actual.wasForced()) {
       failWithActual(simpleFact("expected to be forced"));
     }
   }
