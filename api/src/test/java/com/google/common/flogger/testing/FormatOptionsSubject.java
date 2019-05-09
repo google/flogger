@@ -39,122 +39,125 @@ public final class FormatOptionsSubject extends Subject<FormatOptionsSubject, Fo
   private static final Subject.Factory<FormatOptionsSubject, FormatOptions> FORMAT_OPTIONS_FACTORY =
       FormatOptionsSubject::new;
 
+  private final FormatOptions actual;
+
   private FormatOptionsSubject(FailureMetadata failureMetadata, @Nullable FormatOptions subject) {
     super(failureMetadata, subject);
+    this.actual = subject;
   }
 
   public void isDefault() {
-    if (!actual().isDefault()) {
+    if (!actual.isDefault()) {
       failWithActual(simpleFact("expected to be default"));
     }
   }
 
   public void hasPrecision(int precision) {
-    check("getPrecision()").that(actual().getPrecision()).isEqualTo(precision);
+    check("getPrecision()").that(actual.getPrecision()).isEqualTo(precision);
   }
 
   public void hasWidth(int width) {
-    check("getWidth()").that(actual().getWidth()).isEqualTo(width);
+    check("getWidth()").that(actual.getWidth()).isEqualTo(width);
   }
 
   public void hasNoFlags() {
-    if (actual().getFlags() != 0) {
+    if (actual.getFlags() != 0) {
       failWithActual(simpleFact("expected to have no flags"));
     }
   }
 
   public void shouldUpperCase() {
-    if (!actual().shouldUpperCase()) {
+    if (!actual.shouldUpperCase()) {
       failWithActual(simpleFact("expected to upper case"));
     }
   }
 
   public void shouldntUpperCase() {
-    if (actual().shouldUpperCase()) {
+    if (actual.shouldUpperCase()) {
       failWithActual(simpleFact("expected not to upper case"));
     }
   }
 
   public void shouldLeftAlign() {
-    if (!actual().shouldLeftAlign()) {
+    if (!actual.shouldLeftAlign()) {
       failWithActual(simpleFact("expected to left align"));
     }
   }
 
   public void shouldntLeftAlign() {
-    if (actual().shouldLeftAlign()) {
+    if (actual.shouldLeftAlign()) {
       failWithActual(simpleFact("expected not to left align"));
     }
   }
 
   public void shouldShowAltForm() {
-    if (!actual().shouldShowAltForm()) {
+    if (!actual.shouldShowAltForm()) {
       failWithActual(simpleFact("expected to show alt form"));
     }
   }
 
   public void shouldntShowAltForm() {
-    if (actual().shouldShowAltForm()) {
+    if (actual.shouldShowAltForm()) {
       failWithActual(simpleFact("expected not to show alt form"));
     }
   }
 
   public void shouldShowGrouping() {
-    if (!actual().shouldShowGrouping()) {
+    if (!actual.shouldShowGrouping()) {
       failWithActual(simpleFact("expected to show grouping"));
     }
   }
 
   public void shouldntShowGrouping() {
-    if (actual().shouldShowGrouping()) {
+    if (actual.shouldShowGrouping()) {
       failWithActual(simpleFact("expected not to show grouping"));
     }
   }
 
   public void shouldShowLeadingZeros() {
-    if (!actual().shouldShowLeadingZeros()) {
+    if (!actual.shouldShowLeadingZeros()) {
       failWithActual(simpleFact("expected to show leading zeros"));
     }
   }
 
   public void shouldntShowLeadingZeros() {
-    if (actual().shouldShowLeadingZeros()) {
+    if (actual.shouldShowLeadingZeros()) {
       failWithActual(simpleFact("expected not to show leading zeros"));
     }
   }
 
   public void shouldPrefixSpaceForPositiveValues() {
-    if (!actual().shouldPrefixSpaceForPositiveValues()) {
+    if (!actual.shouldPrefixSpaceForPositiveValues()) {
       failWithActual(simpleFact("expected to prefix space for positive values"));
     }
   }
 
   public void shouldntPrefixSpaceForPositiveValues() {
-    if (actual().shouldPrefixSpaceForPositiveValues()) {
+    if (actual.shouldPrefixSpaceForPositiveValues()) {
       failWithActual(simpleFact("expected not to prefix space for positive values"));
     }
   }
 
   public void shouldPrefixPlusForPositiveValues() {
-    if (!actual().shouldPrefixPlusForPositiveValues()) {
+    if (!actual.shouldPrefixPlusForPositiveValues()) {
       failWithActual(simpleFact("expected to prefix plus for positive values"));
     }
   }
 
   public void shouldntPrefixPlusForPositiveValues() {
-    if (actual().shouldPrefixPlusForPositiveValues()) {
+    if (actual.shouldPrefixPlusForPositiveValues()) {
       failWithActual(simpleFact("expected not to prefix plus for positive values"));
     }
   }
 
   public void areValidFor(FormatChar formatChar) {
-    if (!actual().areValidFor(formatChar)) {
+    if (!actual.areValidFor(formatChar)) {
       failWithActual("expected to be valid for", formatChar);
     }
   }
 
   public void areNotValidFor(FormatChar formatChar) {
-    if (actual().areValidFor(formatChar)) {
+    if (actual.areValidFor(formatChar)) {
       failWithActual("expected not to be valid for", formatChar);
     }
   }

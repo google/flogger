@@ -44,12 +44,15 @@ public final class MetadataSubject extends Subject<MetadataSubject, Metadata> {
     return assertAbout(metadata()).that(metadata);
   }
 
+  private final Metadata actual;
+
   private MetadataSubject(FailureMetadata failureMetadata, @Nullable Metadata subject) {
     super(failureMetadata, subject);
+    this.actual = subject;
   }
 
   private List<MetadataKey<?>> keyList() {
-    Metadata metadata = actual();
+    Metadata metadata = actual;
     List<MetadataKey<?>> keys = new ArrayList<>();
     for (int n = 0; n < metadata.size(); n++) {
       keys.add(metadata.getKey(n));
@@ -58,7 +61,7 @@ public final class MetadataSubject extends Subject<MetadataSubject, Metadata> {
   }
 
   private List<Object> valueList() {
-    Metadata metadata = actual();
+    Metadata metadata = actual;
     List<Object> values = new ArrayList<>();
     for (int n = 0; n < metadata.size(); n++) {
       values.add(metadata.getValue(n));
@@ -68,13 +71,13 @@ public final class MetadataSubject extends Subject<MetadataSubject, Metadata> {
 
   public void hasSize(int expectedSize) {
     checkArgument(expectedSize >= 0, "expectedSize(%s) must be >= 0", expectedSize);
-    check("size()").that(actual().size()).isEqualTo(expectedSize);
+    check("size()").that(actual.size()).isEqualTo(expectedSize);
   }
 
   public <T> void containsUniqueEntry(MetadataKey<T> key, T value) {
     checkNotNull(key, "key must not be null");
     checkNotNull(value, "value must not be null");
-    T actual = actual().findValue(key);
+    T actual = this.actual.findValue(key);
     if (actual == null) {
       failWithActual("expected to contain value for key", key);
     } else {
