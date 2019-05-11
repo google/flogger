@@ -14,6 +14,7 @@ package_group(
         "//api/...",
         "//google/...",
         "//log4j/...",
+        "//log4j2/...",
         "//slf4j/...",
         "//tools/...",
     ],
