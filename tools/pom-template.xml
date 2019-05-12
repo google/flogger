@@ -31,7 +31,7 @@
   <url>https://github.com/google/flogger</url>
 
   <scm>
-    <url>http://github.com/google/flogger/</url>
+    <url>https://github.com/google/flogger/</url>
     <connection>scm:git:git://github.com/google/flogger.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/google/flogger.git</developerConnection>
     <tag>HEAD</tag>
@@ -39,19 +39,19 @@
 
   <issueManagement>
     <system>GitHub Issues</system>
-    <url>http://github.com/google/flogger/issues</url>
+    <url>https://github.com/google/flogger/issues</url>
   </issueManagement>
 
   <licenses>
     <license>
       <name>Apache 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
 
   <organization>
     <name>Google, Inc.</name>
-    <url>http://www.google.com</url>
+    <url>https://www.google.com</url>
   </organization>
 
   <dependencies>
