@@ -29,10 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 
-/**
- * A <a href="https://github.com/google/truth">Truth</a> subject for {@link Metadata}.
- */
-public final class MetadataSubject extends Subject<MetadataSubject, Metadata> {
+/** A <a href="https://github.com/google/truth">Truth</a> subject for {@link Metadata}. */
+public final class MetadataSubject extends Subject {
   private static final Subject.Factory<MetadataSubject, Metadata> METADATA_SUBJECT_FACTORY =
       MetadataSubject::new;
 

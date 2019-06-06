@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  *
  * @author Kurt Alfred Kluever (kak@google.com)
  */
-public final class FormatTypeSubject extends Subject<FormatTypeSubject, FormatType> {
+public final class FormatTypeSubject extends Subject {
 
   public static FormatTypeSubject assertThat(@Nullable FormatType formatType) {
     return assertAbout(FormatTypeSubject.FORMAT_TYPE_SUBJECT_FACTORY).that(formatType);
