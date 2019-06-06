@@ -28,11 +28,9 @@ import java.util.Arrays;
 import java.util.List;
 import javax.annotation.Nullable;
 
-/**
- * A <a href="https://github.com/google/truth">Truth</a> subject for {@link LogData}.
- */
+/** A <a href="https://github.com/google/truth">Truth</a> subject for {@link LogData}. */
 @CheckReturnValue
-public final class LogDataSubject extends Subject<LogDataSubject, LogData> {
+public final class LogDataSubject extends Subject {
   private static final Subject.Factory<LogDataSubject, LogData> LOG_DATA_SUBJECT_FACTORY =
       LogDataSubject::new;
 
