@@ -65,12 +65,11 @@ final class AssertingLogger extends Logger {
   }
 
   /**
-   * Returns an AssertionLogger with the given name.
+   * Returns an AssertingLogger with the given name.
    *
-   * <p>If an AssertionLogger with this name was created before than the existing AssertionLogger
-   * instance is returned, otherwise a new AssertionLogger is created.
+   * <p>If an AssertingLogger with the given name already exists, then that instance is returned.
    *
-   * <p>It is safe to call this method in parallel tests but it's up to the caller to use unique
+   * <p>It is safe to call this method in parallel tests, but it's up to the caller to use unique
    * names if they want unique instances.
    *
    * @throws IllegalStateException if a logger with the given name already exists but is not an
@@ -85,7 +84,7 @@ final class AssertingLogger extends Logger {
     return (AssertingLogger) logger;
   }
 
-  private final List<AssertingLogger.LogEntry> entries = new ArrayList<>();
+  private final List<LogEntry> entries = new ArrayList<>();
 
   private AssertingLogger(String name) {
     super(name);
@@ -116,7 +115,7 @@ final class AssertingLogger extends Logger {
   }
 
   void assertLogEntry(int index, Level level, String message) {
-    AssertingLogger.LogEntry entry = entries.get(index);
+    LogEntry entry = entries.get(index);
     assertThat(entry.level).isEqualTo(level);
     assertThat(entry.message).isEqualTo(message);
     assertThat(entry.thrown).isNull();
