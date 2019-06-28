@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
  *
  * <ul>
  *   <li>{@code flogger.backend_factory=
- *       com.google.common.flogger.backend.log4j.Log4jBackendFactory#getInstance}.
+ *       com.google.common.flogger.backend.log4j.Log4jBackendFactory#getInstance}
  * </ul>
  */
 public final class Log4jBackendFactory extends BackendFactory {

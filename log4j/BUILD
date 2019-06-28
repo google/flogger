@@ -50,13 +50,10 @@ gen_java_tests(
         ":log4j_backend",
         "//api",
         "//api:testing",
-        "@google_bazel_common//third_party/java/auto:service",
         "@google_bazel_common//third_party/java/guava",
-        "@google_bazel_common//third_party/java/guava:testlib",
         "@google_bazel_common//third_party/java/jsr305_annotations",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/log4j",
-        "@google_bazel_common//third_party/java/mockito",
         "@google_bazel_common//third_party/java/truth",
     ],
 )
