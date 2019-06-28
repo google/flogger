@@ -66,6 +66,12 @@ deploy_library \
   log4j/pom.xml
 
 deploy_library \
+  log4j2/liblog4j2_backend.jar \
+  log4j2/liblog4j2_backend-src.jar \
+  log4j2/javadoc.jar \
+  log4j2/pom.xml
+
+deploy_library \
   slf4j/libslf4j_backend.jar \
   slf4j/libslf4j_backend-src.jar \
   slf4j/javadoc.jar \
