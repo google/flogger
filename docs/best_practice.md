@@ -8,7 +8,7 @@
 It's good to remember that a logging backend might not necessarily be outputting
 only plain text files. For a statement such as
 
-```java {.good}
+```java
 logger.atInfo().log("Received message is: %s", proto)
 ```
 
@@ -17,7 +17,7 @@ its original, structured form.
 
 On the other hand, with either of these calls:
 
-```java {.bad}
+```java
 logger.atInfo().log("Received message is: %s", proto.toString())
 logger.atInfo().log("Received message is: " + proto);
 ```
@@ -34,7 +34,7 @@ Flogger is designed to make disabled logging statements virtually free, so that
 more of them can be left intact in the code without harm. This is a great
 advantage, but unfortunately it can be defeated easily:
 
-```java {.bad}
+```java
 logger.atFine().log("stats=%s", createSummaryOf(stats));
 ```
 
@@ -47,7 +47,7 @@ Here's how to fix this problem, **in order of preference**.
 
 Import this method from the [`LazyArgs`] class.
 
-```java {.good}
+```java
 // Almost no work done at the log site and structure is preserved.
 logger.atFine().log("stats=%s", lazy(() -> createSummaryOf(stats)));
 ```
@@ -199,7 +199,7 @@ creating the misleading impression that multiple issues need investigating.
 
 A call such as:
 
-```java {.bad}
+```java
 Logger.getLogger(loggerName).setLevel(Level.FINE);
 ```
 
@@ -222,7 +222,7 @@ Flogger's "fluent" API is designed for log statements to exist as a single
 statement. The `Api` instance returned by a logger is not safe to use on its
 own.
 
-```java {.bad}
+```java
 GoogleLogger.Api api = logger.atInfo();
 ...
 api.log("message");
@@ -241,7 +241,7 @@ so if you think you really need to do it, please contact g/flogger-discuss.
 One misconception is that you need to do this to make conditional calls on
 fluent methods, such as:
 
-```java {.bad}
+```java
 GoogleLogger.Api api = logger.atInfo();
 if (wantRateLimiting) {
   api.atMostEvery(5, SECONDS);
@@ -259,7 +259,7 @@ This is never needed, since any fluent methods expected to be conditional accept
 
 Thus the above example can be written as:
 
-```java {.good}
+```java
 logger.atInfo()
     .atMostEvery(wantRateLimiting ? 5 : 0, SECONDS)
     .log("message");
@@ -274,7 +274,7 @@ helper methods, one legitimate use-case (which has lead to people wanting to
 split the logging API out) is the desire to implement project specific logging
 behaviour. The naïve way to write such a method might be:
 
-```java {.bad}
+```java
 /** Call this whenever a FooException is caught and handled. */
 public static void logFooFailure(FooException error, String message) {
   logger.at(getLogLevelFor(error))
@@ -299,7 +299,7 @@ Relying on specific implementation details like this makes code very fragile
 The way to handle this issue properly is to have the calling code invoke the
 [`logSite()`] method at the point where the helper is called.
 
-```java {.good}
+```java
 public static void logFooFailure(LogSite logSite, FooException error, String message) {
   logger.at(getLogLevelFor(error))
       .withInjectedLogSite(logSite)
@@ -310,7 +310,7 @@ public static void logFooFailure(LogSite logSite, FooException error, String mes
 
 And the calling code would do:
 
-```java {.good}
+```java
 // Failure in code path A
 logFooFailure(logSite(), errA, "bad things happened");
 ...
