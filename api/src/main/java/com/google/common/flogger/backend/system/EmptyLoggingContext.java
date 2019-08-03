@@ -36,6 +36,11 @@ public final class EmptyLoggingContext extends LoggingContext {
   }
 
   @Override
+  public Level getForceLoggingLevelOnLevelUnable() {
+    return null;
+  }
+
+  @Override
   public Tags getTags() {
     return Tags.empty();
   }

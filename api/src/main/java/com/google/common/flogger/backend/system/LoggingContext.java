@@ -54,6 +54,13 @@ public abstract class LoggingContext {
       String loggerName, Level level, boolean isEnabledByLevel);
 
   /**
+   * Returns new Level, try to make backend log statement enabled. When {@code isEnabledByLevel} is false and {@link #shouldForceLogging(String, Level, boolean)} returns true.
+   *
+   * @return new Level, or null to use the original level.
+   */
+  public abstract Level getForceLoggingLevelOnLevelUnable();
+
+  /**
    * Returns a set of tags to be added to a log statement. These tags can be used to provide
    * additional contextual metadata to log statements (e.g. request IDs).
    *

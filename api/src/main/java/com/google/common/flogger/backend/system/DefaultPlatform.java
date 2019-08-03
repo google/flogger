@@ -94,6 +94,11 @@ public class DefaultPlatform extends Platform {
   }
 
   @Override
+  protected Level getForceLoggingLevelOnLevelUnableImpl() {
+    return context.getForceLoggingLevelOnLevelUnable();
+  }
+
+  @Override
   protected Tags getInjectedTagsImpl() {
     return context.getTags();
   }

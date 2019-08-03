@@ -180,6 +180,14 @@ public abstract class Platform {
     return false;
   }
 
+  public static Level getForceLoggingLevelOnLevelUnable() {
+    return LazyHolder.INSTANCE.getForceLoggingLevelOnLevelUnableImpl();
+  }
+
+  protected Level getForceLoggingLevelOnLevelUnableImpl() {
+    return null;
+  }
+
   public static Tags getInjectedTags() {
     return LazyHolder.INSTANCE.getInjectedTagsImpl();
   }

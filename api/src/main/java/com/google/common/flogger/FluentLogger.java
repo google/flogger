@@ -80,6 +80,12 @@ public final class FluentLogger extends AbstractLogger<FluentLogger.Api> {
   public Api at(Level level) {
     boolean isLoggable = isLoggable(level);
     boolean isForced = Platform.shouldForceLogging(getName(), level, isLoggable);
+    if (!isLoggable && isForced) {
+      Level forceLoggingLevel = Platform.getForceLoggingLevelOnLevelUnable();
+      if (forceLoggingLevel != null) {
+        level = forceLoggingLevel;
+      }
+    }
     return (isLoggable || isForced) ? new Context(level, isForced) : NO_OP;
   }
 
