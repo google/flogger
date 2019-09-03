@@ -36,3 +36,22 @@ javadoc_library(
     root_packages = ["com.google.common.flogger.backend.log4j2"],
     deps = [":log4j2_backend"],
 )
+
+# ---- Unit Tests ----
+
+load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
+
+gen_java_tests(
+    name = "log4j2_tests",
+    srcs = glob(["src/test/java/**/*.java"]),
+    deps = [
+        ":log4j2_backend",
+        "//api",
+        "//api:testing",
+        "@google_bazel_common//third_party/java/guava",
+        "@google_bazel_common//third_party/java/jsr305_annotations",
+        "@google_bazel_common//third_party/java/junit",
+        "@google_bazel_common//third_party/java/log4j2",
+        "@google_bazel_common//third_party/java/truth",
+    ],
+)
