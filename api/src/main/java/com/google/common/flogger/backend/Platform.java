@@ -36,9 +36,6 @@ import java.util.logging.Level;
  */
 public abstract class Platform {
   // non-final to prevent javac inlining.
-  @SuppressWarnings("ConstantField")
-  private static String ANDROID_PLATFORM =
-      "com.google.common.flogger.backend.android.AndroidPlatform";
 
   // non-final to prevent javac inlining.
 
