@@ -1,4 +1,5 @@
 # Flogger: A Fluent Logging API for Java
+[![Maven Central](https://img.shields.io/maven-central/v/com.google.flogger/flogger.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.google.flogger%22%20AND%20a:%22flogger%22&core=gav) [![Javadocs](https://javadoc.io/badge/com.google.flogger/flogger.svg)](https://javadoc.io/doc/com.google.flogger/flogger)
 
 ## What is it?
 
