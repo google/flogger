@@ -40,7 +40,6 @@ public interface LogData {
   long getTimestampMicros();
 
   /** Returns a nanosecond timestamp for the current log statement. */
-  @SuppressWarnings("GoodTime") // should return a java.time.Instant
   long getTimestampNanos();
 
   /**
