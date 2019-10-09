@@ -35,10 +35,10 @@ public final class FakeMetadata extends Metadata {
     }
   }
 
-  private final List<KeyValuePair> entries = new ArrayList<>();
+  private final List<KeyValuePair<?>> entries = new ArrayList<>();
 
   public <T> FakeMetadata add(MetadataKey<T> key, T value) {
-    entries.add(new KeyValuePair(key, value));
+    entries.add(new KeyValuePair<T>(key, value));
     return this;
   }
 
@@ -56,7 +56,7 @@ public final class FakeMetadata extends Metadata {
   @Override
   @Nullable
   public <T> T findValue(MetadataKey<T> key) {
-    for (KeyValuePair e : entries) {
+    for (KeyValuePair<?> e : entries) {
       if (e.key.equals(key)) {
         return key.cast(e.value);
       }
