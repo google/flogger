@@ -79,17 +79,17 @@ public class LogContextTest {
     FluentLogger logger = new FluentLogger(backend);
 
     // Cannot use Java8 lambdas here (these tests need to run on earlier Java versions).
-    LazyArg lazy = new LazyArg() {
+    LazyArg<String> lazy = new LazyArg<String>() {
       @Override
-      public Object evaluate() {
+      public String evaluate() {
         return "World";
       }
     };
     logger.atInfo().log("Hello %s", lazy);
 
-    LazyArg lazyFail = new LazyArg() {
+    LazyArg<String> lazyFail = new LazyArg<String>() {
       @Override
-      public Object evaluate() {
+      public String evaluate() {
         throw new RuntimeException(
             "Lazy arguments should not be evaluated in a disabled log statement");
       }
