@@ -19,7 +19,7 @@ package com.google.common.flogger;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * A value type which representing the location of a single log statement. This class is similar to
@@ -144,7 +144,7 @@ public abstract class LogSite implements LogSiteKey {
       String internalClassName,
       String methodName,
       int encodedLineNumber,
-      @Nullable String sourceFileName) {
+      @NullableDecl String sourceFileName) {
     return new InjectedLogSite(internalClassName, methodName, encodedLineNumber, sourceFileName);
   }
 

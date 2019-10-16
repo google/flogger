@@ -21,7 +21,7 @@ import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.backend.Tags;
 import com.google.common.flogger.util.Checks;
 import java.util.logging.Level;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * The default fluent logger platform for a server-side Java environment. The default platform
@@ -119,7 +119,7 @@ public class DefaultPlatform extends Platform {
    * @return the return value of the specified static no-argument method, or null if the method
    *     cannot be called or the returned value is of the wrong type.
    */
-  @Nullable
+  @NullableDecl
   private static <T> T resolveAttribute(String attributeName, Class<T> type) {
     String getter = readProperty(attributeName);
     if (getter == null) {

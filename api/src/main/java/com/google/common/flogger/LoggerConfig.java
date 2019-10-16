@@ -27,7 +27,7 @@ import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * An adapter for the configuration specific aspects of a JDK logger which retains a strong
@@ -140,35 +140,35 @@ public final class LoggerConfig {
   }
 
   /** See {@link Logger#getResourceBundle()}. */
-  @Nullable
+  @NullableDecl
   public ResourceBundle getResourceBundle() {
     return logger.getResourceBundle();
   }
 
   /** See {@link Logger#getResourceBundleName()}. */
-  @Nullable
+  @NullableDecl
   public String getResourceBundleName() {
     return logger.getResourceBundleName();
   }
 
   /** See {@link Logger#setFilter(Filter)}. */
-  public void setFilter(@Nullable Filter newFilter) throws SecurityException {
+  public void setFilter(@NullableDecl Filter newFilter) throws SecurityException {
     logger.setFilter(newFilter);
   }
 
   /** See {@link Logger#getFilter()}. */
-  @Nullable
+  @NullableDecl
   public Filter getFilter() {
     return logger.getFilter();
   }
 
   /** See {@link Logger#setLevel(Level)}. */
-  public void setLevel(@Nullable Level newLevel) throws SecurityException {
+  public void setLevel(@NullableDecl Level newLevel) throws SecurityException {
     logger.setLevel(newLevel);
   }
 
   /** See {@link Logger#getLevel()}. */
-  @Nullable
+  @NullableDecl
   public Level getLevel() {
     return logger.getLevel();
   }
@@ -206,7 +206,7 @@ public final class LoggerConfig {
   }
 
   /** See {@link Logger#getParent()}. */
-  @Nullable
+  @NullableDecl
   public Logger getParent() {
     return logger.getParent();
   }

@@ -49,7 +49,6 @@ gen_java_tests(
         "//api",
         "//api:testing",
         "@google_bazel_common//third_party/java/guava",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/log4j2",
         "@google_bazel_common//third_party/java/truth",

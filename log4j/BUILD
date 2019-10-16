@@ -16,7 +16,6 @@ java_library(
     deps = [
         "//api",
         "//api:system_backend",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
         "@google_bazel_common//third_party/java/log4j",
     ],
 )
@@ -50,8 +49,8 @@ gen_java_tests(
         ":log4j_backend",
         "//api",
         "//api:testing",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/guava",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/log4j",
         "@google_bazel_common//third_party/java/truth",

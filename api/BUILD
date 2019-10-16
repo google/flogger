@@ -66,6 +66,7 @@ java_library(
         ":platform_provider",
         ":stack",
         ":tags",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
         "@google_bazel_common//third_party/java/jsr305_annotations",
     ],
@@ -151,8 +152,8 @@ java_library(
     javacopts = ["-source 1.6 -target 1.6"],
     deps = [
         ":checks",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
     ],
 )
 
@@ -164,7 +165,7 @@ java_library(
     javacopts = ["-source 1.6 -target 1.6"],
     deps = [
         ":checks",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
     ],
 )
 
@@ -177,8 +178,8 @@ java_library(
     deps = [
         ":api",
         ":checks",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
     ],
 )
 
@@ -188,10 +189,7 @@ java_library(
     name = "stack",
     srcs = STACK_SRCS,
     javacopts = ["-source 1.6 -target 1.6"],
-    deps = [
-        "@google_bazel_common//third_party/java/error_prone:annotations",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
-    ],
+    deps = ["@google_bazel_common//third_party/java/checker_framework_annotations"],
 )
 
 # A separate library for exposing just the 'LogSite' class. This is exported as
@@ -202,8 +200,8 @@ java_library(
     javacopts = ["-source 1.6 -target 1.6"],
     deps = [
         ":checks",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
     ],
 )
 
@@ -216,12 +214,7 @@ java_library(
     srcs = LOG_SITE_HELPER_SRCS,
     javacopts = ["-source 1.6 -target 1.6"],
     exports = [":log_site"],
-    deps = [
-        ":api",
-        ":log_site",
-        "@google_bazel_common//third_party/java/error_prone:annotations",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
-    ],
+    deps = [":api"],
 )
 
 # Core library to implement a JDK compatible backend for Flogger.
@@ -235,8 +228,7 @@ java_library(
     deps = [
         ":api",
         ":checks",
-        ":log_site",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
     ],
 )
 
@@ -270,10 +262,9 @@ java_library(
     deps = [
         ":api",
         ":checks",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
         "@google_bazel_common//third_party/java/guava",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
-        "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/truth",
     ],
 )
@@ -349,6 +340,7 @@ gen_java_tests(
         ":system_backend",
         ":testing",
         "@google_bazel_common//third_party/java/auto:service",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/guava:testlib",
         "@google_bazel_common//third_party/java/jsr305_annotations",
