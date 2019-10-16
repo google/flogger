@@ -56,42 +56,46 @@ public enum FormatChar {
    * <p>
    * This is a numeric format.
    */
-  DECIMAL('d', FormatType.INTEGRAL, "-0+ ,", false  /* lower-case only */),
+  DECIMAL('d', FormatType.INTEGRAL, "-0+ ,(", false  /* lower-case only */),
 
   /**
    * Formats the argument as an unsigned octal integer.
    * <p>
    * This is a numeric format.
+   * <p>
+   * '(' is only supported for {@link java.math.BigInteger} or {@link java.math.BigDecimal}
    */
-  OCTAL('o', FormatType.INTEGRAL, "-#0", false  /* lower-case only */),
+  OCTAL('o', FormatType.INTEGRAL, "-#0(", false  /* lower-case only */),
 
   /**
    * Formats the argument as an unsigned hexadecimal integer.
    * <p>
    * This is a numeric format with an upper-case variant.
+   * <p>
+   * '(' is only supported for {@link java.math.BigInteger} or {@link java.math.BigDecimal}
    */
-  HEX('x', FormatType.INTEGRAL, "-#0", true /* upper-case variant */),
+  HEX('x', FormatType.INTEGRAL, "-#0(", true /* upper-case variant */),
 
   /**
    * Formats the argument as a signed decimal floating value.
    * <p>
    * This is a numeric format.
    */
-  FLOAT('f', FormatType.FLOAT, "-#0+ ,", false  /* lower-case only */),
+  FLOAT('f', FormatType.FLOAT, "-#0+ ,(", false  /* lower-case only */),
 
   /**
    * Formats the argument using computerized scientific notation.
    * <p>
    * This is a numeric format with an upper-case variant.
    */
-  EXPONENT('e', FormatType.FLOAT, "-#0+ ", true /* upper-case variant */),
+  EXPONENT('e', FormatType.FLOAT, "-#0+ (", true /* upper-case variant */),
 
   /**
    * Formats the argument using general scientific notation.
    * <p>
    * This is a numeric format with an upper-case variant.
    */
-  GENERAL('g', FormatType.FLOAT, "-0+ ,", true /* upper-case variant */),
+  GENERAL('g', FormatType.FLOAT, "-0+ ,(", true /* upper-case variant */),
 
   /**
    * Formats the argument using hexadecimal exponential form. This formatting option is primarily

@@ -55,36 +55,50 @@ public class FormatCharTest {
     assertFormatType(FormatType.FLOAT, FLOAT, GENERAL, EXPONENT, EXPONENT_HEX);
   }
 
+  // Testing the exact set of allowed flags for each format type.
   @Test
-  public void testCase() {
+  public void testAllowedFlags() {
     // Grouped by similar allowed flags.
     assertFlags(FormatChar.STRING, "-#", true);
 
     assertFlags(FormatChar.BOOLEAN, "-", true);
     assertFlags(FormatChar.CHAR, "-", true);
 
-    assertFlags(FormatChar.DECIMAL, "-0+ ,", false);
-    assertFlags(FormatChar.GENERAL, "-0+ ,", true);
+    assertFlags(FormatChar.DECIMAL, "(-0+ ,", false);
+    assertFlags(FormatChar.GENERAL, "-0(+ ,", true);
 
-    assertFlags(FormatChar.HEX, "-#0", true);
-    assertFlags(FormatChar.OCTAL, "-#0", false);
+    assertFlags(FormatChar.HEX, "-#(0", true);
+    assertFlags(FormatChar.OCTAL, "-(#0", false);
 
-    assertFlags(FormatChar.FLOAT, "-#0+ ,", false);
+    assertFlags(FormatChar.FLOAT, "-#0+ ,(", false);
 
-    assertFlags(FormatChar.EXPONENT, "-#0+ ", true);
+    assertFlags(FormatChar.EXPONENT, "-#0+ (", true);
     assertFlags(FormatChar.EXPONENT_HEX, "-#0+ ", true);
   }
 
+  // Testing conditional rules and special cases for flags/width/precision etc.
+  // See also the "Details" section in:
+  // https://docs.oracle.com/javase/9/docs/api/java/util/Formatter.html
+  // These are not exhaustive tests for all illegal formatting options.
   @Test
   public void testAppendPrintfBadOptions() {
+    // String formatting cannot have zero padding.
     assertThat(parseOptions("#016").areValidFor(STRING)).isFalse();
+    // Integer formatting cannot have precision.
     assertThat(parseOptions("10.5").areValidFor(DECIMAL)).isFalse();
+    // Exponential formatting cannot use grouping (even though other numeric formats do).
     assertThat(parseOptions(",").areValidFor(EXPONENT)).isFalse();
+    // Gereral scientific notation cannot specify a radix.
     assertThat(parseOptions("#").areValidFor(GENERAL)).isFalse();
+    // Octal numbers are never negative, so ' ' is not meaningful.
     assertThat(parseOptions(" ").areValidFor(OCTAL)).isFalse();
     // Left alignment or zero padding must have a width.
     assertThat(parseOptions("-").areValidFor(DECIMAL)).isFalse();
     assertThat(parseOptions("0").areValidFor(HEX)).isFalse();
+
+    // Assert that '(' is not valid for other formats
+    assertThat(parseOptions("(").areValidFor(EXPONENT_HEX)).isFalse();
+    assertThat(parseOptions("(").areValidFor(STRING)).isFalse();
   }
 
   private static FormatOptions parseOptions(String s) {
