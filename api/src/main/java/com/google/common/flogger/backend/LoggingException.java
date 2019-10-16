@@ -16,7 +16,7 @@
 
 package com.google.common.flogger.backend;
 
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * Exception thrown when a log statement cannot be emitted correctly. This exception should only be
@@ -30,11 +30,11 @@ import javax.annotation.Nullable;
  */
 public class LoggingException extends RuntimeException {
 
-  public LoggingException(@Nullable String message) {
+  public LoggingException(@NullableDecl String message) {
     super(message);
   }
 
-  public LoggingException(@Nullable String message, @Nullable Throwable cause) {
+  public LoggingException(@NullableDecl String message, @NullableDecl Throwable cause) {
     super(message, cause);
   }
 }

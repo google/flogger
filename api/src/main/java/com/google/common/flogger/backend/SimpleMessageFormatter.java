@@ -39,7 +39,7 @@ import java.util.FormattableFlags;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.logging.Level;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * Helper class for formatting LogData as text. This class is useful for any logging backend which
@@ -61,7 +61,7 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
      * Handles a single formatted log statement with the given level, message and "cause". This is
      * called back exactly once, from the same thread, for every call made to {@link #format}.
      */
-    void handleFormattedLogMessage(Level level, String message, @Nullable Throwable thrown);
+    void handleFormattedLogMessage(Level level, String message, @NullableDecl Throwable thrown);
   }
 
   /**

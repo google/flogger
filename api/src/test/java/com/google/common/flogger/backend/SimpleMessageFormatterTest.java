@@ -35,7 +35,7 @@ import java.util.FormatFlagsConversionMismatchException;
 import java.util.Formattable;
 import java.util.Formatter;
 import java.util.logging.Level;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -279,7 +279,7 @@ public class SimpleMessageFormatterTest {
         private String captured = null;
 
         @Override
-        public void handleFormattedLogMessage(Level lvl, String msg, @Nullable Throwable e) {
+        public void handleFormattedLogMessage(Level lvl, String msg, @NullableDecl Throwable e) {
           captured = msg;
         }
 

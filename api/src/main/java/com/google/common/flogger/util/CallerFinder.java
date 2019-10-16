@@ -19,7 +19,7 @@ package com.google.common.flogger.util;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /** A helper class for determining callers of a specified class currently on the stack. */
 @CheckReturnValue
@@ -40,7 +40,7 @@ public final class CallerFinder {
    * @return the stack trace element representing the immediate caller of the specified class, or
    *     null if no caller was found (due to incorrect target, wrong skip count or use of JNI).
    */
-  @Nullable
+  @NullableDecl
   public static StackTraceElement findCallerOf(Class<?> target, Throwable throwable, int skip) {
     checkNotNull(target, "target");
     checkNotNull(throwable, "throwable");
@@ -85,7 +85,6 @@ public final class CallerFinder {
    *     the empty array if no caller was found (due to incorrect target, wrong skip count or use
    *     of JNI).
    */
-  @Nullable
   public static StackTraceElement[] getStackForCallerOf(
       Class<?> target, Throwable throwable, int maxDepth) {
     checkNotNull(target, "target");
