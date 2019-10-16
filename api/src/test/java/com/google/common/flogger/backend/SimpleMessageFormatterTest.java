@@ -19,14 +19,19 @@ package com.google.common.flogger.backend;
 import static com.google.common.flogger.backend.FormatOptions.FLAG_UPPER_CASE;
 import static com.google.common.flogger.backend.FormatOptions.UNSET;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
 
 import com.google.common.flogger.LogContext.Key;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.SimpleMessageFormatter.Option;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
+import com.google.common.flogger.parser.ParseException;
 import com.google.common.flogger.testing.FakeLogData;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.FormatFlagsConversionMismatchException;
 import java.util.Formattable;
 import java.util.Formatter;
 import java.util.logging.Level;
@@ -109,6 +114,76 @@ public class SimpleMessageFormatterTest {
   }
 
   @Test
+  public void testNumberFormatting() {
+    // TODO: add more tests with other flags '#', ',', ' ', '-', '+'
+    assertThat(log("%d", -123)).isEqualTo("-123");
+    assertThat(log("%d", -123L)).isEqualTo("-123");
+    assertThat(log("%G", -123f)).isEqualTo("-123.000");
+    assertThat(log("%e", -123f)).isEqualTo("-1.230000e+02");
+    assertThat(log("%f", -123f)).isEqualTo("-123.000000");
+    assertThat(log("%g", -123.456789)).isEqualTo("-123.457");
+    assertThat(log("%.6G", -123.456789)).isEqualTo("-123.457"); // Precision is ignored
+    assertThat(log("%.8E", -123.456789)).isEqualTo("-1.23456789E+02");
+    assertThat(log("%f", -123.456789)).isEqualTo("-123.456789");
+
+    assertThat(log("%(d", 123)).isEqualTo("123");
+    assertThat(log("%(d", -123)).isEqualTo("(123)");
+    assertThat(log("%(d", -123L)).isEqualTo("(123)");
+    assertThat(log("%(g", -123f)).isEqualTo("(123.000)");
+    assertThat(log("%(E", -123f)).isEqualTo("(1.230000E+02)");
+    assertThat(log("%(f", -123f)).isEqualTo("(123.000000)");
+    assertThat(log("%(4.10f", -123f)).isEqualTo("(123.0000000000)");
+    assertThat(log("%(1.2f", -123f)).isEqualTo("(123.00)");
+    assertThat(log("%(.2f", -123f)).isEqualTo("(123.00)");
+    assertThat(log("%(f", -123.0)).isEqualTo("(123.000000)");
+
+    // Hex int and BigInteger
+    assertThat(log("%x", 123)).isEqualTo("7b");
+    assertThat(log("%X", -123)).isEqualTo("FFFFFF85");
+    assertThat(log("%x", BigInteger.valueOf(123))).isEqualTo("7b");
+    assertThat(log("%X", BigInteger.valueOf(-123))).isEqualTo("-7B");
+    assertThat(log("%(x", BigInteger.valueOf(-123))).isEqualTo("(7b)");
+    assertThat(log("%(x", BigInteger.valueOf(123))).isEqualTo("7b");
+
+    // Octal ints and BigInteger
+    assertThat(log("%o", 123)).isEqualTo("173");
+    assertThat(log("%o", -123)).isEqualTo("37777777605");
+    assertThat(log("%o", BigInteger.valueOf(123))).isEqualTo("173");
+    assertThat(log("%o", BigInteger.valueOf(-123))).isEqualTo("-173");
+    assertThat(log("%(o", BigInteger.valueOf(-123))).isEqualTo("(173)");
+    assertThat(log("%(o", BigInteger.valueOf(123))).isEqualTo("173");
+
+    // BigDecimal
+    assertThat(log("%f", BigDecimal.ONE)).isEqualTo("1.000000");
+    assertThat(log("%f", BigDecimal.valueOf(-1234.56789))).isEqualTo("-1234.567890");
+    assertThat(log("%g", BigDecimal.ONE)).isEqualTo("1.00000");
+    assertThat(log("%g", BigDecimal.valueOf(-123456789))).isEqualTo("-1.23457e+08");
+    assertThat(log("%G", BigDecimal.valueOf(-1234.56789))).isEqualTo("-1234.57");
+    assertThat(log("%G", BigDecimal.valueOf(-123456789))).isEqualTo("-1.23457E+08");
+    assertThat(log("%e", BigDecimal.valueOf(1234.56789))).isEqualTo("1.234568e+03");
+    assertThat(log("%E", BigDecimal.valueOf(-1234.56789))).isEqualTo("-1.234568E+03");
+    assertThat(log("%(f", BigDecimal.valueOf(-1234.56789))).isEqualTo("(1234.567890)");
+    assertThat(log("%(g", BigDecimal.valueOf(-1234.56789))).isEqualTo("(1234.57)");
+    assertThat(log("%(e", BigDecimal.valueOf(-1234.56789))).isEqualTo("(1.234568e+03)");
+  }
+
+  @Test
+  public void testInvalidFlags() {
+    assertFormatFailure("%(s", 123);
+    assertFormatFailure("%(b", 123);
+    assertFormatFailure("%(s", -123);
+    assertFormatFailure("%(b", -123);
+  }
+
+  @Test
+  public void testFormatFlagsConversionMismatchException() {
+    assertFormatFlagsConversionMismatchException("%(x", 123);
+    assertFormatFlagsConversionMismatchException("%(o", 123);
+    assertFormatFlagsConversionMismatchException("%(x", -123);
+    assertFormatFlagsConversionMismatchException("%(o", -123);
+  }
+
+  @Test
   public void testFormatWithOption() {
     assertThat(logWithOption(Option.DEFAULT, "Hello World")).isEqualTo("Hello World");
     assertThat(logWithOption(Option.WITH_LOG_SITE, "Hello World"))
@@ -145,6 +220,22 @@ public class SimpleMessageFormatterTest {
     };
     assertThat(log("%s", arg)).contains("java.lang.RuntimeException: Badness!!");
     assertThat(log("%s", arg)).doesNotContain("UNEXPECTED");
+  }
+
+  private static void assertFormatFailure(String format, Object arg) {
+    try {
+      log(format, arg);
+      fail("expected ParseException");
+    } catch (ParseException expected) {
+    }
+  }
+
+  private static void assertFormatFlagsConversionMismatchException(String format, Object arg) {
+    try {
+      log(format, arg);
+      fail("expected FormatFlagsConversionMismatchException");
+    } catch (FormatFlagsConversionMismatchException expected) {
+    }
   }
 
   private static String formatHex(Number n, FormatOptions options) {

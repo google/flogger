@@ -344,7 +344,7 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
       default:
         // Fall through.
     }
-    // Default handle for rare cases that need non-tivial formatting.
+    // Default handle for rare cases that need non-trivial formatting.
     String formatString = format.getDefaultFormatString();
     if (!options.isDefault()) {
       char chr = format.getChar();
