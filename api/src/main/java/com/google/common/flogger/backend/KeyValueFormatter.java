@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.backend;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
@@ -56,17 +57,16 @@ class KeyValueFormatter implements KeyValueHandler {
   private static final int NEWLINE_LIMIT = 1000;
 
   // All fundamental types other than "Character", since that can require escaping.
-  private static final Set<Class<?>> FUNDAMENTAL_TYPES = new HashSet<Class<?>>();
-
-  {
-    FUNDAMENTAL_TYPES.add(Boolean.class);
-    FUNDAMENTAL_TYPES.add(Byte.class);
-    FUNDAMENTAL_TYPES.add(Short.class);
-    FUNDAMENTAL_TYPES.add(Integer.class);
-    FUNDAMENTAL_TYPES.add(Long.class);
-    FUNDAMENTAL_TYPES.add(Float.class);
-    FUNDAMENTAL_TYPES.add(Double.class);
-  }
+  private static final Set<Class<?>> FUNDAMENTAL_TYPES =
+      new HashSet<Class<?>>(
+          Arrays.asList(
+              Boolean.class,
+              Byte.class,
+              Short.class,
+              Integer.class,
+              Long.class,
+              Float.class,
+              Double.class));
 
   // The prefix to add before the key/value pairs (e.g. [<prefix>[ foo=bar ])
   private final String prefix;
