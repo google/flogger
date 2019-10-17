@@ -21,8 +21,6 @@
  * <a href="https://google.github.io/flogger">Flogger library</a>.
  */
 @CheckReturnValue
-@ParametersAreNonnullByDefault
 package com.google.common.flogger.parser;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import javax.annotation.ParametersAreNonnullByDefault;
