@@ -115,7 +115,7 @@ public class SimpleMessageFormatterTest {
 
   @Test
   public void testNumberFormatting() {
-    // TODO: add more tests with other flags '#', ',', ' ', '-', '+'
+    // TODO: add more tests with other flags ',', ' ', '-', '+'
     assertThat(log("%d", -123)).isEqualTo("-123");
     assertThat(log("%d", -123L)).isEqualTo("-123");
     assertThat(log("%G", -123f)).isEqualTo("-123.000");
@@ -132,6 +132,7 @@ public class SimpleMessageFormatterTest {
     assertThat(log("%(g", -123f)).isEqualTo("(123.000)");
     assertThat(log("%(E", -123f)).isEqualTo("(1.230000E+02)");
     assertThat(log("%(f", -123f)).isEqualTo("(123.000000)");
+    assertThat(log("%(.0f", -123f)).isEqualTo("(123)");
     assertThat(log("%(4.10f", -123f)).isEqualTo("(123.0000000000)");
     assertThat(log("%(1.2f", -123f)).isEqualTo("(123.00)");
     assertThat(log("%(.2f", -123f)).isEqualTo("(123.00)");
@@ -165,6 +166,12 @@ public class SimpleMessageFormatterTest {
     assertThat(log("%(f", BigDecimal.valueOf(-1234.56789))).isEqualTo("(1234.567890)");
     assertThat(log("%(g", BigDecimal.valueOf(-1234.56789))).isEqualTo("(1234.57)");
     assertThat(log("%(e", BigDecimal.valueOf(-1234.56789))).isEqualTo("(1.234568e+03)");
+
+    // '#' tests
+    assertThat(log("%#o", -123)).isEqualTo("037777777605");
+    assertThat(log("%#x", 123)).isEqualTo("0x7b");
+    assertThat(log("%#X", 123)).isEqualTo("0X7B");
+    assertThat(log("%#.0f", 123.)).isEqualTo("123.");
   }
 
   @Test
@@ -173,6 +180,11 @@ public class SimpleMessageFormatterTest {
     assertFormatFailure("%(b", 123);
     assertFormatFailure("%(s", -123);
     assertFormatFailure("%(b", -123);
+
+    assertFormatFailure("%#h", "foo");
+    assertFormatFailure("%#b", true);
+    assertFormatFailure("%#d", 123);
+    assertFormatFailure("%#g", BigDecimal.ONE);
   }
 
   @Test
