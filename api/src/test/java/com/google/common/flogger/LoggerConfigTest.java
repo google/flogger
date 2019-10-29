@@ -29,13 +29,17 @@ import org.junit.runners.JUnit4;
 public class LoggerConfigTest {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  static class MemberClass {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  }
+
   @Test
   public void testFromLogger() {
     LoggerConfig config = LoggerConfig.of(logger);
     assertThat(config.getName()).isEqualTo(LoggerConfigTest.class.getName());
   }
 
-@Test
+  @Test
   public void testClassAndPackageNaming() {
     // Simple class/package naming.
     assertThat(LoggerConfig.getConfig(LoggerConfigTest.class).getName())
@@ -63,5 +67,17 @@ public class LoggerConfigTest {
     } finally {
       config.removeHandler(dummyHandler);
     }
+  }
+
+  @Test
+  public void memberClass_byLogger() {
+    LoggerConfig config = LoggerConfig.of(MemberClass.logger);
+    assertThat(config.getName()).isEqualTo(MemberClass.class.getCanonicalName());
+  }
+
+  @Test
+  public void memberClass_byClass() {
+    LoggerConfig config = LoggerConfig.getConfig(MemberClass.class);
+    assertThat(config.getName()).isEqualTo(MemberClass.class.getCanonicalName());
   }
 }
