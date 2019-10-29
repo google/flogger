@@ -98,7 +98,8 @@ public final class LoggerConfig {
    * @param clazz the class whose logger is to be configured via this API.
    */
   public static LoggerConfig getConfig(Class<?> clazz) {
-    return getConfig(clazz.getName());
+    // TODO(b/27920233): Strip inner/nested classes when deriving logger name.
+    return getConfig(clazz.getName().replace('$', '.'));
   }
 
   /**
