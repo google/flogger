@@ -172,6 +172,35 @@ backends may choose to handle this differently though.
 
 [`StackSize`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/StackSize.java
 
+## Loggers should always be `private static final` {#modifiers}
+
+Why `final`? The logger for a class should never need to change. If you need to
+change logging configuration at runtime, you can do that through LoggerConfig.
+Replacing the logger itself is disruptive for no particular upside.
+
+Why `static`? Most obviously, some loggers *must* be static, because they will
+be used from static initializers. And since logger usage should be consistent
+throughout a codebase, this implies all loggers should be static. Logging
+behavior should be the same throughout a class's lifetime, and making a logger
+static ensures that it will be a singleton. Additionally there is a slight
+performance advantage, of course: no need to make a new logger for each object.
+
+Why `private`? Public loggers are bad for encapsulation (why should another
+class get to use your logger?), and for refactoring. The three most common
+reasons developers want to make a logger more visible, and the reasons not to do
+so, are:
+
+1.  For convenience, so that subclasses don't need to define their own logger.
+    This is not a good enough reason: declare a dedicated logger in each
+    subclass.
+2.  For testing, either to change logging behavior in tests, or to test what
+    logs are emitted. In both cases,
+    [this is discouraged, and better altneratives exist][testing]
+3.  Passing a logger to another class, or another method, so that it can log "on
+    your behalf". In general [this does not work](#one-per-class).
+
+[testing]: http://g3doc/g3doc/testing.md#testing-log-statements
+
 ## Make the logger the first static field in a class {#first-field}
 
 The following code fails with a `NullPointerException`:
