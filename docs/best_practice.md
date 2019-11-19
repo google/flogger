@@ -194,12 +194,10 @@ so, are:
     This is not a good enough reason: declare a dedicated logger in each
     subclass.
 2.  For testing, either to change logging behavior in tests, or to test what
-    logs are emitted. In both cases,
-    [this is discouraged, and better altneratives exist][testing]
+    logs are emitted. In both cases, this is discouraged, and better alternatives exist.
 3.  Passing a logger to another class, or another method, so that it can log "on
     your behalf". In general [this does not work](#one-per-class).
 
-[testing]: http://g3doc/g3doc/testing.md#testing-log-statements
 
 ## Make the logger the first static field in a class {#first-field}
 
