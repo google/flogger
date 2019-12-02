@@ -78,23 +78,15 @@ public class LogContextTest {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentLogger logger = new FluentLogger(backend);
 
-    // Cannot use Java8 lambdas here (these tests need to run on earlier Java versions).
-    LazyArg<String> lazy = new LazyArg<String>() {
-      @Override
-      public String evaluate() {
-        return "World";
-      }
-    };
-    logger.atInfo().log("Hello %s", lazy);
+    logger.atInfo().log("Hello %s", LazyArgs.lazy(() -> "World"));
 
-    LazyArg<String> lazyFail = new LazyArg<String>() {
-      @Override
-      public String evaluate() {
-        throw new RuntimeException(
-            "Lazy arguments should not be evaluated in a disabled log statement");
-      }
-    };
-    logger.atFine().log("Hello %s", lazyFail);
+    logger.atFine().log(
+        "Hello %s",
+        LazyArgs.lazy(
+            () -> {
+              throw new RuntimeException(
+                  "Lazy arguments should not be evaluated in a disabled log statement");
+            }));
 
     // By the time the backend processes a log statement, lazy arguments have been evaluated.
     backend.assertLastLogged().hasMessage("Hello %s");
@@ -115,7 +107,8 @@ public class LogContextTest {
     try {
       backend.getLogged(0).getLiteralArgument();
       fail("expected IllegalStateException");
-    } catch (IllegalStateException expected) { }
+    } catch (IllegalStateException expected) {
+    }
   }
 
   @Test
@@ -166,7 +159,9 @@ public class LogContextTest {
     }
 
     assertThat(backend.getLoggedCount()).isEqualTo(3);
-    backend.assertLogged(0).metadata()
+    backend
+        .assertLogged(0)
+        .metadata()
         .containsUniqueEntry(Key.LOG_AT_MOST_EVERY, LogSiteStats.newRateLimitPeriod(2, SECONDS));
     backend.assertLogged(0).hasArguments(0);
     backend.assertLogged(1).hasArguments(4);
@@ -222,23 +217,33 @@ public class LogContextTest {
     logger.at(INFO, nowNanos).atMostEvery(1, SECONDS).withInjectedLogSite(logSite).log("LOGGED 1");
 
     nowNanos += MILLISECONDS.toNanos(100);
-    logger.at(INFO, nowNanos)
-        .atMostEvery(1, SECONDS).withInjectedLogSite(logSite).log("NOT LOGGED");
+    logger
+        .at(INFO, nowNanos)
+        .atMostEvery(1, SECONDS)
+        .withInjectedLogSite(logSite)
+        .log("NOT LOGGED");
 
     nowNanos += MILLISECONDS.toNanos(100);
-    logger.forceAt(INFO, nowNanos)
-        .atMostEvery(1, SECONDS).withInjectedLogSite(logSite).log("LOGGED 2");
+    logger
+        .forceAt(INFO, nowNanos)
+        .atMostEvery(1, SECONDS)
+        .withInjectedLogSite(logSite)
+        .log("LOGGED 2");
 
     nowNanos += MILLISECONDS.toNanos(100);
-    logger.at(INFO, nowNanos)
-        .atMostEvery(1, SECONDS).withInjectedLogSite(logSite).log("NOT LOGGED");
+    logger
+        .at(INFO, nowNanos)
+        .atMostEvery(1, SECONDS)
+        .withInjectedLogSite(logSite)
+        .log("NOT LOGGED");
 
     assertThat(backend.getLoggedCount()).isEqualTo(2);
     backend.assertLogged(0).hasMessage("LOGGED 1");
     backend.assertLogged(0).metadata().hasSize(1);
-    backend.assertLogged(0).metadata()
-        .containsUniqueEntry(
-            Key.LOG_AT_MOST_EVERY, LogSiteStats.newRateLimitPeriod(1, SECONDS));
+    backend
+        .assertLogged(0)
+        .metadata()
+        .containsUniqueEntry(Key.LOG_AT_MOST_EVERY, LogSiteStats.newRateLimitPeriod(1, SECONDS));
 
     backend.assertLogged(1).hasMessage("LOGGED 2");
     backend.assertLogged(1).metadata().hasSize(1);
@@ -308,7 +313,7 @@ public class LogContextTest {
     FluentLogger logger = new FluentLogger(backend);
     logger.atInfo().log("Hello %d World", null);
     backend.assertLastLogged().hasMessage("Hello %d World");
-    backend.assertLastLogged().hasArguments(new Object[] { null });
+    backend.assertLastLogged().hasArguments(new Object[] {null});
   }
 
   // Currently having a null message and a null argument will throw a runtime exception, but
@@ -324,7 +329,8 @@ public class LogContextTest {
     try {
       logger.atInfo().log(null, null);
       fail("null message and arguments should fail");
-    } catch (NullPointerException expected) {}
+    } catch (NullPointerException expected) {
+    }
   }
 
   @Test
@@ -355,10 +361,12 @@ public class LogContextTest {
     logger.atInfo().log(ms, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
     backend.assertLastLogged().hasArguments("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
     logger.atInfo().log(ms, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11");
-    backend.assertLastLogged()
+    backend
+        .assertLastLogged()
         .hasArguments("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11");
     logger.atInfo().log(ms, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12");
-    backend.assertLastLogged()
+    backend
+        .assertLastLogged()
         .hasArguments("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12");
   }
 
@@ -535,7 +543,8 @@ public class LogContextTest {
 
     // Print the stack trace via the expected method (ie, printStackTrace()).
     Throwable cause = backend.getLogged(0).getMetadata().findValue(Key.LOG_CAUSE);
-    assertThat(cause).hasMessageThat().isEqualTo("SMALL");;
+    assertThat(cause).hasMessageThat().isEqualTo("SMALL");
+    ;
     StringWriter out = new StringWriter();
     cause.printStackTrace(new PrintWriter(out));
     Iterable<String> actualStackLines = Splitter.on('\n').trimResults().split(out.toString());

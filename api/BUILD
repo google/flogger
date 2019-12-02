@@ -8,11 +8,15 @@ package(default_visibility = ["//:internal"])
 
 CHECKS_SRCS = ["src/main/java/com/google/common/flogger/util/Checks.java"]
 
+METHOD_CALLER_SRCS = ["src/main/java/com/google/common/flogger/util/StaticMethodCaller.java"]
+
 TAGS_SRCS = [
     "src/main/java/com/google/common/flogger/backend/KeyValueFormatter.java",
     "src/main/java/com/google/common/flogger/backend/KeyValueHandler.java",
     "src/main/java/com/google/common/flogger/backend/Tags.java",
 ]
+
+CONTEXT_SRCS = glob(["src/main/java/com/google/common/flogger/context/*.java"])
 
 LAZY_ARGS_SRCS = [
     "src/main/java/com/google/common/flogger/LazyArg.java",
@@ -42,7 +46,9 @@ java_library(
     srcs = glob(
         ["src/main/java/**/*.java"],
         exclude = CHECKS_SRCS +
+                  METHOD_CALLER_SRCS +
                   TAGS_SRCS +
+                  CONTEXT_SRCS +
                   LAZY_ARGS_SRCS +
                   LOG_SITE_SRCS +
                   LOG_SITE_HELPER_SRCS +
@@ -68,7 +74,6 @@ java_library(
         ":tags",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
     ],
 )
 
@@ -84,9 +89,11 @@ pom_file(
     targets = [
         ":api",
         ":checks",
+        ":context",
         ":lazy_args",
         ":log_site",
         ":platform_provider",
+        ":reflection_utils",
         ":stack",
         ":tags",
         # :config should be here, but that causes a circular reference to :api. Thankfully, :config
@@ -101,10 +108,12 @@ jarjar_library(
     jars = [
         ":api",
         ":checks",
+        ":context",
         ":config",
         ":lazy_args",
         ":log_site",
         ":platform_provider",
+        ":reflection_utils",
         ":stack",
         ":tags",
     ],
@@ -116,8 +125,10 @@ jarjar_library(
         ":libapi-src.jar",
         ":libchecks-src.jar",
         ":libconfig-src.jar",
+        ":libcontext-src.jar",
         ":liblazy_args-src.jar",
         ":liblog_site-src.jar",
+        ":libreflection_utils-src.jar",
         ":libstack-src.jar",
         ":libtags-src.jar",
         # TODO(ronshapiro): consider generating PlatformProvider as a source file so it can be
@@ -143,6 +154,16 @@ java_library(
     javacopts = ["-source 1.6 -target 1.6"],
 )
 
+java_library(
+    name = "reflection_utils",
+    srcs = METHOD_CALLER_SRCS,
+    javacopts = ["-source 1.6 -target 1.6"],
+    deps = [
+        ":checks",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
+    ],
+)
+
 # A separate library for exposing just the 'Tags' class for use with the
 # TraceLoggingContext.
 #
@@ -152,6 +173,18 @@ java_library(
     javacopts = ["-source 1.6 -target 1.6"],
     deps = [
         ":checks",
+        "@google_bazel_common//third_party/java/checker_framework_annotations",
+        "@google_bazel_common//third_party/java/error_prone:annotations",
+    ],
+)
+
+java_library(
+    name = "context",
+    srcs = CONTEXT_SRCS,
+    javacopts = ["-source 1.6 -target 1.6"],
+    deps = [
+        ":checks",
+        ":reflection_utils",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
     ],
@@ -227,7 +260,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         ":api",
-        ":checks",
+        ":reflection_utils",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
     ],
 )
@@ -336,6 +369,7 @@ gen_java_tests(
     deps = [
         ":api",
         ":config",
+        ":context",
         ":log_sites",
         ":system_backend",
         ":testing",
@@ -343,7 +377,6 @@ gen_java_tests(
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/guava:testlib",
-        "@google_bazel_common//third_party/java/jsr305_annotations",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/mockito",
         "@google_bazel_common//third_party/java/truth",
