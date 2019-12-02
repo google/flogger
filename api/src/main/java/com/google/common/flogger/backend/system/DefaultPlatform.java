@@ -16,12 +16,12 @@
 
 package com.google.common.flogger.backend.system;
 
+import static com.google.common.flogger.util.StaticMethodCaller.callGetterFromSystemProperty;
+
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.backend.Tags;
-import com.google.common.flogger.util.Checks;
 import java.util.logging.Level;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * The default fluent logger platform for a server-side Java environment. The default platform
@@ -49,9 +49,10 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  */
 // Non-final for testing.
 public class DefaultPlatform extends Platform {
-  private static final String BACKEND_FACTORY = "backend_factory";
-  private static final String LOGGING_CONTEXT = "logging_context";
-  private static final String CLOCK = "clock";
+  // System property names for properties expected to define "getters" for platform attributes.
+  private static final String BACKEND_FACTORY = "flogger.backend_factory";
+  private static final String LOGGING_CONTEXT = "flogger.logging_context";
+  private static final String CLOCK = "flogger.clock";
 
   private final BackendFactory backendFactory;
   private final LoggingContext context;
@@ -59,11 +60,11 @@ public class DefaultPlatform extends Platform {
   private final LogCallerFinder callerFinder;
 
   public DefaultPlatform() {
-    BackendFactory factory = resolveAttribute(BACKEND_FACTORY, BackendFactory.class);
+    BackendFactory factory = callGetterFromSystemProperty(BACKEND_FACTORY, BackendFactory.class);
     this.backendFactory = (factory != null) ? factory : SimpleBackendFactory.getInstance();
-    LoggingContext context = resolveAttribute(LOGGING_CONTEXT, LoggingContext.class);
+    LoggingContext context = callGetterFromSystemProperty(LOGGING_CONTEXT, LoggingContext.class);
     this.context = (context != null) ? context : EmptyLoggingContext.getInstance();
-    Clock clock = resolveAttribute(CLOCK, Clock.class);
+    Clock clock = callGetterFromSystemProperty(CLOCK, Clock.class);
     this.clock = (clock != null) ? clock : SystemClock.getInstance();
     // TODO(dbeaumont): Figure out how to handle StackWalker when it becomes available (Java9).
     this.callerFinder = StackBasedCallerFinder.getInstance();
@@ -110,57 +111,5 @@ public class DefaultPlatform extends Platform {
         + "Clock: " + clock + "\n"
         + "LoggingContext: " + context + "\n"
         + "LogCallerFinder: " + callerFinder + "\n";
-  }
-
-  /**
-   * Helper to call a static no-arg getter to obtain an instance of a specified type. This is used
-   * for platform aspects which are optional, but are expected to have a singleton available.
-   *
-   * @return the return value of the specified static no-argument method, or null if the method
-   *     cannot be called or the returned value is of the wrong type.
-   */
-  @NullableDecl
-  private static <T> T resolveAttribute(String attributeName, Class<T> type) {
-    String getter = readProperty(attributeName);
-    if (getter == null) {
-      return null;
-    }
-    int idx = getter.indexOf('#');
-    if (idx <= 0 || idx == getter.length() - 1) {
-      error("invalid getter (expected <class>#<method>): %s\n", getter);
-      return null;
-    }
-    return callStaticMethod(getter.substring(0, idx), getter.substring(idx + 1), type);
-  }
-
-  private static String readProperty(String attributeName) {
-    Checks.checkNotNull(attributeName, "attribute name");
-    String propertyName = "flogger." + attributeName;
-    try {
-      return System.getProperty(propertyName);
-    } catch (SecurityException e) {
-      error("cannot read property name %s: %s", propertyName, e);
-    }
-    return null;
-  }
-
-  private static <T> T callStaticMethod(String className, String methodName, Class<T> type) {
-    try {
-      return type.cast(Class.forName(className).getMethod(methodName).invoke(null));
-    } catch (ClassNotFoundException e) {
-      // Expected if an optional aspect is not being used (no error).
-    } catch (ClassCastException e) {
-      error("cannot cast result of calling '%s#%s' to '%s': %s\n",
-          className, methodName, type.getName(), e);
-    } catch (Exception e) {
-      // Catches SecurityException *and* ReflexiveOperationException (which doesn't exist in 1.6).
-      error("cannot call expected no-argument static method '%s#%s': %s\n",
-          className, methodName, e);
-    }
-    return null;
-  }
-
-  private static void error(String msg, Object... args) {
-    System.err.println(DefaultPlatform.class + ": " + String.format(msg, args));
   }
 }

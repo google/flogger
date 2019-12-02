@@ -41,8 +41,7 @@ public class Checks {
   /** Checks if the given string is a valid metadata identifier. */
   public static String checkMetadataIdentifier(String s) {
     // Note that we avoid using regular expressions here, since we've not used it anywhere else
-    // thus far in Flogger (avoid it make it more likely that Flogger can be transpiled for things
-    // like GWT).
+    // thus far in Flogger (avoid it make it more likely that Flogger can be transpiled).
     if (s.isEmpty()) {
       throw new IllegalArgumentException("identifier must not be empty");
     }
