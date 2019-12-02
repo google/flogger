@@ -216,6 +216,37 @@ private static Data initStaticData() {
 When `initStaticData()` is called, the static `logger` field is still `null`. A
 habit of initializing your logger *first* will prevent this problem.
 
+### Avoid circular dependencies during initialization using a lazy-holder {#lazy-logging}
+
+If using a static field to hold a logger doesn't work because of circular
+dependencies during static initialization (i.e. your class must be initialized
+before the fluent logger can be initialized), you can lazily instantiate your
+logger using the "lazy static holder" pattern (see "Effective Java", 2nd ed.
+"Item 71: Use lazy initialization judiciously").
+
+For example:
+
+```java
+public class MyClassInitializedBeforeFlogger {
+  // Cannot initialize logger early; see google.github.io/flogger/best_practice#lazy-logging
+  private static final class LazyLogger {
+    private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
+  }
+
+  void methodCalledDuringNormalVmOperation() {
+    // Logger initialization is deferred until the first time logging occurs.
+    LazyLogger.logger.atInfo().log("Normal log message");
+  }
+}
+```
+
+However you should only use the following approach if there's a definite problem
+with using a normal static field to reference a logger, and you should comment
+it carefully.
+
+Note that you still can't invoke the logger during your class's static
+initialization, or at any point before the fluent logger library is initialized.
+
 ## Don't log and throw {#log-and-throw}
 
 When throwing an exception, let the surrounding code choose whether to log it.
