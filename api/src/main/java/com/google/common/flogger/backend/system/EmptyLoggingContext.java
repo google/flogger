@@ -19,10 +19,15 @@ package com.google.common.flogger.backend.system;
 import com.google.common.flogger.backend.Tags;
 import java.util.logging.Level;
 
-/** Empty trace context implementation. */
+/**
+ * Empty trace context implementation.
+ *
+ * <p>See class documentation in {@link LoggingContext} for important implementation restrictions.
+ */
 public final class EmptyLoggingContext extends LoggingContext {
   private static final LoggingContext INSTANCE = new EmptyLoggingContext();
 
+  // Called during logging platform initialization; MUST NOT call any code that might log.
   public static LoggingContext getInstance() {
     return INSTANCE;
   }

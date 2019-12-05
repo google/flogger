@@ -22,10 +22,15 @@ import com.google.common.flogger.backend.Platform.LogCallerFinder;
 import com.google.common.flogger.util.CallerFinder;
 import com.google.common.flogger.util.StackBasedLogSite;
 
-/** Default caller finder implementation which should work on all recent Java releases. */
+/**
+ * Default caller finder implementation which should work on all recent Java releases.
+ *
+ * <p>See class documentation in {@link LogCallerFinder} for important implementation restrictions.
+ */
 public final class StackBasedCallerFinder extends LogCallerFinder {
   private static final LogCallerFinder INSTANCE = new StackBasedCallerFinder();
 
+  // Called during logging platform initialization; MUST NOT call any code that might log.
   public static LogCallerFinder getInstance() {
     return INSTANCE;
   }
