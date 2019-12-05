@@ -98,14 +98,35 @@ public abstract class Platform {
   }
 
   /**
-   * API for determining the logging class and log statement sites, return from
-   * {@link #getCallerFinder}. This classes is immutable and thread safe.
-   * <p>
-   * This functionality is not provided directly by the {@code Platform} API because doing so would
-   * require several additional levels to be added to the stack before the implementation was
+   * API for determining the logging class and log statement sites, return from {@link
+   * #getCallerFinder}. This classes is immutable and thread safe.
+   *
+   * <p>This functionality is not provided directly by the {@code Platform} API because doing so
+   * would require several additional levels to be added to the stack before the implementation was
    * reached. This is problematic for Android which has only limited stack analysis. By allowing
    * callers to resolve the implementation early and then call an instance directly (this is not an
    * interface), we reduce the number of elements in the stack before the caller is found.
+   *
+   * <h2>Essential Implementation Restrictions</h2>
+   *
+   * Any implementation of this API <em>MUST</em> follow the rules listed below to avoid any risk of
+   * re-entrant code calling during logger initialization. Failure to do so risks creating complex,
+   * hard to debug, issues with Flogger configuration.
+   *
+   * <ol>
+   *   <li>Implementations <em>MUST NOT</em> attempt any logging in static methods or constructors.
+   *   <li>Implementations <em>MUST NOT</em> statically depend on any unknown code.
+   *   <li>Implementations <em>MUST NOT</em> depend on any unknown code in constructors.
+   * </ol>
+   *
+   * <p>Note that logging and calling arbitrary unknown code (which might log) are permitted inside
+   * the instance methods of this API, since they are not called during platform initialization. The
+   * easiest way to achieve this is to simply avoid having any non-trivial static fields or any
+   * instance fields at all in the implementation.
+   *
+   * <p>While this sounds onerous it's not difficult to achieve because this API is a singleton, and
+   * can delay any actual work until its methods are called. For example if any additional state is
+   * required in the implementation, it can be held via a "lazy holder" to defer initialization.
    */
   public abstract static class LogCallerFinder {
     /**

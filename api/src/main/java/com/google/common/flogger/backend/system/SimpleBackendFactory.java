@@ -19,10 +19,15 @@ package com.google.common.flogger.backend.system;
 import com.google.common.flogger.backend.LoggerBackend;
 import java.util.logging.Logger;
 
-/** Default factory for creating logger backends. */
+/**
+ * Default factory for creating logger backends.
+ *
+ * <p>See class documentation in {@link BackendFactory} for important implementation restrictions.
+ */
 public final class SimpleBackendFactory extends BackendFactory {
   private static final BackendFactory INSTANCE = new SimpleBackendFactory();
 
+  // Called during logging platform initialization; MUST NOT call any code that might log.
   public static BackendFactory getInstance() {
     return INSTANCE;
   }

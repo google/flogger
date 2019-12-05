@@ -18,10 +18,15 @@ package com.google.common.flogger.backend.system;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-/** Default millisecond precision clock. */
+/**
+ * Default millisecond precision clock.
+ *
+ * <p>See class documentation in {@link Clock} for important implementation restrictions.
+ */
 public final class SystemClock extends Clock {
   private static final SystemClock INSTANCE = new SystemClock();
 
+  // Called during logging platform initialization; MUST NOT call any code that might log.
   public static SystemClock getInstance() {
     return INSTANCE;
   }
