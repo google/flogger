@@ -627,7 +627,6 @@ public interface LoggingApi<API extends LoggingApi<API>> {
 
     @Override
     public API withInjectedLogSite(LogSite logSite) {
-      checkNotNull(logSite, "log site");
       return noOp();
     }
 
