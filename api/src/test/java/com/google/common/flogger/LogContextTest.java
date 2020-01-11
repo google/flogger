@@ -544,7 +544,6 @@ public class LogContextTest {
     // Print the stack trace via the expected method (ie, printStackTrace()).
     Throwable cause = backend.getLogged(0).getMetadata().findValue(Key.LOG_CAUSE);
     assertThat(cause).hasMessageThat().isEqualTo("SMALL");
-    ;
     StringWriter out = new StringWriter();
     cause.printStackTrace(new PrintWriter(out));
     Iterable<String> actualStackLines = Splitter.on('\n').trimResults().split(out.toString());
@@ -598,9 +597,11 @@ public class LogContextTest {
   public void testExplicitLogSiteInjection() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentLogger logger = new FluentLogger(backend);
+    // Tests it's the log site instance that controls rate limiting, even over different calls.
+    // We don't expect this to ever happen in real code though.
     for (int i = 0; i <= 6; i++) {
-      logHelper(logger, logSite(), 2, "Foo: " + i);
-      logHelper(logger, logSite(), 3, "Bar: " + i);
+      logHelper(logger, logSite(), 2, "Foo: " + i);  // Log every 2nd (0, 2, 4, 6)
+      logHelper(logger, logSite(), 3, "Bar: " + i);  // Log every 3rd (0, 3, 6)
     }
     // Expect: Foo -> 0, 2, 4, 6 and Bar -> 0, 3, 6 (but not in that order)
     assertThat(backend.getLoggedCount()).isEqualTo(7);
@@ -616,5 +617,22 @@ public class LogContextTest {
   // In normal use, the logger would never need to be passed in and you'd use logVarargs().
   private static void logHelper(FluentLogger logger, LogSite logSite, int n, String message) {
     logger.atInfo().withInjectedLogSite(logSite).every(n).log(message);
+  }
+
+  // It's important that injecting an INVALID log site acts as a override to suppress log site
+  // calculation rather than being a no-op.
+  @Test
+  public void testExplicitLogSiteSuppression() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    FluentLogger logger = new FluentLogger(backend);
+
+    logger.atInfo().withInjectedLogSite(LogSite.INVALID).log("No log site here");
+    logger.atInfo().withInjectedLogSite(null).log("No-op injection");
+
+    assertThat(backend.getLoggedCount()).isEqualTo(2);
+    backend.assertLogged(0).logSite().isEqualTo(LogSite.INVALID);
+
+    backend.assertLogged(1).logSite().isNotNull();
+    backend.assertLogged(1).logSite().isNotEqualTo(LogSite.INVALID);
   }
 }
