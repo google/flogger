@@ -517,7 +517,7 @@ public abstract class LogContext<
    * of arguments.
    */
   private boolean shouldLog() {
-    // The log site may have already been injected via "withInjectedLogSite()".
+    // The log site may have already been injected via "withInjectedLogSite()" or similar.
     if (logSite == null) {
       // From the point at which we call inferLogSite() we can skip 1 additional method (the
       // shouldLog() method itself) when looking up the stack to find the log() method.
@@ -571,9 +571,11 @@ public abstract class LogContext<
   @Override
   public final API withInjectedLogSite(LogSite logSite) {
     // First call wins (since auto-injection will typically target the log() method at the end of
-    // the chain and might not check for previous explicit injection).
-    if (this.logSite == null) {
-      this.logSite = checkNotNull(logSite, "log site");
+    // the chain and might not check for previous explicit injection). In particular it MUST be
+    // allowed for a caller to specify the "INVALID" log site, and have that set the field here to
+    // disable log site lookup at this log statement (though passing "null" is a no-op).
+    if (this.logSite == null && logSite != null) {
+      this.logSite = logSite;
     }
     return api();
   }

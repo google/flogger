@@ -90,4 +90,11 @@ public final class LogDataSubject extends Subject {
       failWithActual(simpleFact("expected to be forced"));
     }
   }
+
+  /**
+   * Asserts about the log site of the log record.
+   */
+  public Subject logSite() {
+    return check("getLogSite()").that(actual.getLogSite());
+  }
 }
