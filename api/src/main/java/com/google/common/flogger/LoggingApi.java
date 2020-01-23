@@ -287,7 +287,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * @param message the message template string containing a single argument placeholder.
    * @param varargs the non-null array of arguments to be formatted.
    */
-  void logVarargs(String message, Object[] varargs);
+  void logVarargs(String message, @NullableDecl Object[] varargs);
 
   /**
    * Terminal log statement when a message is not required. A {@code log} method must terminate all
