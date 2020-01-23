@@ -1246,7 +1246,7 @@ public abstract class LogContext<
   }
 
   @Override
-  public final void logVarargs(String message, Object[] params) {
+  public final void logVarargs(String message, @NullableDecl Object[] params) {
     if (shouldLog()) {
       // Copy the varargs array (because we didn't create it and this is quite a rare case).
       logImpl(message, Arrays.copyOf(params, params.length));

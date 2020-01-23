@@ -258,10 +258,10 @@ public class LogContextTest {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentLogger logger = new FluentLogger(backend);
 
-    Object[] args = new Object[] {"foo", "bar", "baz"};
+    Object[] args = new Object[] {"foo", null, "baz"};
     logger.atInfo().logVarargs("Any message ...", args);
 
-    backend.assertLastLogged().hasArguments("foo", "bar", "baz");
+    backend.assertLastLogged().hasArguments("foo", null, "baz");
     // Make sure we took a copy of the arguments rather than risk re-using them.
     assertThat(backend.getLoggedCount()).isEqualTo(1);
     assertThat(backend.getLogged(0).getArguments()).isNotSameInstanceAs(args);
