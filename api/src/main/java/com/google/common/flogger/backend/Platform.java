@@ -64,7 +64,6 @@ public abstract class Platform {
     private static final Platform INSTANCE = loadFirstAvailablePlatform(AVAILABLE_PLATFORMS);
 
     private static Platform loadFirstAvailablePlatform(String[] platformClass) {
-      StringBuilder errorMessage = new StringBuilder();
       Platform platform = null;
       // Try the platform provider first, if it's available.
       try {
@@ -79,6 +78,7 @@ public abstract class Platform {
         return platform;
       }
 
+      StringBuilder errorMessage = new StringBuilder();
       // Try the reflection-based approach as a backup, if the provider isn't available.
       for (String clazz : platformClass) {
         try {
