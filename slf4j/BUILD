@@ -3,6 +3,11 @@
 # Description:
 #   Flogger slf4j backend (google.github.io/flogger).
 
+load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
+load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
+load("@rules_java//java:defs.bzl", "java_library")
+load("//tools:maven.bzl", "pom_file")
+
 package(default_visibility = ["//:internal"])
 
 SLF4J_BACKEND_SRCS = glob(["src/main/java/**/*.java"])
@@ -19,16 +24,12 @@ java_library(
     ],
 )
 
-load("//tools:maven.bzl", "pom_file")
-
 pom_file(
     name = "pom",
     artifact_id = "flogger-slf4j-backend",
     artifact_name = "Flogger SLF4J Backend",
     targets = [":slf4j_backend"],
 )
-
-load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 
 javadoc_library(
     name = "javadoc",
@@ -38,8 +39,6 @@ javadoc_library(
 )
 
 # ---- Unit Tests ----
-
-load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 
 gen_java_tests(
     name = "slf4j_tests",
