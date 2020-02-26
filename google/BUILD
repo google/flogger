@@ -6,6 +6,11 @@
 # package).
 #
 
+load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
+load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
+load("@rules_java//java:defs.bzl", "java_library")
+load("//tools:maven.bzl", "pom_file")
+
 package(default_visibility = ["//:internal"])
 
 GOOGLE_LOGGER_SRCS = glob(["src/main/java/com/google/common/flogger/*.java"])
@@ -26,16 +31,12 @@ java_library(
     ],
 )
 
-load("//tools:maven.bzl", "pom_file")
-
 pom_file(
     name = "google_logger_pom",
     artifact_id = "google-extensions",
     artifact_name = "Google Logger",
     targets = [":flogger"],
 )
-
-load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 
 javadoc_library(
     name = "flogger_javadoc",
@@ -50,8 +51,6 @@ filegroup(
 )
 
 # ---- Tests ----
-
-load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 
 gen_java_tests(
     name = "google_logger_tests",

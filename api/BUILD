@@ -4,6 +4,12 @@
 # Description:
 #   Flogger core libraries (google.github.io/flogger).
 
+load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
+load("@google_bazel_common//tools/jarjar:jarjar.bzl", "jarjar_library")
+load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
+load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library")
+load("//tools:maven.bzl", "pom_file")
+
 package(default_visibility = ["//:internal"])
 
 CHECKS_SRCS = ["src/main/java/com/google/common/flogger/util/Checks.java"]
@@ -77,8 +83,6 @@ java_library(
     ],
 )
 
-load("//tools:maven.bzl", "pom_file")
-
 # This pom file and the two jarjar libraries below must contain the targets/jars for anything
 # that's released in open-source. If new targets are refactored out in the main codebase, they
 # must be included here.
@@ -100,8 +104,6 @@ pom_file(
         # has no deps itself
     ],
 )
-
-load("@google_bazel_common//tools/jarjar:jarjar.bzl", "jarjar_library")
 
 jarjar_library(
     name = "merged_api",
@@ -135,8 +137,6 @@ jarjar_library(
         # included here?
     ],
 )
-
-load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 
 javadoc_library(
     name = "api_javadoc",
@@ -355,8 +355,6 @@ filegroup(
 )
 
 # ---- Unit Tests ----
-
-load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 
 gen_java_tests(
     name = "api_tests",
