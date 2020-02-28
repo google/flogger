@@ -199,6 +199,28 @@ so, are:
     your behalf". In general [this does not work](#one-per-class).
 
 
+### Loggers in interfaces
+
+Java 8 introduced interface default and static methods, and you may find
+yourself wanting to use a logger in one of these cases. Because interfaces do
+not support private fields, the alternative recommendation is to create an inner
+class to hold the logger privately:
+
+```java
+public interface FooInterface {
+  default void doSomething() {
+    FooInterfaceLogger.logger.atWarning().log("doSomething not overridden");
+  }
+
+  /** Do not use. Exists only to hide implementation details of this interface. */
+  final class FooInterfacePrivate {
+    private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
+
+    private FooInterfacePrivate() {}
+  }
+}
+```
+
 ## Make the logger the first static field in a class {#first-field}
 
 The following code fails with a `NullPointerException`:
