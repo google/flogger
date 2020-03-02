@@ -209,7 +209,7 @@ class to hold the logger privately:
 ```java
 public interface FooInterface {
   default void doSomething() {
-    FooInterfaceLogger.logger.atWarning().log("doSomething not overridden");
+    FooInterfacePrivate.logger.atWarning().log("doSomething not overridden");
   }
 
   /** Do not use. Exists only to hide implementation details of this interface. */
