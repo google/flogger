@@ -71,6 +71,14 @@ public final class FluentLogger extends AbstractLogger<FluentLogger.Api> {
     return new FluentLogger(Platform.getBackend(loggingClass));
   }
 
+  /**
+   * Returns a new logger instance which parses log messages using printf format for the given
+   * log name using the system default logging backend.
+   */
+  public static FluentLogger withName(String name) {
+    return new FluentLogger(Platform.getBackend(name));
+  }
+
   // Visible for testing.
   FluentLogger(LoggerBackend backend) {
     super(backend);

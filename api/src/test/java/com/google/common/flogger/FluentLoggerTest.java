@@ -46,6 +46,12 @@ public class FluentLoggerTest {
   }
 
   @Test
+  public void testCreateWithName() {
+    FluentLogger logger = FluentLogger.withName("my_logger");
+    assertThat(logger.getBackend().getLoggerName()).isEqualTo("my_logger");
+  }
+
+  @Test
   public void testNoOp() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentLogger logger = new FluentLogger(backend);
