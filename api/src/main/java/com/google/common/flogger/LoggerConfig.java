@@ -59,6 +59,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * </ul>
  */
 // TODO(dbeaumont): Move this to a new package so it's clear it's NOT part of the core Flogger API.
+@Deprecated // See https://github.com/google/flogger/issues/142.
 @CheckReturnValue
 public final class LoggerConfig {
   /**
@@ -89,7 +90,7 @@ public final class LoggerConfig {
     return getConfig(fluentLogger.getName());
   }
 
-/**
+  /**
    * Returns a configuration instance suitable for configuring the logger of the specified class.
    *
    * <p>This method obtains and wraps the underlying logger for the given class, retaining a strong
