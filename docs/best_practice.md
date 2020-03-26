@@ -175,8 +175,9 @@ backends may choose to handle this differently though.
 ## Loggers should always be `private static final` {#modifiers}
 
 Why `final`? The logger for a class should never need to change. If you need to
-change logging configuration at runtime, you can do that through LoggerConfig.
-Replacing the logger itself is disruptive for no particular upside.
+change logging configuration at runtime, you should do that according to the
+chosen logging backend in your system. Replacing the logger itself is disruptive
+for no particular upside.
 
 Why `static`? Most obviously, some loggers *must* be static, because they will
 be used from static initializers. And since logger usage should be consistent
@@ -275,26 +276,6 @@ When throwing an exception, let the surrounding code choose whether to log it.
 When you log it yourself first, it often ends up being logged multiple times,
 creating the misleading impression that multiple issues need investigating.
 
-## Use `LoggerConfig`, not a JDK `Logger`, to configure logging {#weak-refs}
-
-A call such as:
-
-```java
-Logger.getLogger(loggerName).setLevel(Level.FINE);
-```
-
-May end up having *no effect*. Since this code is not retaining any reference to
-the logger, it may be garbage collected at any time, erasing your configuration
-choices. Instead, use `LoggerConfig`, which retains strong references to each
-logger it accesses.
-
-```java
-LoggerConfig.of(logger).setLevel(Level.FINE);
-```
-
-See [`LoggerConfig`] for details.
-
-[`LoggerConfig`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LoggerConfig.java
 
 ## Don't split log statements {#no-split}
 
