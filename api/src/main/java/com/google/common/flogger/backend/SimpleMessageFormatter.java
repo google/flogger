@@ -22,7 +22,6 @@ import static com.google.common.flogger.backend.FormatOptions.FLAG_UPPER_CASE;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.LogContext;
-import com.google.common.flogger.LogContext.Key;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.parameter.DateTimeFormat;
@@ -74,6 +73,11 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
     WITH_LOG_SITE
   }
 
+  /** A predicate to determine which metadata entries should be formatted. */
+  public interface MetadataPredicate {
+    boolean shouldFormat(MetadataKey<?> key);
+  }
+
   // Literal string to be inlined whenever a placeholder references a non-existent argument.
   private static final String MISSING_ARGUMENT_MESSAGE = "[ERROR: MISSING LOG ARGUMENT]";
 
@@ -83,6 +87,17 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
   // It would be more "proper" to use "Locale.getDefault(Locale.Category.FORMAT)" here, but also
   // removes the capability of optimising certain formatting operations.
   private static final Locale FORMAT_LOCALE = Locale.ROOT;
+
+  // Default metadata keys to add to formatted strings. (No lambdas here for compatibility.)
+  // When the Flogger core library supports JDK 8, this can be converted to a lambda or Predicate.
+  @SuppressWarnings("UnnecessaryAnonymousClass")
+  private static final MetadataPredicate FORMAT_ALL_METADATA =
+      new MetadataPredicate() {
+        @Override
+        public boolean shouldFormat(MetadataKey<?> key) {
+          return true;
+        }
+      };
 
   /**
    * Formats the log message and any metadata for the given {@link LogData}, calling the supplied
@@ -97,20 +112,39 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
    * receiver object with the results with a given option.
    */
   static void format(LogData logData, SimpleLogHandler receiver, Option option) {
+    format(logData, receiver, option, FORMAT_ALL_METADATA);
+  }
+
+  /**
+   * Formats the log message and any metadata for the given {@link LogData}, calling the supplied
+   * receiver object with the results with a given option and metadata keys filter.
+   */
+  static void format(
+      LogData logData,
+      SimpleLogHandler receiver,
+      Option option,
+      MetadataPredicate metadataPredicate) {
     Metadata metadata = logData.getMetadata();
     Throwable thrown = metadata.findValue(LogContext.Key.LOG_CAUSE);
-    // Either no metadata, or exactly one "cause" means we don't need to do additional formatting.
-    // This is pretty common and will save some work and object allocations.
-    boolean hasOnlyKnownMetadata = metadata.size() == 0 || (metadata.size() == 1 && thrown != null);
+    // Either no metadata, or only "cause" and ignored metadata means we don't need to do additional
+    // formatting. This is pretty common and will save some work and object allocations.
+    boolean hasOnlyKnownMetadata = true;
+    for (int n = 0; n < metadata.size(); n++) {
+      MetadataKey<?> key = metadata.getKey(n);
+      if (shouldFormat(key, metadataPredicate)) {
+        hasOnlyKnownMetadata = false;
+        break;
+      }
+    }
 
     TemplateContext ctx = logData.getTemplateContext();
     String message;
     if (ctx == null) {
-      message = formatLiteralMessage(logData, option, hasOnlyKnownMetadata);
+      message = formatLiteralMessage(logData, option, hasOnlyKnownMetadata, metadataPredicate);
     } else {
       StringBuilder buffer = formatMessage(logData, option);
       if (!hasOnlyKnownMetadata) {
-        appendContext(buffer, metadata);
+        appendContext(buffer, metadata, metadataPredicate);
       }
       message = buffer.toString();
     }
@@ -202,15 +236,16 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
     return out;
   }
 
-  private static void appendContext(StringBuilder out, Metadata metadata) {
+  private static void appendContext(
+      StringBuilder out, Metadata metadata, MetadataPredicate metadataPredicate) {
     KeyValueFormatter kvf = new KeyValueFormatter("[CONTEXT ", " ]", out);
     Tags tags = null;
     for (int n = 0; n < metadata.size(); n++) {
       MetadataKey<?> key = metadata.getKey(n);
-      if (key.equals(Key.LOG_CAUSE)) {
+      if (!shouldFormat(key, metadataPredicate)) {
         continue;
-      } else if (key.equals(Key.TAGS)) {
-        tags = Key.TAGS.cast(metadata.getValue(n));
+      } else if (key.equals(LogContext.Key.TAGS)) {
+        tags = LogContext.Key.TAGS.cast(metadata.getValue(n));
         continue;
       }
       key.emit(metadata.getValue(n), kvf);
@@ -219,6 +254,12 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
       tags.emitAll(kvf);
     }
     kvf.done();
+  }
+
+  private static boolean shouldFormat(MetadataKey<?> key, MetadataPredicate metadataPredicate) {
+    // The cause is special and is never formatted like other metadata (it's also the most common,
+    // so checking for it first is good).
+    return !key.equals(LogContext.Key.LOG_CAUSE) && metadataPredicate.shouldFormat(key);
   }
 
   // Input argument array reference (not copied).
@@ -405,7 +446,10 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
   }
 
   private static String formatLiteralMessage(
-      LogData logData, Option option, boolean hasOnlyKnownMetadata) {
+      LogData logData,
+      Option option,
+      boolean hasOnlyKnownMetadata,
+      MetadataPredicate metadataPredicate) {
     // If a literal message (no arguments) is logged and no metadata exists, just use the string.
     // Having no format arguments is fairly common and this avoids allocating StringBuilders and
     // formatter instances in a lot of situations.
@@ -421,7 +465,7 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
     if (!hasOnlyKnownMetadata) {
       // If unknown metadata exists we have to append it to the message (this is not that common
       // because a Throwable "cause" is already handled separately).
-      appendContext(builder, logData.getMetadata());
+      appendContext(builder, logData.getMetadata(), metadataPredicate);
     }
     return builder.toString();
   }
