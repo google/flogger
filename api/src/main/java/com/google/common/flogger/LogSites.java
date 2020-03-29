@@ -96,7 +96,7 @@ public final class LogSites {
    * }</pre>
    * <p>
    * Because this method adds an additional parameter and exposes a Flogger specific type to the
-   * calling code, you should consider using {@link #callerOf(Class<?>)} for simple logging
+   * calling code, you should consider using {@link #callerOf(Class)} for simple logging
    * utilities.
    * <p>
    * It is very important to note that this method can be very slow, since determining the log site
