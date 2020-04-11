@@ -110,8 +110,18 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
         .setTimeMillis(TimeUnit.NANOSECONDS.toMillis(logData.getTimestampNanos()))
         .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
         .setIncludeLocation(true)
+        .setSource(getLocationInfo())
         .setContextMap(mdcProperties)
         .build();
+  }
+
+  private StackTraceElement getLocationInfo() {
+    LogSite logSite = logData.getLogSite();
+    return new StackTraceElement(
+        logSite.getClassName(),
+        logSite.getMethodName(),
+        logSite.getFileName(),
+        Integer.toString(logSite.getLineNumber()));
   }
 
   @Override
