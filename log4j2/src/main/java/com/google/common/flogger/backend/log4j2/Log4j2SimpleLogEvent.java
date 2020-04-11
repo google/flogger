@@ -109,6 +109,7 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
         // Don't use Duration here as (a) it allocates and (b) we can't allow error on overflow.
         .setTimeMillis(TimeUnit.NANOSECONDS.toMillis(logData.getTimestampNanos()))
         .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
+        .setIncludeLocation(true)
         .setContextMap(mdcProperties)
         .build();
   }
