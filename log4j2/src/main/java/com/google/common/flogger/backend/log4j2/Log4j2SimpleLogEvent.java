@@ -122,7 +122,7 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
         logSite.getClassName(),
         logSite.getMethodName(),
         logSite.getFileName(),
-        Integer.toString(logSite.getLineNumber()));
+        logSite.getLineNumber());
   }
 
   @Override
