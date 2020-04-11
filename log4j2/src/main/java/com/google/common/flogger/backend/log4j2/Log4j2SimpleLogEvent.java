@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.backend.log4j2;
 
+import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
 import java.util.Collections;
