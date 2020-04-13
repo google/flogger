@@ -84,9 +84,9 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
     // are written from the current thread.
     //
     // Example:
-    //  MDC.put("user.id", userId);
+    //  ThreadContext.put("user.id", userId);
     //  // do business logic that triggers logs
-    //  MDC.clear();
+    //  ThreadContext.clear();
     //
     // By using '%X{key}' in the ConversionPattern of an appender this data can be included in the
     // logs.
@@ -112,7 +112,7 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
         .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
         .setIncludeLocation(true)
         .setSource(getLocationInfo())
-        .setContextMap(mdcProperties)
+        .setContextData(mdcProperties)
         .build();
   }
 
