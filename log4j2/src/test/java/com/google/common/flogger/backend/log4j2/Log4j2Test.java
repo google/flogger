@@ -30,6 +30,7 @@ import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.parser.ParseException;
 import com.google.common.flogger.testing.FakeLogData;
+import com.google.common.flogger.testing.FakeLogSite;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -117,6 +118,15 @@ public final class Log4j2Test {
     assertThat(event.getThrown()).isNull();
   }
 
+  void assertLogSite(int index, String className, String methodName, int line, String file) {
+    LogEvent event = events.get(index);
+    StackTraceElement source = event.getSource();
+    assertThat(source.getClassName()).isEqualTo(className);
+    assertThat(source.getMethodName()).isEqualTo(methodName);
+    assertThat(source.getFileName()).isEqualTo(file);
+    assertThat(source.getLineNumber()).isEqualTo(line);
+  }
+
   void assertThrown(int index, Throwable thrown) {
     assertThat(events.get(index).getThrown()).isSameInstanceAs(thrown);
   }
@@ -169,6 +179,22 @@ public final class Log4j2Test {
     assertLogEntry(4, INFO, "info");
     assertLogEntry(5, WARN, "warning");
     assertLogEntry(6, ERROR, "severe");
+  }
+
+  @Test
+  public void testSource() {
+    backend.log(
+        FakeLogData.of("First")
+            .setLogSite(FakeLogSite.create("<class>", "<method>", 42, "<file>")));
+    backend.log(
+        FakeLogData.of("No file").setLogSite(FakeLogSite.create("<class>", "<method>", 42, null)));
+    backend.log(
+        FakeLogData.of("No line").setLogSite(FakeLogSite.create("<class>", "<method>", -1, null)));
+
+    assertLogCount(3);
+    assertLogSite(0, "<class>", "<method>", 42, "<file>");
+    assertLogSite(1, "<class>", "<method>", 42, null);
+    assertLogSite(2, "<class>", "<method>", -1, null);
   }
 
   @Test
