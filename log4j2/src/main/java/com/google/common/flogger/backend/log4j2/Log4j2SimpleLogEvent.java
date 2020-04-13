@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.backend.log4j2;
 
+import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
 import java.util.Collections;
@@ -109,8 +110,19 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
         // Don't use Duration here as (a) it allocates and (b) we can't allow error on overflow.
         .setTimeMillis(TimeUnit.NANOSECONDS.toMillis(logData.getTimestampNanos()))
         .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
+        .setIncludeLocation(true)
+        .setSource(getLocationInfo())
         .setContextMap(mdcProperties)
         .build();
+  }
+
+  private StackTraceElement getLocationInfo() {
+    LogSite logSite = logData.getLogSite();
+    return new StackTraceElement(
+        logSite.getClassName(),
+        logSite.getMethodName(),
+        logSite.getFileName(),
+        logSite.getLineNumber());
   }
 
   @Override
