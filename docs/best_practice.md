@@ -139,14 +139,54 @@ log message.
 ## Don't pass loggers between classes {#one-per-class}
 
 Only log via a single static logger instance that's created inside the same
-source file as the log statement.
+source file as the log statement. There is generally **no reason to pass a
+logger from one class to another**.
 
-There is generally no reason to pass a logger from one class to another. Note in
-particular that this does **not** cause the name of the class that created the
-logger to appear in log output. It does have the effect of using the passed
-logger's configuration, but this is confusing and should be unnecessary.
-(Perhaps such code should instead throw an exception, after which the caller can
-catch and log it in the normal way?)
+
+### Why do people think that loggers should be passed between classes?
+
+I think the primary reason is that people misunderstand where the class name in
+log output comes from. It is not based on the name of the logger; it's the
+location of the log statement, regardless of the name of the logger used.
+
+The logger instance does affect the configuration of the logger, but if all
+loggers use the same configuration (which is very common) then different logger
+instances will behave identically and there no reason to pass them around.
+
+### Static helper classes
+
+One common anti-pattern is passing loggers into static helper methods in utility
+classes (e.g. where common metadata is added to all log statements). Having a
+static helper for logging is okay in some circumstances, but it comes with
+downsides, and in general you should never need to pass the logger itself in
+(just use a static logger in the utility class).
+
+For example consider:
+
+```java
+LogHelper.logInfo(logger, message, args);
+```
+
+where `logInfo` might be:
+
+```java
+public static void logInfo(GoogleLogger logger, String msg, Object... args) {
+  logger.atInfo().with(SOME_METADATA_KEY, getValue()).log(msg, args);
+}
+```
+
+There are several distinct downsides to this approach:
+
+*   Log site injection will not work as expected (all logs are now identified as
+    coming from the one line of code in the helper class).
+*   You now have an additional, possibly confusing, public API that all future
+    maintainers of the codebase need to be aware of.
+*   You reduce you ability to reuse and refactor common code which does logging
+    (since a common library would not use this helper class).
+
+Overall while these utilities can have value, it can also be a burden on future
+maintainers to use helper classes like this. See also [LogSite](#log-site) for
+more information on how to implement better static helper methods.
 
 
 ## Don't create a `Throwable` just to log it {#stack-trace}
@@ -328,7 +368,7 @@ logger.atInfo()
 
 Or you can add a helper method to return the log period if used in many places.
 
-## Use `logSite()` to implement non-trivial logging helper methods {#log-site}
+## Use LogSite to implement non-trivial logging helper methods {#log-site}
 
 While it is generally unnecessary and bad practice to implement lots of logging
 helper methods, one legitimate use-case (which has lead to people wanting to
@@ -357,27 +397,22 @@ guaranteed and it could easily enough be implemented in the logger.
 Relying on specific implementation details like this makes code very fragile
 (which is why splitting log statements is such a bad idea).
 
-The way to handle this issue properly is to have the calling code invoke the
-[`logSite()`] method at the point where the helper is called.
+The way to handle this issue properly is to have the calling code obtain a
+[`LogSite`] and inject that into the log statement.
 
 ```java
-public static void logFooFailure(LogSite logSite, FooException error, String message) {
+public static void logFooFailure(FooException error, String message) {
   logger.at(getLogLevelFor(error))
-      .withInjectedLogSite(logSite)
+      .withInjectedLogSite(LogSites.callerOf(MyClass.class))
       .atMostEvery(FAILURE_RATE_LIMIT_SECONDS, SECONDS)
       .withCause(error.shouldAlert() ? error : null)
       .log("Foo failure[%s]: %s", error.getStatus(), message);
 ```
 
-And the calling code would do:
-
-```java
-// Failure in code path A
-logFooFailure(logSite(), errA, "bad things happened");
-...
-// Failure in code path B
-logFooFailure(logSite(), errB, "more bad things happened");
-```
+You can also obtain a [`LogSite`] for the current line of code using
+`LogSites.logSite()` if you cannot use `LogSites.callerOf(...)` for any reason,
+but it's a more error-prone approach since it effectively separates the log
+statement into two parts.
 
 Now the rate limiting would be per-caller of the helper method and the logs
 would show that location instead of the eventual logging call. It's as if the
@@ -390,4 +425,5 @@ below). This often isn't an issue however since the typical use case for this
 approach is to handle complex logging, which usually means logging failure and
 errors, which are almost always enabled and already doing significant work.
 
+[`LogSite`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LogSite.java
 [`logSite()`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LogSites.java
