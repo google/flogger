@@ -49,14 +49,17 @@ public abstract class AbstractLogger<API extends LoggingApi<API>> {
    * Returns a fluent logging API appropriate for the specified log level.
    * <p>
    * If a logger implementation determines that logging is definitely disabled at this point then
-   * this method is expected to return a "no-op" implementation of the logging API, which will
+   * this method is expected to return a "no-op" implementation of that logging API, which will
    * result in all further calls made for the log statement to being silently ignored.
    * <p>
-   * Typically an implementation of this method in a concrete subclass would look like:
+   * A simple implementation of this method in a concrete subclass might look like:
    * <pre>{@code
-   *  return isLoggable(level) ? new Context(level): NO_OP;
+   * boolean isLoggable = isLoggable(level);
+   * boolean isForced = Platform.shouldForceLogging(getName(), level, isLoggable);
+   * return (isLoggable | isForced) ? new SubContext(level, isForced) : NO_OP;
    * }</pre>
-   * where {@code NO_OP} is a singleton, no-op instance of the logging API.
+   * where {@code NO_OP} is a singleton, no-op instance of the logging API whose methods do nothing
+   * and just {@code return noOp()}.
    */
   public abstract API at(Level level);
 

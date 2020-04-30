@@ -69,8 +69,19 @@ public final class GoogleLogger extends AbstractLogger<GoogleLogger.Api> {
     super(loggerBackend);
   }
 
+  @SuppressWarnings("ShortCircuitBoolean")
   @Override
   public Api at(Level level) {
+    // Important: This code is the "hottest" code path in Flogger. It is called for all log
+    // statements or log level checks reached by user code. The overwhelming number of callers to
+    // this method will be non-loggable and return the singleton "no op" API. Profiling of server
+    // side applications shows that approximately 80% of the total CPU usage associated with this
+    // method is used for cases where logging will not occur, so any changes must be optimized for
+    // that case. In-particular no allocation should ever occur for "disabled" log statements.
+    //
+    // In systems where log statements are stripped from code at build time, this obviously
+    // dramatically affects the ratio of enabled to disabled log statements, but in those cases,
+    // the cost of this method is trivial compared to the work of actually logging.
     boolean isLoggable = isLoggable(level);
     boolean isForced = Platform.shouldForceLogging(getName(), level, isLoggable);
     return (isLoggable || isForced) ? new Context(level, isForced) : NO_OP;
