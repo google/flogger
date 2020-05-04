@@ -181,15 +181,6 @@ public class GoogleLoggerTest {
     assertingHandler.assertOnlyLog().contains("flags=42 point.x=17 point.y=29 flags=23");
   }
 
-  @Test
-  public void testLoggerConfig() {
-    LoggerConfig.of(logger).setLevel(Level.WARNING);
-    logger.atInfo().log("Hello First World");
-    LoggerConfig.of(logger).setLevel(Level.INFO);
-    logger.atInfo().log("Hello Second World");
-    assertingHandler.assertOnlyLog().contains("Hello Second World");
-  }
-
   // Ensure that forEnclosingClass() creates a logger with the expected name, either by
   // stack analysis or compile-time injection.
   @Test

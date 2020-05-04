@@ -34,8 +34,6 @@ STACK_SRCS = [
     "src/main/java/com/google/common/flogger/StackSize.java",
 ]
 
-CONFIG_SRCS = ["src/main/java/com/google/common/flogger/LoggerConfig.java"]
-
 LOG_SITE_SRCS = [
     "src/main/java/com/google/common/flogger/LogSite.java",
     "src/main/java/com/google/common/flogger/LogSiteKey.java",
@@ -59,7 +57,6 @@ java_library(
                   LOG_SITE_SRCS +
                   LOG_SITE_HELPER_SRCS +
                   STACK_SRCS +
-                  CONFIG_SRCS +
                   SYSTEM_BACKEND_SRCS,
     ),
     javacopts = ["-source 1.6 -target 1.6"],
@@ -101,8 +98,6 @@ pom_file(
         ":reflection_utils",
         ":stack",
         ":tags",
-        # :config should be here, but that causes a circular reference to :api. Thankfully, :config
-        # has no deps itself
     ],
 )
 
@@ -112,7 +107,6 @@ jarjar_library(
         ":api",
         ":checks",
         ":context",
-        ":config",
         ":lazy_args",
         ":log_site",
         ":log_sites",
@@ -128,7 +122,6 @@ jarjar_library(
     jars = [
         ":libapi-src.jar",
         ":libchecks-src.jar",
-        ":libconfig-src.jar",
         ":libcontext-src.jar",
         ":liblazy_args-src.jar",
         ":liblog_site-src.jar",
@@ -202,20 +195,6 @@ java_library(
     deps = [
         ":checks",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
-    ],
-)
-
-# A separate library for exposing just the 'LoggerConfig' classes, since these are
-# support classes which can be imported and used freely in general code.
-java_library(
-    name = "config",
-    srcs = CONFIG_SRCS,
-    javacopts = ["-source 1.6 -target 1.6"],
-    deps = [
-        ":api",
-        ":checks",
-        "@google_bazel_common//third_party/java/checker_framework_annotations",
-        "@google_bazel_common//third_party/java/error_prone:annotations",
     ],
 )
 
@@ -369,7 +348,6 @@ gen_java_tests(
     ),
     deps = [
         ":api",
-        ":config",
         ":context",
         ":log_sites",
         ":system_backend",

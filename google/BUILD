@@ -60,7 +60,6 @@ gen_java_tests(
         ":flogger",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/guava:testlib",
-        "//api:config",
         "//api:testing",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/truth",
