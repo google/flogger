@@ -617,6 +617,11 @@ public abstract class LogContext<
   }
 
   @Override
+  public final <T> API with(MetadataKey<Boolean> key) {
+    return with(key, Boolean.TRUE);
+  }
+
+  @Override
   public final API withCause(Throwable cause) {
     if (cause != null) {
       addMetadata(Key.LOG_CAUSE, cause);

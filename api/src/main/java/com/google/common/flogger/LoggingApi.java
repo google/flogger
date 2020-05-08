@@ -172,6 +172,27 @@ public interface LoggingApi<API extends LoggingApi<API>> {
   <T> API with(MetadataKey<T> key, @NullableDecl T value);
 
   /**
+   * Sets a boolean metadata key constant to {@code true} for this log statement in a structured way
+   * that is accessible to logger backends.
+   *
+   * <p>This method is not a replacement for general parameter passing in the {@link #log()} method
+   * and should be reserved for keys/values with specific semantics. Examples include:
+   *
+   * <ul>
+   *   <li>Keys that are recognised by specific logger backends (typically to control logging
+   *       behaviour in some way).
+   *   <li>Key value pairs which are explicitly extracted from logs by tools.
+   * </ul>
+   *
+   * <p>This method is just an alias for {@code with(key, true)} to improve readability.
+   *
+   * @param key the boolean metadata key (expected to be a static constant)
+   * @throws NullPointerException if the given key is null
+   * @see MetadataKey
+   */
+  <T> API with(MetadataKey<Boolean> key);
+
+  /**
    * Sets the log site for the current log statement. Explicit log site injection is very rarely
    * necessary, since either the log site is injected automatically, or it is determined at runtime
    * via stack analysis. The one use case where calling this method explicitly may be useful is
@@ -647,6 +668,13 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     @Override
     public final <T> API with(MetadataKey<T> key, @NullableDecl T value) {
       // Identical to the check in LogContext for consistency.
+      checkNotNull(key, "metadata key");
+      return noOp();
+    }
+
+    @Override
+    public final <T> API with(MetadataKey<Boolean> key) {
+      // Do this inline rather than calling with(key, true) to keep no-op minimal.
       checkNotNull(key, "metadata key");
       return noOp();
     }
