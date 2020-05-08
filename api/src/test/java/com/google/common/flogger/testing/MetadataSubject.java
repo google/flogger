@@ -67,6 +67,17 @@ public final class MetadataSubject extends Subject {
     return values;
   }
 
+  private <T> List<T> valuesOf(MetadataKey<T> key) {
+    Metadata metadata = actual;
+    List<T> values = new ArrayList<>();
+    for (int n = 0; n < metadata.size(); n++) {
+      if (metadata.getKey(n).equals(key)) {
+        values.add(key.cast(metadata.getValue(n)));
+      }
+    }
+    return values;
+  }
+
   public void hasSize(int expectedSize) {
     checkArgument(expectedSize >= 0, "expectedSize(%s) must be >= 0", expectedSize);
     check("size()").that(actual.size()).isEqualTo(expectedSize);
@@ -86,6 +97,11 @@ public final class MetadataSubject extends Subject {
         failWithActual("expected to have unique key", key);
       }
     }
+  }
+
+  public <T> void containsEntries(MetadataKey<T> key, T... values) {
+    checkNotNull(key, "key must not be null");
+    check("<values of>(%s)", key).that(valuesOf(key)).containsExactlyElementsIn(values).inOrder();
   }
 
   public IterableSubject keys() {

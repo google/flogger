@@ -49,6 +49,9 @@ public class LogContextTest {
   private static final char CHAR_ARG = 'X';
   private static final Object OBJECT_ARG = new Object();
 
+  private static final MetadataKey<String> REPEATED_KEY = MetadataKey.repeated("str", String.class);
+  private static final MetadataKey<Boolean> FLAG_KEY = MetadataKey.repeated("flag", Boolean.class);
+
   @Test
   public void testIsEnabled() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
@@ -141,6 +144,25 @@ public class LogContextTest {
     backend.assertLogged(0).metadata().hasSize(2);
     backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_EVERY_N, 42);
     backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_CAUSE, cause);
+  }
+
+  @Test
+  public void testMetadataKeys() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    FluentLogger logger = new FluentLogger(backend);
+
+    logger.atInfo().with(REPEATED_KEY, "foo").with(REPEATED_KEY, "bar").log("Several values");
+    logger.atInfo().with(FLAG_KEY).log("Set Flag");
+    logger.atInfo().with(FLAG_KEY, false).log("No flag");
+    logger.atInfo().with(REPEATED_KEY, "foo").with(FLAG_KEY).with(REPEATED_KEY, "bar").log("...");
+
+    assertThat(backend.getLoggedCount()).isEqualTo(4);
+    backend.assertLogged(0).metadata().containsEntries(REPEATED_KEY, "foo", "bar");
+    backend.assertLogged(1).metadata().containsUniqueEntry(FLAG_KEY, true);
+    backend.assertLogged(2).metadata().containsUniqueEntry(FLAG_KEY, false);
+    // Just check nothing weird happens when the metadata is interleaved in the log statement.
+    backend.assertLogged(3).metadata().containsEntries(REPEATED_KEY, "foo", "bar");
+    backend.assertLogged(3).metadata().containsUniqueEntry(FLAG_KEY, true);
   }
 
   @Test
