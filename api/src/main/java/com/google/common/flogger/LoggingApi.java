@@ -324,7 +324,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
   void log();
 
   /**
-   * Logs the given literal string without without interpreting any argument placeholders.
+   * Logs the given literal string without interpreting any argument placeholders.
    * <p>
    * Important: This is intended only for use with hard-coded, literal strings which cannot
    * contain user data. If you wish to log user generated data, you should do something like:
