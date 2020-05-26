@@ -69,7 +69,6 @@ public final class GoogleLogger extends AbstractLogger<GoogleLogger.Api> {
     super(loggerBackend);
   }
 
-  @SuppressWarnings("ShortCircuitBoolean")
   @Override
   public Api at(Level level) {
     // Important: This code is the "hottest" code path in Flogger. It is called for all log
@@ -82,14 +81,30 @@ public final class GoogleLogger extends AbstractLogger<GoogleLogger.Api> {
     // In systems where log statements are stripped from code at build time, this obviously
     // dramatically affects the ratio of enabled to disabled log statements, but in those cases,
     // the cost of this method is trivial compared to the work of actually logging.
+    //
+    // We have also worked to avoid exceeding the 35-bytecode heuristic for inlining decisions.
+    // TODO(cpovirk): Add a test to ensure we don't exceed it again (if we find that the method size
+    // affects performance noticeably).
     boolean isLoggable = isLoggable(level);
     boolean isForced = Platform.shouldForceLogging(getName(), level, isLoggable);
-    return (isLoggable || isForced) ? new Context(level, isForced) : NO_OP;
+    if (isLoggable || isForced) {
+      return newContext(level, isForced);
+    }
+    return NO_OP;
+  }
+
+  /*
+   * Extracted to a separate method to keep at(Level) from exceeding the 35-bytecode heuristic for
+   * inlining decisions.
+   */
+  private Context newContext(Level level, boolean isForced) {
+    return new Context(level, isForced);
   }
 
   /** Logging context implementing the fully specified API for this logger. */
   private final class Context extends GoogleLogContext<GoogleLogger, Api> implements Api {
-    private Context(Level level, boolean isForced) {
+    // Non-private so that javac doesn't have to generate a bridge constructor.
+    Context(Level level, boolean isForced) {
       super(level, isForced);
     }
 
