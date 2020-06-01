@@ -93,7 +93,6 @@ pom_file(
         ":context",
         ":lazy_args",
         ":log_site",
-        ":log_sites",
         ":platform_provider",
         ":reflection_utils",
         ":stack",
