@@ -37,7 +37,7 @@ deploy_library() {
 
 deploy_library \
   api/merged_api.jar \
-  api/merged_api_src.jar \
+  api/libapi-src.jar \
   api/api_javadoc.jar \
   api/api_pom.xml
 

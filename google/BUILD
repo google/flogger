@@ -27,7 +27,6 @@ java_library(
         # TODO(dbeaumont): Split this so truly public things can be exported
         # without needing implementation to be visible to the world.
         "//api",
-        "//api:checks",
     ],
 )
 
