@@ -82,9 +82,12 @@ public final class GoogleLogger extends AbstractLogger<GoogleLogger.Api> {
     // dramatically affects the ratio of enabled to disabled log statements, but in those cases,
     // the cost of this method is trivial compared to the work of actually logging.
     //
-    // We have also worked to avoid exceeding the 35-bytecode heuristic for inlining decisions.
-    // TODO(cpovirk): Add a test to ensure we don't exceed it again (if we find that the method size
-    // affects performance noticeably).
+    // As a general optimization, we have worked to avoid exceeding the 35-bytecode heuristic for
+    // inlining decisions. However, it's not clear that this helps performance. We could further
+    // reduce bytecodes by switching from || to | (which may affect performance in other ways).
+    // Conceivably we could do even better by writing our own bytecode to replace load and store
+    // operations with stack management. Perhaps all this would help to enable multiple levels of
+    // the call tree to be inlined?
     boolean isLoggable = isLoggable(level);
     boolean isForced = Platform.shouldForceLogging(getName(), level, isLoggable);
     if (isLoggable || isForced) {
@@ -95,7 +98,7 @@ public final class GoogleLogger extends AbstractLogger<GoogleLogger.Api> {
 
   /*
    * Extracted to a separate method to keep at(Level) from exceeding the 35-bytecode heuristic for
-   * inlining decisions.
+   * inlining decisions. But see discussion in at(Level).
    */
   private Context newContext(Level level, boolean isForced) {
     return new Context(level, isForced);
