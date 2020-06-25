@@ -25,17 +25,16 @@ import com.google.common.flogger.backend.KeyValueHandler;
  * Key for logging semi-structured metadata values.
  *
  * <p>Metadata keys can be used to provide log statements with strongly typed values which can be
- * read and interpreted by logging backends or other logs related tools. This mechanism is
- * intended for values with specific semantics and should not be seen as a replacement for logging
- * arguments as part of a formatted log message.
- *
+ * read and interpreted by logging backends or other logs related tools. This mechanism is intended
+ * for values with specific semantics and should not be seen as a replacement for logging arguments
+ * as part of a formatted log message.
  *
  * <p>Logger backends can act upon metadata present in log statements to modify behaviour. Any
  * metadata entries that are not handled by a backend explicitly are, by default, rendered as part
  * of the log statement in a default format.
  *
- * <p>Note that some metadata entries are handled prior to being processed by the backend (e.g.
- * rate limiting), but a metadata entry remains present to record the fact that rate limiting was
+ * <p>Note that some metadata entries are handled prior to being processed by the backend (e.g. rate
+ * limiting), but a metadata entry remains present to record the fact that rate limiting was
  * enabled.
  */
 public class MetadataKey<T> {
