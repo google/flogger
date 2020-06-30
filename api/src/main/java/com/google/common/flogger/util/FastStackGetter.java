@@ -19,7 +19,7 @@ package com.google.common.flogger.util;
 import com.google.errorprone.annotations.CheckReturnValue;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A helper class to abstract the complexities of dynamically invoking the
@@ -31,7 +31,7 @@ final class FastStackGetter {
    * @return a new {@code FastStackGetter} if the {@code getStackTraceElement()} method of
    * {@code JavaLangAccess} is supported on this platform, or {@code null} otherwise.
    */
-  @NullableDecl
+  @Nullable
   public static FastStackGetter createIfSupported() {
     try {
       Object javaLangAccess =

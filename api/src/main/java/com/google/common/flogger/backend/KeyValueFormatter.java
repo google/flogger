@@ -19,7 +19,7 @@ package com.google.common.flogger.backend;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Formats key/value pairs as a human readable string on the end of log statements. The format is:
@@ -88,7 +88,7 @@ class KeyValueFormatter implements KeyValueHandler {
   }
 
   @Override
-  public KeyValueFormatter handle(String label, @NullableDecl Object value) {
+  public KeyValueFormatter handle(String label, @Nullable Object value) {
     if (haveSeenValues) {
       out.append(' ');
     } else {

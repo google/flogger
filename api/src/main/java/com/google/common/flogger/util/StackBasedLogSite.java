@@ -20,7 +20,7 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.LogSite;
 import com.google.errorprone.annotations.CheckReturnValue;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A stack based log site which uses information from a given {@code StackTraceElement}.
@@ -64,7 +64,7 @@ public final class StackBasedLogSite extends LogSite {
   }
 
   @Override
-  public boolean equals(@NullableDecl Object obj) {
+  public boolean equals(@Nullable Object obj) {
     return (obj instanceof StackBasedLogSite)
         && stackElement.equals(((StackBasedLogSite) obj).stackElement);
   }

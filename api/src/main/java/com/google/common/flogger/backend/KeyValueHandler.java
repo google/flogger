@@ -16,7 +16,7 @@
 
 package com.google.common.flogger.backend;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Callback interface to handle additional contextual key/value pairs with log statements. Used
@@ -27,5 +27,5 @@ public interface KeyValueHandler {
    * Handle a single key value pair of contextual metadata for a log statement. Note that it is
    * permitted for the value to be null if a tag was added by name only.
    */
-  KeyValueHandler handle(String key, @NullableDecl Object value);
+  KeyValueHandler handle(String key, @Nullable Object value);
 }

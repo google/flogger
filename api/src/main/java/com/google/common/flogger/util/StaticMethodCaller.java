@@ -16,7 +16,7 @@
 
 package com.google.common.flogger.util;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Helper to call a static no-arg getter to obtain an instance of a specified type. This is used
@@ -36,7 +36,7 @@ public final class StaticMethodCaller {
    * @param type the expected type (or supertype) of the returned value (generified types are not
    *     supported).
    */
-  @NullableDecl
+  @Nullable
   public static <T> T callGetterFromSystemProperty(String propertyName, Class<T> type) {
     String getter = readProperty(propertyName);
     if (getter == null) {
