@@ -19,10 +19,14 @@ package com.google.common.flogger.util;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+// Since JDK 11 was released the internal class used to implement "fast" stack access used have
+// been replaced by StackWalker, but that's difficult to integrate into Flogger at the moment.
+@Ignore  // b/142270173
 @RunWith(JUnit4.class)
 public class FastStackGetterTest {
   /**
