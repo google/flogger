@@ -51,4 +51,5 @@ public abstract class GoogleLogContext<
   protected final MessageParser getMessageParser() {
     return DefaultPrintfMessageParser.getInstance();
   }
+
 }
