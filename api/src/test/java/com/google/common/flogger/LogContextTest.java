@@ -16,16 +16,17 @@
 
 package com.google.common.flogger;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.flogger.LogSites.logSite;
+import static com.google.common.truth.Correspondence.transforming;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.INFO;
 import static org.junit.Assert.fail;
 
-import com.google.common.base.Function;
 import com.google.common.base.Splitter;
-import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.LogContext.Key;
 import com.google.common.flogger.testing.FakeLogSite;
 import com.google.common.flogger.testing.FakeLoggerBackend;
@@ -527,7 +528,12 @@ public class LogContextTest {
     List<StackTraceElement> expectedStack = Arrays.asList(new Throwable().getStackTrace());
     // Overwrite the first element to the expected value.
     expectedStack.set(0, expectedCaller);
-    assertThat(actualStack).containsExactlyElementsIn(expectedStack).inOrder();
+    // Use string representation for comparison since synthetic stack elements are not "equal" to
+    // equivalent system stack elements.
+    assertThat(actualStack)
+        .comparingElementsUsing(transforming(Object::toString, Object::toString, "toString"))
+        .containsExactlyElementsIn(expectedStack)
+        .inOrder();
   }
 
   @Test
@@ -561,49 +567,49 @@ public class LogContextTest {
 
     // Keep these 2 lines immediately adjacent to each other.
     StackTraceElement expectedCaller = getCallerInfoFollowingLine();
-    logger.atWarning().withStackTrace(StackSize.SMALL).log("Message");
+    logger.atWarning().withStackTrace(StackSize.MEDIUM).log("Message");
 
     // Print the stack trace via the expected method (ie, printStackTrace()).
     Throwable cause = backend.getLogged(0).getMetadata().findValue(Key.LOG_CAUSE);
-    assertThat(cause).hasMessageThat().isEqualTo("SMALL");
+    assertThat(cause).hasMessageThat().isEqualTo("MEDIUM");
     StringWriter out = new StringWriter();
     cause.printStackTrace(new PrintWriter(out));
-    Iterable<String> actualStackLines = Splitter.on('\n').trimResults().split(out.toString());
+    List<String> stackLines = Splitter.on('\n').trimResults().splitToList(out.toString());
+    ImmutableList<String> actualStackRefs =
+        stackLines.stream()
+            // Ignore lines that don't look like call-stack entries.
+            .filter(s -> s.startsWith("at "))
+            // Remove anything that's not caller information.
+            .map(s -> s.replaceAll("^at (?:java\\.base/)?", ""))
+            .collect(toImmutableList());
 
     // We assume there's at least one element in the stack we're testing.
-    int syntheticStackSize = cause.getStackTrace().length;
-    assertThat(syntheticStackSize).isGreaterThan(0);
+    assertThat(actualStackRefs).isNotEmpty();
 
-    List<StackTraceElement> expectedElements = Arrays.asList(new Throwable().getStackTrace());
-    expectedElements.set(0, expectedCaller);
+    StackTraceElement[] expectedElements = new Throwable().getStackTrace();
+    // Overwrite first element since we are starting from a different place (in the same method).
+    expectedElements[0] = expectedCaller;
     // Mimic the standard formatting for stack traces (a bit fragile but at least it's explicit).
-    List<String> expectedLines =
-        FluentIterable.from(expectedElements)
-            // Limit to the number in the synthetic stack trace (which is truncated).
-            .limit(syntheticStackSize)
+    List<String> expectedStackRefs =
+        Arrays.stream(expectedElements)
             // Format the elements into something that should match the normal stack formatting.
             // Apologies to whoever has to debug/fix this if it ever breaks :(
-            .transform(
-                new Function<StackTraceElement, String>() {
-                  @Override
-                  public String apply(StackTraceElement e) {
-                    // Native methods (where line number < 0) are formatted differently.
-                    if (e.getLineNumber() >= 0) {
-                      return String.format(
-                          "at %s.%s(%s:%d)",
-                          e.getClassName(), e.getMethodName(), e.getFileName(), e.getLineNumber());
-                    } else {
-                      return String.format(
-                          "at %s.%s(Native Method)", e.getClassName(), e.getMethodName());
-                    }
-                  }
-                })
-            .toList();
+            // Native methods (where line number < 0) are formatted differently.
+            .map(
+                e ->
+                    (e.getLineNumber() >= 0)
+                        ? String.format(
+                            "%s.%s(%s:%d)",
+                            e.getClassName(), e.getMethodName(), e.getFileName(), e.getLineNumber())
+                        : String.format(
+                            "%s.%s(Native Method)", e.getClassName(), e.getMethodName()))
+            // Limit to the number in the synthetic stack trace (which is truncated).
+            .limit(actualStackRefs.size())
+            .collect(toImmutableList());
 
     // This doesn't check anything about the message that's printed before the stack lines,
     // but that's not the point of this test.
-    assertThat(expectedLines).hasSize(syntheticStackSize);
-    assertThat(actualStackLines).containsAtLeastElementsIn(expectedLines).inOrder();
+    assertThat(actualStackRefs).isEqualTo(expectedStackRefs);
   }
 
   private static StackTraceElement getCallerInfoFollowingLine() {
