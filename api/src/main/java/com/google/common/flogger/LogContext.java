@@ -495,11 +495,23 @@ public abstract class LogContext<
     if (stackSize != null) {
       // we add this information to the stack trace exception so it doesn't need to go here.
       removeMetadata(Key.CONTEXT_STACK_SIZE);
+      // IMPORTANT: Skipping at least 1 stack frame below is essential for correctness, since
+      // postProcess() can be overridden, so the stack could look like:
+      //
+      // ^  UserCode::someMethod       << we want to start here and skip everything below
+      // |  LogContext::log
+      // |  LogContext::shouldLog
+      // |  OtherChildContext::postProcess
+      // |  ChildContext::postProcess  << this is not the caller of LogContext we're after
+      // \- LogContext::postProcess    << we are here
+      //
+      // By skipping the initial code inside this method, we don't trigger any stack capture until
+      // after the "log" method.
       LogSiteStackTrace context =
           new LogSiteStackTrace(
               getMetadata().findValue(LogContext.Key.LOG_CAUSE),
               stackSize,
-              getStackForCallerOf(LogContext.class, new Throwable(), stackSize.getMaxDepth()));
+              getStackForCallerOf(LogContext.class, new Throwable(), stackSize.getMaxDepth(), 1));
       // The "cause" is a unique metadata key, we must replace any existing value.
       addMetadata(LogContext.Key.LOG_CAUSE, context);
     }

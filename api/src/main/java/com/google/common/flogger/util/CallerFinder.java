@@ -81,16 +81,20 @@ public final class CallerFinder {
    * @param target the class who caller the returned stack trace will start at.
    * @param throwable a new Throwable made at a known point in the call hierarchy.
    * @param maxDepth the maximum size of the returned stack (pass -1 for the complete stack).
+   * @param skip the minimum number of stack frames to skip before looking for callers.
    * @return a synthetic stack trace starting at the immediate caller of the specified target, or
    *     the empty array if no caller was found (due to incorrect target, wrong skip count or use
    *     of JNI).
    */
   public static StackTraceElement[] getStackForCallerOf(
-      Class<?> target, Throwable throwable, int maxDepth) {
+      Class<?> target, Throwable throwable, int maxDepth, int skip) {
     checkNotNull(target, "target");
     checkNotNull(throwable, "throwable");
     if (maxDepth <= 0 && maxDepth != -1) {
       throw new IllegalArgumentException("invalid maximum depth: " + maxDepth);
+    }
+    if (skip < 0) {
+      throw new IllegalArgumentException("skip count cannot be negative: " + skip);
     }
     // Getting the full stack trace is expensive, so avoid it where possible.
     StackTraceElement[] stack;
@@ -103,12 +107,7 @@ public final class CallerFinder {
       depth = stack.length;
     }
     boolean foundCaller = false;
-    // Note that previous versions of this code skipped some variable number of stack frames to
-    // account for "known" stack frames at the point this method was called. This was a minor
-    // performance optimization but turned out to be problematic in the face of things like
-    // Proguard, which can fold method/classes and change the number of intermediate stack frames.
-    // Now we just start at the immediate "parent" frame.
-    for (int index = 0; index < depth; index++) {
+    for (int index = skip; index < depth; index++) {
       StackTraceElement element =
           (stackGetter != null) ? stackGetter.getStackTraceElement(throwable, index) : stack[index];
       if (target.getName().equals(element.getClassName())) {
