@@ -38,6 +38,12 @@ public class Checks {
     }
   }
 
+  public static void checkState(boolean condition, String message) {
+    if (!condition) {
+      throw new IllegalStateException(message);
+    }
+  }
+
   /** Checks if the given string is a valid metadata identifier. */
   public static String checkMetadataIdentifier(String s) {
     // Note that we avoid using regular expressions here, since we've not used it anywhere else
