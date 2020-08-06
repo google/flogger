@@ -19,8 +19,9 @@ package com.google.common.flogger.backend;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
- * Callback interface to handle additional contextual key/value pairs with log statements. Used
- * for both {@code Tags} and {@code Metadata}.
+ * Callback interface to handle additional contextual {@code Metadata} and {@code Tags} in log
+ * statements. This interface is only intended for use by logger backend implementations as part of
+ * formatting metadata, and should not be used in any general application code.
  */
 public interface KeyValueHandler {
   /**
