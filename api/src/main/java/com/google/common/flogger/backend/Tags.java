@@ -324,7 +324,7 @@ public final class Tags {
   }
 
   /** Emits all the key/value pairs of this Tags instance to the given consumer. */
-  public void emitAll(KeyValueHandler out) {
+  void emitAll(KeyValueHandler out) {
     for (Entry<String, SortedSet<Object>> e : map.entrySet()) {
       // Remember that tags can exist without values.
       String key = e.getKey();

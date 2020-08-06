@@ -37,6 +37,9 @@ import java.util.Formattable;
 import java.util.FormattableFlags;
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.logging.Level;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
@@ -251,9 +254,25 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
       key.emit(metadata.getValue(n), kvf);
     }
     if (tags != null) {
-      tags.emitAll(kvf);
+      emitAllTags(tags, kvf);
     }
     kvf.done();
+  }
+
+  /** Emits all the key/value pairs of this Tags instance to the given consumer. */
+  private static void emitAllTags(Tags tags, KeyValueHandler out) {
+    for (Map.Entry<String, SortedSet<Object>> e : tags.asMap().entrySet()) {
+      // Remember that tags can exist without values.
+      String key = e.getKey();
+      Set<Object> values = e.getValue();
+      if (!values.isEmpty()) {
+        for (Object value : values) {
+          out.handle(key, value);
+        }
+      } else {
+        out.handle(key, null);
+      }
+    }
   }
 
   private static boolean shouldFormat(MetadataKey<?> key, MetadataPredicate metadataPredicate) {
