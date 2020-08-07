@@ -17,7 +17,7 @@
 package com.google.common.flogger.backend;
 
 import com.google.common.flogger.MetadataKey;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Optional debug information which can be attached to a log statement. Metadata is represented as
@@ -105,7 +105,7 @@ public abstract class Metadata {
     }
 
     @Override
-    @NullableDecl
+    @Nullable
     public <T> T findValue(MetadataKey<T> key) {
       return null;
     }
@@ -133,6 +133,6 @@ public abstract class Metadata {
    *
    * @throws NullPointerException if {@code key} is {@code null}.
    */
-  @NullableDecl
+  @Nullable
   public abstract <T> T findValue(MetadataKey<T> key);
 }

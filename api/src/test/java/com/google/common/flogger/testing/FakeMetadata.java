@@ -22,7 +22,7 @@ import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.Metadata;
 import java.util.ArrayList;
 import java.util.List;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public final class FakeMetadata extends Metadata {
 
@@ -54,7 +54,7 @@ public final class FakeMetadata extends Metadata {
   }
 
   @Override
-  @NullableDecl
+  @Nullable
   public <T> T findValue(MetadataKey<T> key) {
     for (KeyValuePair<?> e : entries) {
       if (e.key.equals(key)) {

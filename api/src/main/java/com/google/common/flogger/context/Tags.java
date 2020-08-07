@@ -27,7 +27,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Immutable tags which can be attached to log statements via platform specific injection
@@ -321,7 +321,7 @@ public final class Tags {
   }
 
   @Override
-  public boolean equals(@NullableDecl Object obj) {
+  public boolean equals(@Nullable Object obj) {
     return (obj instanceof Tags) && ((Tags) obj).map.equals(map);
   }
 

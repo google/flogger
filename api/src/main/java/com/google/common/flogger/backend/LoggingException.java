@@ -16,7 +16,7 @@
 
 package com.google.common.flogger.backend;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Exception thrown when a log statement cannot be emitted correctly. This exception should only be
@@ -30,11 +30,11 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  */
 public class LoggingException extends RuntimeException {
 
-  public LoggingException(@NullableDecl String message) {
+  public LoggingException(@Nullable String message) {
     super(message);
   }
 
-  public LoggingException(@NullableDecl String message, @NullableDecl Throwable cause) {
+  public LoggingException(@Nullable String message, @Nullable Throwable cause) {
     super(message, cause);
   }
 }

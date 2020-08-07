@@ -27,7 +27,7 @@ import com.google.common.truth.IterableSubject;
 import com.google.common.truth.Subject;
 import java.util.ArrayList;
 import java.util.List;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A <a href="https://github.com/google/truth">Truth</a> subject for {@link Metadata}. */
 public final class MetadataSubject extends Subject {
@@ -38,13 +38,13 @@ public final class MetadataSubject extends Subject {
     return METADATA_SUBJECT_FACTORY;
   }
 
-  public static MetadataSubject assertThat(@NullableDecl Metadata metadata) {
+  public static MetadataSubject assertThat(@Nullable Metadata metadata) {
     return assertAbout(metadata()).that(metadata);
   }
 
   private final Metadata actual;
 
-  private MetadataSubject(FailureMetadata failureMetadata, @NullableDecl Metadata subject) {
+  private MetadataSubject(FailureMetadata failureMetadata, @Nullable Metadata subject) {
     super(failureMetadata, subject);
     this.actual = subject;
   }

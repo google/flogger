@@ -17,7 +17,7 @@
 package com.google.common.flogger.backend;
 
 import com.google.common.flogger.parser.ParseException;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A structured representation of formatting options compatible with printf style formatting.
@@ -490,7 +490,7 @@ public final class FormatOptions {
   }
 
   @Override
-  public boolean equals(@NullableDecl Object o) {
+  public boolean equals(@Nullable Object o) {
     // Various functions ensure that the same instance gets re-used, so it seems likely that it's
     // worth optimizing for it here.
     if (o == this) {

@@ -16,7 +16,7 @@
 
 package com.google.common.flogger;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A synthetic exception which can be attached to log statements when additional stack trace
@@ -36,7 +36,7 @@ public final class LogSiteStackTrace extends Exception {
    * @param syntheticStackTrace the synthetic stack trace starting at the log statement.
    */
   LogSiteStackTrace(
-      @NullableDecl Throwable cause, StackSize stackSize, StackTraceElement[] syntheticStackTrace) {
+      @Nullable Throwable cause, StackSize stackSize, StackTraceElement[] syntheticStackTrace) {
     super(stackSize.toString(), cause);
     // This takes a defensive copy, but there's no way around that. Note that we cannot override
     // getStackTrace() to avoid a defensive copy because that breaks stack trace formatting

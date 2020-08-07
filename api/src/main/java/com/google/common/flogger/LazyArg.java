@@ -16,7 +16,7 @@
 
 package com.google.common.flogger;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Functional interface for allowing lazily evaluated arguments to be supplied to Flogger. This
@@ -33,6 +33,6 @@ public interface LazyArg<T> {
    * determined that logging will occur, and the returned value is used in place of the {@code
    * LazyArg} instance that was passed into the log statement.
    */
-  @NullableDecl
+  @Nullable
   T evaluate();
 }

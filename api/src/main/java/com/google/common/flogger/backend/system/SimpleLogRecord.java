@@ -21,7 +21,7 @@ import com.google.common.flogger.backend.SimpleMessageFormatter;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An eagerly evaluating {@link LogRecord} which is created by the Fluent Logger frontend and can be
@@ -54,7 +54,7 @@ public final class SimpleLogRecord extends AbstractLogRecord implements SimpleLo
   }
 
   @Override
-  public void handleFormattedLogMessage(Level level, String message, @NullableDecl Throwable thrown) {
+  public void handleFormattedLogMessage(Level level, String message, @Nullable Throwable thrown) {
     // Ignore the log level as our parent class already set it (that's used in Android).
     setMessage(message);
     setThrown(thrown);

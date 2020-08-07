@@ -23,7 +23,7 @@ import com.google.common.flogger.backend.FormatChar;
 import com.google.common.flogger.backend.FormatOptions;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Subject;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A <a href="https://github.com/google/truth">Truth</a> subject for {@link FormatOptions}.
@@ -32,7 +32,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  */
 public final class FormatOptionsSubject extends Subject {
 
-  public static FormatOptionsSubject assertThat(@NullableDecl FormatOptions formatOptions) {
+  public static FormatOptionsSubject assertThat(@Nullable FormatOptions formatOptions) {
     return assertAbout(FormatOptionsSubject.FORMAT_OPTIONS_FACTORY).that(formatOptions);
   }
 
@@ -41,7 +41,7 @@ public final class FormatOptionsSubject extends Subject {
 
   private final FormatOptions actual;
 
-  private FormatOptionsSubject(FailureMetadata failureMetadata, @NullableDecl FormatOptions subject) {
+  private FormatOptionsSubject(FailureMetadata failureMetadata, @Nullable FormatOptions subject) {
     super(failureMetadata, subject);
     this.actual = subject;
   }
