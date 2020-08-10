@@ -20,6 +20,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.flogger.AbstractLogger;
 import com.google.common.flogger.LogSite;
+import com.google.common.flogger.context.Tags;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 

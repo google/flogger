@@ -20,7 +20,7 @@ import static com.google.common.flogger.util.StaticMethodCaller.callGetterFromSy
 
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.Platform;
-import com.google.common.flogger.backend.Tags;
+import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
 
 /**

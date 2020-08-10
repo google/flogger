@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.Platform.LogCallerFinder;
-import com.google.common.flogger.backend.Tags;
+import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
 import org.junit.Before;
 import org.junit.Test;
