@@ -26,6 +26,7 @@ import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.SimpleMessageFormatter.Option;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
+import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.parser.ParseException;
 import com.google.common.flogger.testing.FakeLogData;
 import java.io.IOException;

@@ -16,7 +16,7 @@
 
 package com.google.common.flogger.backend.system;
 
-import com.google.common.flogger.backend.Tags;
+import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
 
 /**

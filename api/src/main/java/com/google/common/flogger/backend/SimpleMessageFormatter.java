@@ -24,6 +24,7 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
+import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.parameter.DateTimeFormat;
 import com.google.common.flogger.parameter.Parameter;
 import com.google.common.flogger.parameter.ParameterVisitor;
