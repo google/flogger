@@ -84,8 +84,9 @@ public abstract class ContextDataProvider {
    * @param level the level of the log statement being invoked
    * @param isEnabledByLevel whether the logger is enabled at the given level
    */
-  public abstract boolean shouldForceLogging(
-      String loggerName, Level level, boolean isEnabledByLevel);
+  public boolean shouldForceLogging(String loggerName, Level level, boolean isEnabledByLevel) {
+    return false;
+  }
 
   /**
    * Returns a set of tags to be added to a log statement. These tags can be used to provide
