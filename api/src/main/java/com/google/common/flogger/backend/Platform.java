@@ -234,12 +234,12 @@ public abstract class Platform {
    * expected. It should contain the platform name along with any configurable elements
    * (e.g. plugin services) and their settings. It is recommended (though not required) that this
    * string is formatted with one piece of configuration per line in a tabular format, such as:
-   * <pre>
+   * <pre>{@code
    * platform: <human readable name>
    * formatter: com.example.logging.FormatterPlugin
    * formatter.foo: <"foo" settings for the formatter plugin>
    * formatter.bar: <"bar" settings for the formatter plugin>
-   * </pre>
+   * }</pre>
    * It is not required that this string be machine parseable (though it should be stable).
    */
   public static String getConfigInfo() {

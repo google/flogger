@@ -21,17 +21,13 @@ import static org.junit.Assert.fail;
 
 import com.google.common.flogger.context.ScopedLoggingContext.InvalidLoggingScopeStateException;
 import java.io.Closeable;
-import java.util.logging.Level;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+// TODO: Implement an abstract test suite to allow new implementations to be tested easily.
 @RunWith(JUnit4.class)
 public class ContextDataProviderTest {
-
-  private static final Tags TEST_TAGS = Tags.builder().addTag("foo", "bar").build();
-  private static final LogLevelMap TEST_MAP =
-      LogLevelMap.builder().add(Level.FINEST, String.class).build();
 
   // A context which fails when the scope is closed. Used to verify that user errors are
   // prioritized in cases where errors cause scopes to be exited.
@@ -54,38 +50,6 @@ public class ContextDataProviderTest {
           return false;
         }
       };
-
-  @Test
-  public void testNoOpImplementation() {
-    ContextDataProvider ctxData = new NoOpContextDataProvider();
-    assertThat(ctxData.getTags()).isEqualTo(Tags.empty());
-    assertThat(ctxData.shouldForceLogging("java.lang.String", Level.FINE, true)).isFalse();
-
-    ScopedLoggingContext api = ctxData.getContextApiSingleton();
-    assertThat(api.addTags(TEST_TAGS)).isFalse();
-    assertThat(api.applyLogLevelMap(TEST_MAP)).isFalse();
-  }
-
-  @Test
-  public void testNoOpScopesHaveNoEffect() throws Exception {
-    ContextDataProvider ctxData = new NoOpContextDataProvider();
-    ScopedLoggingContext api = ctxData.getContextApiSingleton();
-
-    boolean didTest =
-        api.call(
-            () -> {
-              // API reports failure to modify the current context.
-              assertThat(api.addTags(TEST_TAGS)).isFalse();
-              assertThat(api.applyLogLevelMap(TEST_MAP)).isFalse();
-
-              // And there's no effect on the current context.
-              assertThat(ctxData.getTags()).isEqualTo(Tags.empty());
-              assertThat(ctxData.shouldForceLogging("java.lang.String", Level.FINE, true))
-                  .isFalse();
-              return true;
-            });
-    assertThat(didTest).isTrue();
-  }
 
   @Test
   public void testErrorHandlingWithoutUserError() {
