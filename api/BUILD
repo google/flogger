@@ -25,11 +25,7 @@ java_library(
     ),
     javacopts = ["-source 1.6 -target 1.6"],
     tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
-    visibility = ["//visibility:public"],
     deps = [
-        # If we split any Flogger classes into separate targets and make them
-        # dependencies of this target, we must also include them in merged_api
-        # below.
         ":platform_provider",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
@@ -94,7 +90,7 @@ javadoc_library(
 # about log statements. This is exported via @google_bazel_common//third_party/java/flogger:testing
 # but should only be needed by anyone writing their own fluent logger.
 
-TESTING_SRCS = glob(["src/test/java/com/google/common/flogger/testing/*.java"])
+TESTING_SRCS = glob(["src/test/java/com/google/common/flogger/testing/**/*.java"])
 
 java_library(
     name = "testing",
@@ -168,22 +164,20 @@ filegroup(
 
 # ---- Unit Tests ----
 
+EXCLUDED_TESTS = TESTING_SRCS
+
 gen_java_tests(
     name = "api_tests",
     srcs = glob(
         ["src/test/java/**/*.java"],
-        exclude = [
-            "src/test/java/com/google/common/flogger/testing/**/*.java",
-        ],
+        exclude = EXCLUDED_TESTS,
     ),
     deps = [
         ":api",
         ":system_backend",
         ":testing",
-        "@google_bazel_common//third_party/java/auto:service",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/guava",
-        "@google_bazel_common//third_party/java/guava:testlib",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/mockito",
         "@google_bazel_common//third_party/java/truth",
