@@ -5,7 +5,10 @@
 # declaration and all the interesting targets are found in the various
 # sub-directories.
 
-exports_files(["LICENSE"])
+exports_files([
+    "LICENSE",
+    "extract_public_api.sh",
+])
 
 package_group(
     name = "internal",
