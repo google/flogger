@@ -16,15 +16,13 @@
 
 package com.google.common.flogger.context;
 
-import static com.google.common.flogger.util.StaticMethodCaller.callGetterFromSystemProperty;
-
+import com.google.common.flogger.backend.Platform;
 import java.util.logging.Level;
 
 /**
  * An API for injecting scoped metadata for log statements (either globally or on a per-request
- * basis). This class is intended for subclassing by the logging context implementation, which can
- * then be installed into fluent loggers by setting the {@code "flogger.context"} system property.
- * Thiis class is not a public API and should never need to be invoked directly by application code.
+ * basis). Thiis class is not a public API and should never need to be invoked directly by
+ * application code.
  *
  * <p>Note that since this class (and any installed implementation sub-class) is loaded when the
  * logging platform is loaded, care must be taken to avoid cyclic references during static
@@ -32,9 +30,6 @@ import java.util.logging.Level;
  * loggers or the logging platform (either directly or indirectly).
  */
 public abstract class ContextDataProvider {
-  // Visible only for the no-op implementation.
-  static final String CONTEXT_PROVIDER_PROPERTY = "flogger.context";
-
   /**
    * Returns the singleton instance of the context data provider for use by logging platform
    * implementations. This method should not be called by general application code, and the {@code
@@ -42,7 +37,7 @@ public abstract class ContextDataProvider {
    * platform implementations.
    */
   public static ContextDataProvider getInstance() {
-    return LazyHolder.INSTANCE;
+    return Platform.getContextDataProvider();
   }
 
   /**
@@ -96,15 +91,5 @@ public abstract class ContextDataProvider {
    */
   public Tags getTags() {
     return Tags.empty();
-  }
-
-  private static final class LazyHolder {
-    private static final ContextDataProvider INSTANCE = loadContext();
-
-    private static ContextDataProvider loadContext() {
-      ContextDataProvider ctx =
-          callGetterFromSystemProperty(CONTEXT_PROVIDER_PROPERTY, ContextDataProvider.class);
-      return ctx != null ? ctx : new NoOpContextDataProvider();
-    }
   }
 }

@@ -20,7 +20,7 @@ import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopedLoggingContext;
-import java.io.Closeable;
+import com.google.common.flogger.context.ScopedLoggingContext.LoggingScope;
 
 /**
  * Deprecated context API, to be replaced by {@link ContextDataProvider} and {@link
@@ -36,9 +36,9 @@ public abstract class LoggingContext extends ContextDataProvider {
   }
 
   private static final class NoOpScopedLoggingContext extends ScopedLoggingContext
-      implements Closeable {
+      implements LoggingScope {
     @Override
-    public Closeable withNewScope() {
+    public LoggingScope withNewScope() {
       return this;
     }
 

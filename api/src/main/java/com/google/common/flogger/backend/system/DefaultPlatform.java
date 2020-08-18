@@ -19,7 +19,9 @@ package com.google.common.flogger.backend.system;
 import static com.google.common.flogger.util.StaticMethodCaller.callGetterFromSystemProperty;
 
 import com.google.common.flogger.backend.LoggerBackend;
+import com.google.common.flogger.backend.NoOpContextDataProvider;
 import com.google.common.flogger.backend.Platform;
+import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
 
@@ -42,7 +44,7 @@ import java.util.logging.Level;
  *   <li>{@code flogger.backend_factory}: Provides an instance of
  *       {@code com.google.common.flogger.backend.system.BackendFactory}.
  *   <li>{@code flogger.logging_context}: Provides an instance of
- *       {@code com.google.common.flogger.backend.system.LoggingContext}.
+ *       {@code com.google.common.flogger.context.ContextDataProvider}.
  *   <li>{@code flogger.clock}: Provides an instance of
  *       {@code com.google.common.flogger.backend.system.Clock}.
  * </ul>
@@ -55,15 +57,16 @@ public class DefaultPlatform extends Platform {
   private static final String CLOCK = "flogger.clock";
 
   private final BackendFactory backendFactory;
-  private final LoggingContext context;
+  private final ContextDataProvider context;
   private final Clock clock;
   private final LogCallerFinder callerFinder;
 
   public DefaultPlatform() {
     BackendFactory factory = callGetterFromSystemProperty(BACKEND_FACTORY, BackendFactory.class);
     this.backendFactory = (factory != null) ? factory : SimpleBackendFactory.getInstance();
-    LoggingContext context = callGetterFromSystemProperty(LOGGING_CONTEXT, LoggingContext.class);
-    this.context = (context != null) ? context : EmptyLoggingContext.getInstance();
+    ContextDataProvider context =
+        callGetterFromSystemProperty(LOGGING_CONTEXT, ContextDataProvider.class);
+    this.context = (context != null) ? context : NoOpContextDataProvider.getInstance();
     Clock clock = callGetterFromSystemProperty(CLOCK, Clock.class);
     this.clock = (clock != null) ? clock : SystemClock.getInstance();
     // TODO(dbeaumont): Figure out how to handle StackWalker when it becomes available (Java9).
@@ -87,6 +90,11 @@ public class DefaultPlatform extends Platform {
   @Override
   protected LoggerBackend getBackendImpl(String className) {
     return backendFactory.create(className);
+  }
+
+  @Override
+  protected ContextDataProvider getContextDataProviderImpl() {
+    return context;
   }
 
   @Override

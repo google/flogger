@@ -19,22 +19,22 @@ package com.google.common.flogger.context;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
+import com.google.common.flogger.context.ScopedLoggingContext.LoggingScope;
 import com.google.common.flogger.context.ScopedLoggingContext.InvalidLoggingScopeStateException;
-import java.io.Closeable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 // TODO: Implement an abstract test suite to allow new implementations to be tested easily.
 @RunWith(JUnit4.class)
-public class ContextDataProviderTest {
+public class ScopedLoggingContextTest {
 
   // A context which fails when the scope is closed. Used to verify that user errors are
   // prioritized in cases where errors cause scopes to be exited.
   private static final ScopedLoggingContext ERROR_CONTEXT =
       new ScopedLoggingContext() {
         @Override
-        public Closeable withNewScope() {
+        public LoggingScope withNewScope() {
           return () -> {
             throw new IllegalArgumentException("BAD CONTEXT");
           };
