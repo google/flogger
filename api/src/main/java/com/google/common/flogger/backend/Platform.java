@@ -20,6 +20,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.flogger.AbstractLogger;
 import com.google.common.flogger.LogSite;
+import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.Tags;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
@@ -179,6 +180,21 @@ public abstract class Platform {
   protected abstract LoggerBackend getBackendImpl(String className);
 
   /**
+   * Returns the singleton ContextDataProvider from which a ScopedLoggingContext can be obtained.
+   * Platform implementations are required to always provide the same instance here, since this can
+   * be cached by callers.
+   */
+  public static ContextDataProvider getContextDataProvider() {
+    return LazyHolder.INSTANCE.getContextDataProviderImpl();
+  }
+
+  // Provide default implementation here for new API, but Platform implementations are expected to
+  // override this (one day it should be possible to make this abstract).
+  protected ContextDataProvider getContextDataProviderImpl() {
+    return NoOpContextDataProvider.getInstance();
+  }
+
+  /**
    * Returns whether the given logger should have logging forced at the specified level. When
    * logging is forced for a log statement it will be emitted regardless or the normal log level
    * configuration of the logger and ignoring any rate limiting or other filtering.
@@ -192,6 +208,8 @@ public abstract class Platform {
    *     {@code isLoggable()} on the backend instance)
    */
   public static boolean shouldForceLogging(String loggerName, Level level, boolean isEnabled) {
+    // TODO: Switch to using a cached field from getContextDataProvider() when all platforms are
+    // updated, and deprecate/remove the "impl" method below.
     return LazyHolder.INSTANCE.shouldForceLoggingImpl(loggerName, level, isEnabled);
   }
 
@@ -200,6 +218,8 @@ public abstract class Platform {
   }
 
   public static Tags getInjectedTags() {
+    // TODO: Switch to using a cached field from getContextDataProvider() when all platforms are
+    // updated, and deprecate/remove the "impl" method below.
     return LazyHolder.INSTANCE.getInjectedTagsImpl();
   }
 
