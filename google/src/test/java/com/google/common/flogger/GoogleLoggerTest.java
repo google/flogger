@@ -22,7 +22,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Supplier;
-import com.google.common.flogger.backend.KeyValueHandler;
+import com.google.common.flogger.MetadataKey.KeyValueHandler;
 import com.google.common.truth.StringSubject;
 import java.util.ArrayList;
 import java.util.List;

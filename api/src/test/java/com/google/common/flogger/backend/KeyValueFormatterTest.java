@@ -38,22 +38,31 @@ public class KeyValueFormatterTest {
   @Test public void testPrefixSeparator() {
     // 3 cases: nothing, space or newline
     StringBuilder out = new StringBuilder();
-    formatter(out).handle("foo", 23).done();
+    KeyValueFormatter kvf = formatter(out);
+    kvf.handle("foo", 23);
+    kvf.done();
     assertThat(out.toString()).isEqualTo("<< foo=23 >>");
 
     out = new StringBuilder("Message");
-    formatter(out).handle("foo", 23).done();
+    kvf = formatter(out);
+    kvf.handle("foo", 23);
+    kvf.done();
     assertThat(out.toString()).isEqualTo("Message << foo=23 >>");
 
     out = new StringBuilder("Multi\nLine");
-    formatter(out).handle("foo", 23).done();
+    kvf = formatter(out);
+    kvf.handle("foo", 23);
+    kvf.done();
     assertThat(out.toString()).isEqualTo("Multi\nLine\n<< foo=23 >>");
   }
 
   @Test
   public void testMultipleValues() {
     StringBuilder out = new StringBuilder("Message");
-    formatter(out).handle("foo", 23).handle("bar", false).done();
+    KeyValueFormatter kvf = formatter(out);
+    kvf.handle("foo", 23);
+    kvf.handle("bar", false);
+    kvf.done();
     assertThat(out.toString()).isEqualTo("Message << foo=23 bar=false >>");
   }
 
@@ -110,7 +119,9 @@ public class KeyValueFormatterTest {
 
   private static String format(String key, Object value) {
     StringBuilder out = new StringBuilder();
-    new KeyValueFormatter("", "", out).handle(key, value).done();
+    KeyValueFormatter kvf = new KeyValueFormatter("", "", out);
+    kvf.handle(key, value);
+    kvf.done();
     return out.toString();
   }
 }

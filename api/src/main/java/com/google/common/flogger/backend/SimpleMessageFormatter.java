@@ -261,7 +261,7 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
   }
 
   /** Emits all the key/value pairs of this Tags instance to the given consumer. */
-  private static void emitAllTags(Tags tags, KeyValueHandler out) {
+  private static void emitAllTags(Tags tags, KeyValueFormatter out) {
     for (Map.Entry<String, SortedSet<Object>> e : tags.asMap().entrySet()) {
       // Remember that tags can exist without values.
       String key = e.getKey();
