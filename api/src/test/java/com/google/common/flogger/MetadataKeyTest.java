@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 
-import com.google.common.flogger.backend.KeyValueHandler;
+import com.google.common.flogger.MetadataKey.KeyValueHandler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;

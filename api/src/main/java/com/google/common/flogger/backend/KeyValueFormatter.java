@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.backend;
 
+import com.google.common.flogger.MetadataKey.KeyValueHandler;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -88,7 +89,7 @@ class KeyValueFormatter implements KeyValueHandler {
   }
 
   @Override
-  public KeyValueFormatter handle(String label, @NullableDecl Object value) {
+  public void handle(String label, @NullableDecl Object value) {
     if (haveSeenValues) {
       out.append(' ');
     } else {
@@ -111,7 +112,6 @@ class KeyValueFormatter implements KeyValueHandler {
       appendEscaped(out, value.toString());
       out.append('"');
     }
-    return this;
   }
 
   /** Terminates handling of key/value pairs, leaving the originally supplied buffer modified. */

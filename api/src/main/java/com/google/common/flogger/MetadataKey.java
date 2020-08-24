@@ -19,8 +19,6 @@ package com.google.common.flogger;
 import static com.google.common.flogger.util.Checks.checkMetadataIdentifier;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
-import com.google.common.flogger.backend.KeyValueHandler;
-
 /**
  * Key for logging semi-structured metadata values.
  *
@@ -38,6 +36,17 @@ import com.google.common.flogger.backend.KeyValueHandler;
  * enabled.
  */
 public class MetadataKey<T> {
+  /**
+   * Callback interface to handle additional contextual {@code Metadata} in log statements. This
+   * interface is only intended to be implemented by logger backend classes as part of handling
+   * metadata, and should not be used in any general application code, other than to implement the
+   * {@link MetadataKey#emit()} method in this class.
+   */
+  public interface KeyValueHandler {
+    /** Handle a single key/value pair of contextual metadata for a log statement. */
+    void handle(String key, Object value);
+  }
+
   /**
    * Creates a key for a single piece of metadata. If metadata is set more than once using this
    * key for the same log statement, the last set value will be the one used, and other values
