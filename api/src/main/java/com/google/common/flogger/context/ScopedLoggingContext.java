@@ -373,7 +373,7 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Adds a tags to the current set of log tags for the current scope. Tags are merged together and
+   * Adds tags to the current set of log tags for the current scope. Tags are merged together and
    * existing tags cannot be modified. This is deliberate since two pieces of code may not know
    * about each other and could accidentally use the same tag name; in that situation it's important
    * that both tag values are preserved.
@@ -382,10 +382,6 @@ public abstract class ScopedLoggingContext {
    * very deliberate since these tags must be efficiently added to every log statement and so it's
    * important that they resulting string representation is reliably cacheable and can be calculated
    * without invoking arbitrary code (e.g. the {@code toString()} method of some unknown user type).
-   *
-   * <p>Note that use of this method is discouraged and may be removed in the future. Rather than
-   * modifying an unknown scope you didn't create, it is always preferrable to create a new scope
-   * using the builder API, which has tags added to it when it is created.
    *
    * @return false if there is no current scope, or scoped contexts are not supported.
    */
@@ -402,10 +398,6 @@ public abstract class ScopedLoggingContext {
    * </ul>
    *
    * <p>The effects of this call will be undone only when the current scope terminates.
-   *
-   * <p>Note that use of this method is discouraged and may be removed in the future. Rather than
-   * modifying an unknown scope you didn't create, it is always preferrable to create a new scope
-   * using the builder API, which has log level information added to it when it is created.
    *
    * @return false if there is no current scope, or scoped contexts are not supported.
    */

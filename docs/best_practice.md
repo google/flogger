@@ -1,6 +1,5 @@
 # Flogger Best Practices
 
-
 {:toc}
 
 ## When possible, log objects, not strings {#structured}
@@ -95,7 +94,6 @@ if (logger.atFine().isEnabled()) {
 Note also that this approach only guards log statements by level and does not
 help with rate-limited log statements.
 
-
 [`LazyArgs`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LazyArgs.java
 
 ## Don't be afraid to add fine-grained logging to your code {#fine-grained}
@@ -142,7 +140,6 @@ Only log via a single static logger instance that's created inside the same
 source file as the log statement. There is generally **no reason to pass a
 logger from one class to another**.
 
-
 ### Why do people think that loggers should be passed between classes?
 
 I think the primary reason is that people misunderstand where the class name in
@@ -187,7 +184,6 @@ There are several distinct downsides to this approach:
 Overall while these utilities can have value, it can also be a burden on future
 maintainers to use helper classes like this. See also [LogSite](#log-site) for
 more information on how to implement better static helper methods.
-
 
 ## Don't create a `Throwable` just to log it {#stack-trace}
 
@@ -238,7 +234,6 @@ so, are:
     logs are emitted. In both cases, this is discouraged, and better alternatives exist.
 3.  Passing a logger to another class, or another method, so that it can log "on
     your behalf". In general [this does not work](#one-per-class).
-
 
 ### Loggers in interfaces
 
@@ -291,7 +286,7 @@ For example:
 
 ```java
 public class MyClassInitializedBeforeFlogger {
-  // Cannot initialize logger early; see google.github.io/flogger/best_practice#lazy-logging
+  // Cannot initialize logger early; see https://google.github.io/flogger/best_practice#lazy-logging
   private static final class LazyLogger {
     private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
   }
@@ -315,7 +310,6 @@ initialization, or at any point before the fluent logger library is initialized.
 When throwing an exception, let the surrounding code choose whether to log it.
 When you log it yourself first, it often ends up being logged multiple times,
 creating the misleading impression that multiple issues need investigating.
-
 
 ## Don't split log statements {#no-split}
 

@@ -76,3 +76,9 @@ deploy_library \
   slf4j/libslf4j_backend-src.jar \
   slf4j/javadoc.jar \
   slf4j/pom.xml
+
+deploy_library \
+  grpc/libgrpc_context.jar \
+  grpc/libgrpc_context-src.jar \
+  grpc/javadoc.jar \
+  grpc/pom.xml

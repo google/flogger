@@ -57,7 +57,6 @@ building a set of carefully constructed APIs, both frontend and backend, Flogger
 permits multiple backend implementations to be seamlessly plugged in to provide
 the best possible performance.
 
-
 ## Extensibility {#extensibility}
 
 While we expect that the core Flogger API would provide almost all commonly used

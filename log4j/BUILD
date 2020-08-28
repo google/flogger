@@ -2,7 +2,7 @@
 # Author: ekempin@google.com (Edwin Kempin)
 #
 # Description:
-#   Flogger log4j backend (google.github.io/flogger).
+#   Flogger log4j backend (https://google.github.io/flogger).
 
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")

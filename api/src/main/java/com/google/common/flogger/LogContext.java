@@ -465,7 +465,6 @@ public abstract class LogContext<
    * waiting until here to cancel the operation, although care must be taken to check whether the
    * log statement has been "forced" or not.
    *
-   *
    * <p>The default implementation of this method enforces the rate limits as set by {@link
    * #every(int)} or {@link #atMostEvery(int, TimeUnit)}.
    *

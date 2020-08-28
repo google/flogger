@@ -2,7 +2,7 @@
 # Author: cgruber@google.com (Christian Edward Gruber)
 #
 # Description:
-#   Flogger core libraries (google.github.io/flogger).
+#   Flogger core libraries (https://google.github.io/flogger).
 
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 load("@google_bazel_common//tools/jarjar:jarjar.bzl", "jarjar_library")
@@ -87,8 +87,8 @@ javadoc_library(
 
 # Utilities to help test Fluent Loggers. This target includes simple fakes for
 # creating injectable test data as well as Truth subjects for asserting things
-# about log statements. This is exported via @google_bazel_common//third_party/java/flogger:testing
-# but should only be needed by anyone writing their own fluent logger.
+# about log statements. This
+# should only be needed by anyone writing their own fluent logger.
 
 TESTING_SRCS = glob(["src/test/java/com/google/common/flogger/testing/**/*.java"])
 

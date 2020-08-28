@@ -48,6 +48,11 @@ import java.util.logging.Level;
  *   <li>{@code flogger.clock}: Provides an instance of
  *       {@code com.google.common.flogger.backend.system.Clock}.
  * </ul>
+ *
+ * <p>Note that if the {@code com.google.flogger:flogger-grpc-context} is also available and the
+ * value of the {@code flogger.logging_context} system property is
+ * {@code "com.google.common.flogger.grpc.GrpcContextDataProvider#getInstance"} then a gRPC based
+ * implementation of the {@code ScopedLoggingContext} API will be used.
  */
 // Non-final for testing.
 public class DefaultPlatform extends Platform {
