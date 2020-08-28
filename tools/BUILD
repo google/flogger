@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
+
 package(default_visibility = ["//:internal"])
 
 exports_files(["pom-template.xml"])
-
-load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 
 javadoc_library(
     name = "all_javadoc",
