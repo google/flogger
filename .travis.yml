@@ -15,4 +15,4 @@ before_install:
   - sudo dpkg -i bazel_"${BAZEL_VERSION}"-linux-x86_64.deb
 
 script:
-  - bazel test //...
+  - bazel test //... --test_output=errors
