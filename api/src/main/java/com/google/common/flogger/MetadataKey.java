@@ -40,7 +40,7 @@ public class MetadataKey<T> {
    * Callback interface to handle additional contextual {@code Metadata} in log statements. This
    * interface is only intended to be implemented by logger backend classes as part of handling
    * metadata, and should not be used in any general application code, other than to implement the
-   * {@link MetadataKey#emit()} method in this class.
+   * {@link MetadataKey#emit} method in this class.
    */
   public interface KeyValueHandler {
     /** Handle a single key/value pair of contextual metadata for a log statement. */
@@ -76,6 +76,7 @@ public class MetadataKey<T> {
   private final String label;
   private final Class<T> clazz;
   private final boolean canRepeat;
+  private final long bloomFilterMask;
 
   /**
    * Constructor for custom key subclasses. Most use-cases will not require the use of custom keys,
@@ -86,6 +87,7 @@ public class MetadataKey<T> {
     this.label = checkMetadataIdentifier(label);
     this.clazz = checkNotNull(clazz, "class");
     this.canRepeat = canRepeat;
+    this.bloomFilterMask = createBloomFilterMaskFromSystemHashcode();
   }
 
   /**
@@ -120,6 +122,17 @@ public class MetadataKey<T> {
     out.handle(getLabel(), value);
   }
 
+  /**
+   * Returns a 64-bit bloom filter mask for this metadata key, usable by backend implementations to
+   * efficiently determine uniqueness of keys (e.g. for deduplication and grouping). This value is
+   * calculated on the assumption that there are normally not more than 10 distinct metadata keys
+   * being processed at any time. If more distinct keys need to be processed using this Bloom Filter
+   * mask, it will result in a higher than optimal false-positive rate.
+   */
+  public final long getBloomFilterMask() {
+    return bloomFilterMask;
+  }
+
   // Prevent subclasses changing the singleton semantics of keys.
   @Override
   public final int hashCode() {
@@ -135,5 +148,29 @@ public class MetadataKey<T> {
   @Override
   public final String toString() {
     return getClass().getName() + "/" + label + "[" + clazz.getName() + "]";
+  }
+
+  // From https://en.wikipedia.org/wiki/Bloom_filter the number of hash bits to minimize false
+  // positives is:
+  //   k = (M / N) ln(2)
+  // where:
+  //   k = number of "hash functions" which in our case is the number of bits in the filter mask.
+  //   M = number of bits available (in our case 64)
+  //   N = number of elements in the array (variable but almost always < 10)
+  // This gives a bit count of ~5 bits per mask, which is convenient since that's easily available
+  // by just masking out successive 6-bit chunks in a 32 bit hashcode.
+  private long createBloomFilterMaskFromSystemHashcode() {
+    // In tests (JDK11) the identity hashcode on its own was as good, if not better than, applying
+    // a "mix" operation such as found in:
+    // https://github.com/google/guava/blob/master/guava/src/com/google/common/hash/Murmur3_32HashFunction.java#L234
+    int hash = System.identityHashCode(this);
+    long bloom = 0L;
+    // Bottom 6-bits form a value from 0-63 (the bit index in the Bloom Filter), and we can extract
+    // 5 of these for a 32-bit value (see above for why 5 bits per mask is enough).
+    for (int n = 0; n < 5; n++) {
+      bloom |= 1L << (hash & 0x3F);
+      hash >>>= 6;
+    }
+    return bloom;
   }
 }
