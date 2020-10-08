@@ -21,6 +21,7 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.MetadataKey;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,9 +35,8 @@ import java.util.Map;
  * <p>The expected usage pattern for this class is that:
  *
  * <ol>
- *   <li>The logger backend creates one or more stateless {@link MetadataProcessor.MetadataHandler
- *       MetadataHandler} instances as static constants. These should be immutable and thread safe
- *       since they include only code.
+ *   <li>The logger backend creates one or more stateless {@link MetadataHandler} instances as
+ *       static constants. These should be immutable and thread safe since they include only code.
  *   <li>When handling a log statement, the logger backend generates a {@link MetadataProcessor} in
  *       the logging thread for the current scope and log-site metadata.
  *   <li>The processor can then be repeatedly used to dispatch calls to one or more of the handlers,
@@ -50,46 +50,6 @@ import java.util.Map;
  * be done in the logging thread.
  */
 public abstract class MetadataProcessor {
-  /**
-   * Callback API for logger backend implementations to handle metadata keys/values. The API methods
-   * will be called once for each distinct key, in encounter order. Different methods are called
-   * depending on whether the key is repeatable or not.
-   *
-   * @param <C> the arbitrary context type.
-   */
-  public abstract static class MetadataHandler<C> {
-
-    /**
-     * Handles a single metadata key/value mapping. This method is called directly for singleton
-     * (non repeatable) keys, but may also be called for repeated keys by the default implementation
-     * of {@link #handleRepeated}. It is up to the implementation to override that method if this
-     * behaviour is unwanted.
-     *
-     * @param key the metadata key (not necessarily a "singleton" key)
-     * @param value associated value
-     * @param context an arbitrary context object supplied to the process method.
-     * @param <T> the value type
-     */
-    protected abstract <T> void handle(MetadataKey<T> key, T value, C context);
-
-    /**
-     * Handles values for a repeatable metadata key. The method is called for all repeatable keys
-     * (even those with only one value). The default implementation makes repeated callbacks to the
-     * {@link #handle} method, in order, for each value.
-     *
-     * @param key the repeatable metadata key
-     * @param values a lightweight iterator over all values associated with the key (note that this
-     *     instance must not be held beyond the scope of this callback)
-     * @param context an arbitrary context object supplied to the process method
-     * @param <T> the value type
-     */
-    protected <T> void handleRepeated(MetadataKey<T> key, Iterator<T> values, C context) {
-      while (values.hasNext()) {
-        handle(key, values.next(), context);
-      }
-    }
-  }
-
   /**
    * Returns a new processor for the combined scope and log-site metadata. Note that this returned
    * instance may read directly from the supplied metadata during processing, so the supplied
@@ -322,6 +282,12 @@ public abstract class MetadataProcessor {
     private SimpleProcessor(Metadata scope, Metadata logged) {
       addToMap(scope);
       addToMap(logged);
+      // Wrap any repeated value lists to make them unmodifiable (required for correctness).
+      for (Map.Entry<MetadataKey<?>, Object> e : map.entrySet()) {
+        if (e.getKey().canRepeat()) {
+          e.setValue(Collections.unmodifiableList((List<?>) e.getValue()));
+        }
+      }
     }
 
     // Unlike the LightweightProcessor, we copy references from the Metadata eagerly, so can "cast"

@@ -16,9 +16,11 @@
 
 package com.google.common.flogger.backend;
 
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.Iterators;
 import com.google.common.flogger.MetadataKey;
-import com.google.common.flogger.backend.MetadataProcessor.MetadataHandler;
 import com.google.common.flogger.testing.FakeMetadata;
 import com.google.common.truth.Expect;
 import java.util.ArrayList;
@@ -170,6 +172,39 @@ public class MetadataProcessorTest {
         "K12=v12",
         "K13=v13",
         "R1=[v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27]");
+  }
+
+  @Test
+  public void testReadOnlyIterable() {
+    FakeMetadata scope = new FakeMetadata();
+    scope.add(REP_1, "one");
+    scope.add(REP_1, "two");
+
+    MetadataHandler<Void> handler = new MetadataHandler<Void>() {
+      @Override
+      protected <T> void handle(MetadataKey<T> key, T value, Void context) { }
+
+      @Override
+      protected <T> void handleRepeated(MetadataKey<T> key, Iterator<T> values, Void context) {
+        assertThat(values.hasNext()).isTrue();
+        assertThat(values.next()).isEqualTo("one");
+        values.remove();
+      }
+    };
+
+    try {
+      MetadataProcessor.getLightweightProcessor(scope, Metadata.empty()).process(handler, null);
+      fail("expected UnsupportedOperationException");
+    } catch (UnsupportedOperationException expected) {
+      // pass
+    }
+
+    try {
+      MetadataProcessor.getSimpleProcessor(scope, Metadata.empty()).process(handler, null);
+      fail("expected UnsupportedOperationException");
+    } catch (UnsupportedOperationException expected) {
+      // pass
+    }
   }
 
   private void assertMetadata(Metadata scope, Metadata logged, String... expected) {
