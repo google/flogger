@@ -18,6 +18,9 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkMetadataIdentifier;
 import static com.google.common.flogger.util.Checks.checkNotNull;
+import static com.google.common.flogger.util.Checks.checkState;
+
+import java.util.Iterator;
 
 /**
  * Key for logging semi-structured metadata values.
@@ -113,13 +116,35 @@ public class MetadataKey<T> {
    * emits the given value with this key's label, but it can be overridden to emit multiple
    * key/value pairs if necessary. Note that if multiple key/value pairs are emitted, the following
    * best-practice should be followed:
+   *
    * <ul>
    *   <li>Key names should be of the form {@code "<label>.<suffix>"}.
    *   <li>Suffixes may only contain lower case ASCII letters and underscore (i.e. [a-z_]).
    * </ul>
    */
-  public void emit(Object value, KeyValueHandler out) {
+  public void emit(T value, KeyValueHandler out) {
     out.handle(getLabel(), value);
+  }
+
+  /**
+   * Emits one or more key/value pairs for a sequence of repeated metadata values. By default this
+   * method simply calls {@link #emit} once for each value, in order. However it could be overridden
+   * to treat the sequence of values for a repeated key as a single entity (e.g. by joining elements
+   * with a separator such as {@code '/'}). Note that if multiple key/value pairs are emitted, the
+   * following best-practice should be followed:
+   *
+   * <ul>
+   *   <li>Key names should be of the form {@code "<label>.<suffix>"}.
+   *   <li>Suffixes may only contain lower case ASCII letters and underscore (i.e. [a-z_]).
+   * </ul>
+   *
+   * <p>This method should only be called for repeated keys.
+   */
+  public void emitRepeated(Iterator<T> values, KeyValueHandler out) {
+    checkState(canRepeat, "non repeating key");
+    while (values.hasNext()) {
+      emit(values.next(), out);
+    }
   }
 
   /**

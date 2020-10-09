@@ -252,12 +252,18 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
         tags = LogContext.Key.TAGS.cast(metadata.getValue(n));
         continue;
       }
-      key.emit(metadata.getValue(n), kvf);
+      castAndEmit(key, metadata.getValue(n), kvf);
     }
     if (tags != null) {
       emitAllTags(tags, kvf);
     }
     kvf.done();
+  }
+
+  // Needed to re-capture the key type locally so the cast value is known to have the same type
+  // when passed to the emit method (in the loop it's just a MetadataKey<?>).
+  private static <T> void castAndEmit(MetadataKey<T> key, Object value, KeyValueFormatter kvf) {
+    key.emit(key.cast(value), kvf);
   }
 
   /** Emits all the key/value pairs of this Tags instance to the given consumer. */

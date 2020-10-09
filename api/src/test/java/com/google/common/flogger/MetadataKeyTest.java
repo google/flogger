@@ -21,6 +21,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 
 import com.google.common.flogger.MetadataKey.KeyValueHandler;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -58,8 +59,29 @@ public class MetadataKeyTest {
   public void testDefaultEmit() {
     MetadataKey<String> k = MetadataKey.single("foo", String.class);
     KeyValueHandler handler = Mockito.mock(KeyValueHandler.class);
-    k.emit(123, handler);
-    Mockito.verify(handler).handle("foo", 123);
+    k.emit("123", handler);
+    Mockito.verify(handler).handle("foo", "123");
+  }
+
+  @Test
+  public void testDefaultEmitRepeated() {
+    MetadataKey<String> k = MetadataKey.repeated("foo", String.class);
+    KeyValueHandler handler = Mockito.mock(KeyValueHandler.class);
+    List<String> values = asList("123", "abc");
+    k.emitRepeated(values.iterator(), handler);
+    Mockito.verify(handler).handle("foo", "123");
+    Mockito.verify(handler).handle("foo", "abc");
+  }
+
+  @Test
+  public void testDefaultEmitRepeated_singleKeyFails() {
+    MetadataKey<String> k = MetadataKey.single("foo", String.class);
+    KeyValueHandler handler = Mockito.mock(KeyValueHandler.class);
+    List<String> values = asList("123", "abc");
+    try {
+      k.emitRepeated(values.iterator(), handler);
+      fail("expected IllegalStateException");
+    } catch (IllegalStateException expected) { }
   }
 
   @Test

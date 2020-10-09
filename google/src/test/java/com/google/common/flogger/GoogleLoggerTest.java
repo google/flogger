@@ -63,8 +63,7 @@ public class GoogleLoggerTest {
   private static final MetadataKey<Point> POINT =
       new MetadataKey<Point>("point", Point.class, false) {
     @Override
-    public void emit(Object value, KeyValueHandler out) {
-      Point p = cast(value);
+    public void emit(Point p, KeyValueHandler out) {
       out.handle("point.x", p.x);
       out.handle("point.y", p.y);
     }
