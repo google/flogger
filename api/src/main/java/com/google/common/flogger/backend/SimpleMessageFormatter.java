@@ -40,7 +40,6 @@ import java.util.Formatter;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.logging.Level;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
@@ -268,7 +267,7 @@ public final class SimpleMessageFormatter extends MessageBuilder<StringBuilder>
 
   /** Emits all the key/value pairs of this Tags instance to the given consumer. */
   private static void emitAllTags(Tags tags, KeyValueFormatter out) {
-    for (Map.Entry<String, SortedSet<Object>> e : tags.asMap().entrySet()) {
+    for (Map.Entry<String, ? extends Set<Object>> e : tags.asMap().entrySet()) {
       // Remember that tags can exist without values.
       String key = e.getKey();
       Set<Object> values = e.getValue();

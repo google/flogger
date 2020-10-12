@@ -276,7 +276,7 @@ public final class Tags {
   }
 
   /** Returns an immutable map containing the tag values. */
-  public SortedMap<String, SortedSet<Object>> asMap() {
+  public Map<String, ? extends Set<Object>> asMap() {
     return map;
   }
 
