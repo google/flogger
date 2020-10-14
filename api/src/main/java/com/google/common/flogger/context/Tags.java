@@ -17,14 +17,20 @@
 package com.google.common.flogger.context;
 
 import static com.google.common.flogger.util.Checks.checkMetadataIdentifier;
+import static com.google.common.flogger.util.Checks.checkNotNull;
+import static com.google.common.flogger.util.Checks.checkState;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.AbstractSet;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
@@ -117,15 +123,11 @@ public final class Tags {
         }
       };
 
-  private static final SortedSet<Object> EMPTY_SET =
-      Collections.unmodifiableSortedSet(new TreeSet<Object>());
-
-  private static final Tags EMPTY_TAGS = new Tags(new TreeMap<String, SortedSet<Object>>());
+  private static final Tags EMPTY_TAGS = new Tags(Collections.<String, Set<Object>>emptyMap());
 
   /** A mutable builder for tags. */
   public static final class Builder {
-    private final SortedMap<String, SortedSet<Object>> map =
-        new TreeMap<String, SortedSet<Object>>();
+    private final Map<String, Set<Object>> map = new TreeMap<String, Set<Object>>();
 
     /**
      * Adds an empty tag, ensuring that the given name exists in the tag map with at least an empty
@@ -139,7 +141,7 @@ public final class Tags {
     public Builder addTag(String name) {
       Set<Object> values = map.get(checkMetadataIdentifier(name));
       if (values == null) {
-        map.put(name, EMPTY_SET);
+        map.put(name, Collections.emptySet());
       }
       return this;
     }
@@ -197,8 +199,9 @@ public final class Tags {
 
     private void addImpl(String name, Object value) {
       // Checks and auto-boxing ensure that "value" is never null.
-      SortedSet<Object> values = map.get(checkMetadataIdentifier(name));
-      if (values == null || values == EMPTY_SET) {
+      Set<Object> values = map.get(checkMetadataIdentifier(name));
+      // If a tag without a value is added, the set is empty *and* unmodifiable.
+      if (values == null || values.isEmpty()) {
         values = new TreeSet<Object>(VALUE_COMPARATOR);
         map.put(name, values);
       }
@@ -207,14 +210,7 @@ public final class Tags {
 
     /** Returns an immutable tags instance. */
     public Tags build() {
-      if (map.isEmpty()) {
-        return EMPTY_TAGS;
-      }
-      SortedMap<String, SortedSet<Object>> copy = new TreeMap<String, SortedSet<Object>>();
-      for (Map.Entry<String, SortedSet<Object>> e : map.entrySet()) {
-        copy.put(e.getKey(), Collections.unmodifiableSortedSet(new TreeSet<Object>(e.getValue())));
-      }
-      return new Tags(copy);
+      return map.isEmpty() ? EMPTY_TAGS : new Tags(map);
     }
 
     @Override
@@ -265,14 +261,10 @@ public final class Tags {
     return builder().addTag(name, value).build();
   }
 
-  private final SortedMap<String, SortedSet<Object>> map;
-  private Integer hashCode = null;
-  private String toString = null;
+  private final LightweightTagMap map;
 
-  // Callers are not expected to retain the map after this instance is created, so it doesn't
-  // need to be copied, just wrapped.
-  private Tags(SortedMap<String, SortedSet<Object>> map) {
-    this.map = Collections.unmodifiableSortedMap(map);
+  private Tags(Map<String, ? extends Set<Object>> map) {
+    this.map = new LightweightTagMap(map);
   }
 
   /** Returns an immutable map containing the tag values. */
@@ -295,9 +287,9 @@ public final class Tags {
     if (this.isEmpty()) {
       return other;
     }
-    SortedMap<String, SortedSet<Object>> merged = new TreeMap<String, SortedSet<Object>>();
-    for (Map.Entry<String, SortedSet<Object>> e : map.entrySet()) {
-      SortedSet<Object> otherValues = other.map.get(e.getKey());
+    Map<String, Set<Object>> merged = new TreeMap<String, Set<Object>>();
+    for (Map.Entry<String, Set<Object>> e : map.entrySet()) {
+      Set<Object> otherValues = other.map.get(e.getKey());
       if (otherValues == null || e.getValue().containsAll(otherValues)) {
         // Our values are a superset of the values in the other map, so just use them.
         merged.put(e.getKey(), e.getValue());
@@ -306,12 +298,13 @@ public final class Tags {
         merged.put(e.getKey(), otherValues);
       } else {
         // Values exist in both maps and neither is a superset, so we really must merge.
-        SortedSet<Object> mergedValues = new TreeSet<Object>(e.getValue());
+        Set<Object> mergedValues = new TreeSet<Object>(VALUE_COMPARATOR);
+        mergedValues.addAll(e.getValue());
         mergedValues.addAll(otherValues);
-        merged.put(e.getKey(), Collections.unmodifiableSortedSet(mergedValues));
+        merged.put(e.getKey(), mergedValues);
       }
     }
-    for (Map.Entry<String, SortedSet<Object>> e : other.map.entrySet()) {
+    for (Map.Entry<String, Set<Object>> e : other.map.entrySet()) {
       // Finally add those values that were only in the other map.
       if (!map.containsKey(e.getKey())) {
         merged.put(e.getKey(), e.getValue());
@@ -327,13 +320,8 @@ public final class Tags {
 
   @Override
   public int hashCode() {
-    if (hashCode == null) {
-      // Unmodifiable maps cannot cache hash codes (the underlying map might be mutated), so to
-      // avoid repeating potentially expensive hashcode calculations, we cache it. We could also
-      // do this during construction, but the hashcode of a Tags instance won't be needed often.
-      hashCode = map.hashCode();
-    }
-    return hashCode;
+    // Invert the bits in the map hashcode just to be different.
+    return ~map.hashCode();
   }
 
   /**
@@ -343,9 +331,208 @@ public final class Tags {
    */
   @Override
   public String toString() {
-    if (toString == null) {
-      toString = map.toString();
+    return map.toString();
+  }
+
+  /*
+   * A super lightweight, immutable multi-map to hold tag values. The implementation packs all
+   * entries and values into a single array, and uses an offset array to jump to the start of each
+   * set. Type safety is ensured by careful partitioning during construction of the array.
+   *
+   * The total allocations for a Tags instance are:
+   * 1 x array for entries and values (no duplication, size of map + size of all value sets)
+   * 1 x array for offsets (size of the map)
+   * N x entries which hold 2 field each (N = size of map)
+   * 1 x entry set (holds 1 field)
+   *
+   * It's about 6 x 32-bits per entry (including object headers) and an extra 32 bits per value. For
+   * the largest normal use cases where you have up to 10 values in the tags, one per key, this is
+   * under 300 bytes.
+   *
+   * Previously, using a TreeMap<String, TreeSet<Object>>, it was in the region of 12 x 32 bits per
+   * entry and an additional 8 x 32 bits per value (based on examining the source for TreeSet and
+   * TreeMap), giving a rough estimate of at least 800 bytes.
+   */
+  private static class LightweightTagMap extends AbstractMap<String, Set<Object>> {
+    // Note if we weren't using binary search for lookup, none of this would be necessary.
+    @SuppressWarnings("unchecked")
+    private static final Comparator<Object> ENTRY_COMPARATOR =
+        new Comparator<Object>() {
+          @Override
+          public int compare(Object s1, Object s2) {
+            // Casting can fail if call passes in unexpected values via Set::contains(entry).
+            return ((Entry<String, ?>) s1).getKey().compareTo(((Entry<String, ?>) s2).getKey());
+          }
+        };
+
+    // The array holds ordered entries followed by values for each entry (grouped by key in order).
+    // The offsets array holds the starting offset to each contiguous group of values, plus a final
+    // offset to the end of the last group (also the size of the array).
+    //
+    // [ E(0) ... E(n-1) , V(0,0), V(0,1) ... , V(1,0), V(1,1) ... V(n-1,0), V(n-1,1) ... ]
+    // offsets --------[0]-^ ---------------[1]-^ --- ... ---[n-1]-^ -----------------[n]-^
+    //
+    // E(n) = n-th entry, V(n,m) = m-th value for n-th entry.
+    //
+    // The entries start at 0 and end at offsets[0].
+    // For an entry with index n, its values start at offsets[n] and end at offsets[n+1].
+    // It is permitted to have zero values for an entry (i.e. offsets(n) == offsets(n+1)).
+
+    private final Object[] array;
+    private final int[] offsets;
+
+    // Reusable, immutable entry set. Index -1 is a slightly special case, see getStart() etc.
+    private final Set<Entry<String, Set<Object>>> entrySet =
+        new SortedArraySet<Entry<String, Set<Object>>>(-1);
+
+    // Cache these if anyone needs them (not likely in normal usage).
+    private Integer hashCode = null;
+    private String toString = null;
+
+    LightweightTagMap(Map<String, ? extends Set<Object>> map) {
+      this.offsets = getOffsetArray(map);
+      this.array = getMapArray(map, offsets);
     }
-    return toString;
+
+    // Builds the array of start/end offsets to the different sections of the array and determines
+    // the total size needed to hold all entries and value efficiently (that's just stored in the
+    // final element in the offset array, since it also marks the end of the last group of values).
+    private static int[] getOffsetArray(Map<String, ? extends Set<Object>> map) {
+      int currentSize = map.size();
+      // Put a value on the end so we don't have to special case the final entry.
+      int[] offsets = new int[currentSize + 1];
+      // First value group offset is immediately after the entries.
+      offsets[0] = currentSize;
+      // Fill in remaining start/end offsets.
+      int n = 1;
+      for (Set<Object> e : map.values()) {
+        currentSize += e.size();
+        offsets[n++] = currentSize;
+      }
+      // Sanity check (in case someone is using the builder instance concurrently).
+      checkState(n == offsets.length, "corrupted tag map");
+      return offsets;
+    }
+
+    // Builds the array in map iteration order, but since this is only called from the builder,
+    // which uses sorted sets/maps, this will preserve that order.
+    private Object[] getMapArray(Map<String, ? extends Set<Object>> map, int[] offsets) {
+      Object[] array = new Object[offsets[map.size()]];
+      int index = 0;
+      // The value offset just increases throughout the loop, starting just after the entries.
+      int n = offsets[index];
+      for (Entry<String, ? extends Set<Object>> e : map.entrySet()) {
+        // Store the lightweight entry in the initial part of the array.
+        array[index] = newEntry(e.getKey(), index);
+        for (Object v : e.getValue()) {
+          // Ensure we only store non-null values (should already be promised by the builder).
+          array[n++] = checkNotNull(v, "value");
+        }
+        // Increment the entry index and sanity check that our offset is pointing to the start of
+        // the next set of values (or the end of the array if we've just finished the final entry).
+        index += 1;
+        checkState(n == offsets[index], "corrupted tag map");
+      }
+      // Sanity check we processed the expected number of entries (should never fail).
+      checkState(index == offsets[0], "corrupted tag map");
+      return array;
+    }
+
+    // Note we could play some tricks and avoid 2 allocations here, but it would mean essentially
+    // duplicating the code from SimpleImmutableEntry (so we can merge the entry and values
+    // classes). However it's very likely not worth it.
+    Map.Entry<String, ? extends Set<Object>> newEntry(String key, int index) {
+      return new SimpleImmutableEntry<String, Set<Object>>(key, new SortedArraySet<Object>(index));
+    }
+
+    @Override
+    public Set<Entry<String, Set<Object>>> entrySet() {
+      return entrySet;
+    }
+
+    /**
+     * A lightweight set based on an range in an array. This assumes (but does not enforce) that the
+     * elements in the array are ordered according to the comparator. It uses the array and offsets
+     * from the outer map class, needing only to specify its index from which start/end offsets can
+     * be derived.
+     */
+    class SortedArraySet<T> extends AbstractSet<T> {
+      // -1 = key set, 0...N-1 = values set.
+      final int index;
+
+      SortedArraySet(int index) {
+        this.index = index;
+      }
+
+      private int getStart() {
+        return index == -1 ? 0 : offsets[index];
+      }
+
+      private int getEnd() {
+        return offsets[index + 1];
+      }
+
+      private Comparator<Object> getComparator() {
+        return index == -1 ? ENTRY_COMPARATOR : VALUE_COMPARATOR;
+      }
+
+      @Override
+      public int size() {
+        return getEnd() - getStart();
+      }
+
+      // Optional, but potentially faster to binary search for elements.
+      // TODO(dbeaumont): Benchmark for realistic tag usage and consider removing.
+      @Override
+      public boolean contains(Object o) {
+        return Arrays.binarySearch(array, getStart(), getEnd(), o, getComparator()) >= 0;
+      }
+
+      @Override
+      public Iterator<T> iterator() {
+        return new Iterator<T>() {
+          private int n = 0;
+
+          @Override
+          public boolean hasNext() {
+            return n < size();
+          }
+
+          @Override
+          @SuppressWarnings("unchecked")
+          public T next() {
+            // Copy to local variable to guard against concurrent calls to next() causing the index
+            // to become currupted and going off the end of the valid range for this iterator.
+            // This doesn't make concurrent iteration thread safe in general, but prevents weird
+            // situations where a value for a different element could be returned by mistake.
+            int idx = n;
+            if (idx < size()) {
+              T value = (T) array[getStart() + idx];
+              // Written value is never > size(), even with concurrent iteration.
+              n = idx + 1;
+              return value;
+            }
+            throw new NoSuchElementException();
+          }
+        };
+      }
+    }
+
+    @Override
+    public int hashCode() {
+      // Abstract maps cannot cache their hash codes, but we know we're immutable, so we can.
+      if (hashCode == null) {
+        hashCode = super.hashCode();
+      }
+      return hashCode;
+    }
+
+    @Override
+    public String toString() {
+      if (toString == null) {
+        toString = super.toString();
+      }
+      return toString;
+    }
   }
 }
