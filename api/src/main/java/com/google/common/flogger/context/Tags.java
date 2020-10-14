@@ -263,12 +263,12 @@ public final class Tags {
 
   private final LightweightTagMap map;
 
-  private Tags(Map<String, ? extends Set<Object>> map) {
+  private Tags(Map<String, Set<Object>> map) {
     this.map = new LightweightTagMap(map);
   }
 
   /** Returns an immutable map containing the tag values. */
-  public Map<String, ? extends Set<Object>> asMap() {
+  public Map<String, Set<Object>> asMap() {
     return map;
   }
 
@@ -389,7 +389,7 @@ public final class Tags {
     private Integer hashCode = null;
     private String toString = null;
 
-    LightweightTagMap(Map<String, ? extends Set<Object>> map) {
+    LightweightTagMap(Map<String, Set<Object>> map) {
       this.offsets = getOffsetArray(map);
       this.array = getMapArray(map, offsets);
     }
@@ -397,7 +397,7 @@ public final class Tags {
     // Builds the array of start/end offsets to the different sections of the array and determines
     // the total size needed to hold all entries and value efficiently (that's just stored in the
     // final element in the offset array, since it also marks the end of the last group of values).
-    private static int[] getOffsetArray(Map<String, ? extends Set<Object>> map) {
+    private static int[] getOffsetArray(Map<String, Set<Object>> map) {
       int currentSize = map.size();
       // Put a value on the end so we don't have to special case the final entry.
       int[] offsets = new int[currentSize + 1];
@@ -416,12 +416,12 @@ public final class Tags {
 
     // Builds the array in map iteration order, but since this is only called from the builder,
     // which uses sorted sets/maps, this will preserve that order.
-    private Object[] getMapArray(Map<String, ? extends Set<Object>> map, int[] offsets) {
+    private Object[] getMapArray(Map<String, Set<Object>> map, int[] offsets) {
       Object[] array = new Object[offsets[map.size()]];
       int index = 0;
       // The value offset just increases throughout the loop, starting just after the entries.
       int n = offsets[index];
-      for (Entry<String, ? extends Set<Object>> e : map.entrySet()) {
+      for (Entry<String, Set<Object>> e : map.entrySet()) {
         // Store the lightweight entry in the initial part of the array.
         array[index] = newEntry(e.getKey(), index);
         for (Object v : e.getValue()) {
@@ -441,7 +441,7 @@ public final class Tags {
     // Note we could play some tricks and avoid 2 allocations here, but it would mean essentially
     // duplicating the code from SimpleImmutableEntry (so we can merge the entry and values
     // classes). However it's very likely not worth it.
-    Map.Entry<String, ? extends Set<Object>> newEntry(String key, int index) {
+    Map.Entry<String, Set<Object>> newEntry(String key, int index) {
       return new SimpleImmutableEntry<String, Set<Object>>(key, new SortedArraySet<Object>(index));
     }
 
