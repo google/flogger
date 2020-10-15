@@ -19,6 +19,8 @@ package com.google.common.flogger.context;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -129,6 +131,53 @@ public class TagsTest {
     Tags rhs = Tags.builder().addTag("tag", "abc").build();
     assertThat(lhs.merge(rhs).asMap()).containsEntry("tag", setOf("abc", "def"));
     assertThat(rhs.merge(lhs).asMap()).containsEntry("tag", setOf("abc", "def"));
+  }
+
+  @Test
+  public void testTagMerging_largeNumberOfKeys() {
+    Tags.Builder lhs = Tags.builder();
+    Tags.Builder rhs = Tags.builder();
+    for (int i = 0; i < 256; i++) {
+      String key = String.format("k%02X", i);
+      if ((i & 1) == 0) {
+        lhs.addTag(key);
+      }
+      if ((i & 2) == 0) {
+        rhs.addTag(key);
+      }
+    }
+    Map<String, Set<Object>> tagMap = lhs.build().merge(rhs.build()).asMap();
+    assertThat(tagMap).hasSize(192);  // 3/4 of 256
+    assertThat(tagMap.keySet())
+        .containsAtLeast("k00", "k01", "k02", "k80", "kCC", "kFC", "kFD", "kFE")
+        .inOrder();
+    // Nothing ending in 3, 7, B or F.
+    assertThat(tagMap.keySet()).containsNoneOf("k03", "k77", "kAB", "kFF");
+  }
+
+  @Test
+  public void testTagMerging_largeNumberOfValues() {
+    Tags.Builder lhs = Tags.builder();
+    Tags.Builder rhs = Tags.builder();
+    for (int i = 0; i < 256; i++) {
+      String value = String.format("v%02X", i);
+      if ((i & 1) == 0) {
+        lhs.addTag("tag", value);
+      }
+      if ((i & 2) == 0) {
+        rhs.addTag("tag", value);
+      }
+    }
+    Map<String, Set<Object>> tagMap = lhs.build().merge(rhs.build()).asMap();
+    assertThat(tagMap).hasSize(1);
+    assertThat(tagMap).containsKey("tag");
+
+    Set<Object> values = tagMap.get("tag");
+    assertThat(values).hasSize(192);  // 3/4 of 256
+    assertThat(values)
+        .containsAtLeast("v00", "v01", "v02", "v80", "vCC", "vFC", "vFD", "vFE")
+        .inOrder();
+    assertThat(tagMap.keySet()).containsNoneOf("v03", "v77", "vAB", "vFF");
   }
 
   @Test
