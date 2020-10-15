@@ -19,7 +19,6 @@ package com.google.common.flogger.context;
 import static com.google.common.flogger.util.Checks.checkArgument;
 import static com.google.common.flogger.util.Checks.checkMetadataIdentifier;
 import static com.google.common.flogger.util.Checks.checkNotNull;
-import static com.google.common.flogger.util.Checks.checkState;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.AbstractMap;
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -380,7 +380,7 @@ public final class Tags {
     // A singleton map always has the same immutable offsets (start/end value indices).
     private static final int[] singletonOffsets = new int[] {1, 2};
 
-    // The array holds ordered entries followed by values for each entry (grouped by key in order).
+    // This array holds ordered entries followed by values for each entry (grouped by key in order).
     //
     // The offsets array holds the starting offset to each contiguous group of values, plus a final
     // offset to the end of the last group (but we allow sloppy array sizing, so there might be
@@ -391,10 +391,10 @@ public final class Tags {
     //
     // E(n) = n-th entry, V(n,m) = m-th value for n-th entry.
     //
-    // The entries start at 0 and end at offsets[0].
-    // For an entry with index n, its values start at offsets[n] and end at offsets[n+1].
+    // The set of entries has index -1, and entries start at 0 and end at offsets[0].
+    //
+    // For an entry with index n >= 0, the values start at offsets[n] and end at offsets[n+1].
     // It is permitted to have zero values for an entry (i.e. offsets(n) == offsets(n+1)).
-
     private final Object[] array;
     private final int[] offsets;
 
@@ -416,65 +416,98 @@ public final class Tags {
     // ---- General constructor ----
 
     LightweightTagMap(List<KeyValuePair> sortedPairs) {
-      int entryCount = countMapEntries(sortedPairs);
-      int[] offsets = new int[entryCount + 1];
       // Allocate the maximum required space for entries and values. This is a bit wasteful if there
       // are pairs with null values in (rare) or duplicates (very rare) but we might resize later.
+      int entryCount = countMapEntries(sortedPairs);
       Object[] array = new Object[entryCount + sortedPairs.size()];
-      String key = null;
-      Object value = null;
-      int newEntryIndex = 0;
-      int valueStart = entryCount;
-      for (KeyValuePair e : sortedPairs) {
-        if (!e.key.equals(key)) {
-          key = e.key;
-          array[newEntryIndex] = newEntry(key, newEntryIndex);
-          offsets[newEntryIndex] = valueStart;
-          newEntryIndex++;
-          value = null;
-        }
-        if (e.value != null && !e.value.equals(value)) {
-          value = e.value;
-          array[valueStart++] = value;
-        }
-      }
-      // If someone was using the builder concurrently, all bets are off.
-      checkState(newEntryIndex == entryCount, "corrupted tag map");
-      offsets[entryCount] = valueStart;
-      this.array = maybeResizeElementArray(array, valueStart);
+      int[] offsets = new int[entryCount + 1];
+
+      int totalElementCount = makeTagMap(sortedPairs, entryCount, array, offsets);
+      this.array = maybeResizeElementArray(array, totalElementCount);
       this.offsets = offsets;
     }
 
     // ---- Merging constructor ----
 
     LightweightTagMap(LightweightTagMap lhs, LightweightTagMap rhs) {
-      // We already checked that neither was empty and it's probably not worth optimizing for the
+      // We already checked that neither map is empty and it's probably not worth optimizing for the
       // case where one is a subset of the other (by the time you've checked you might as well have
       // just made a new instance anyway).
       //
-      // Be careful *not* to assume that arrays are efficiently packed (so never use array length
-      // to access the "last" element).
-      // The final entry in the offsets array is the end of the valid values.
-      int maxEntries = lhs.size() + rhs.size();
-      int maxNewArraySize = lhs.getTotalElementCount() + rhs.getTotalElementCount();
+      // We expect to efficiently use most or all of this array (resizing should be rare).
+      int maxEntryCount = lhs.size() + rhs.size();
+      Object[] array = new Object[lhs.getTotalElementCount() + rhs.getTotalElementCount()];
+      int[] offsets = new int[maxEntryCount + 1];
 
-      // We can "right-size" these later, but it's common for names/values to be unique so we expect
-      // to efficiently use most or all of this array (this saves re-allocation during merging).
-      Object[] array = new Object[maxNewArraySize];
-      int[] offsets = new int[maxEntries + 1];
+      int totalElementCount = mergeTagMaps(lhs, rhs, maxEntryCount, array, offsets);
+      this.array = adjustOffsetsAndMaybeResize(array, offsets, totalElementCount);
+      this.offsets = maybeResizeOffsetsArray(offsets);
+    }
 
+    // ---- Helpers for making a tag map from the builder. ----
+
+    // Count the unique keys for a sorted list of key-value pairs.
+    private static int countMapEntries(List<KeyValuePair> sortedPairs) {
+      String key = null;
+      int count = 0;
+      for (KeyValuePair pair : sortedPairs) {
+        if (!pair.key.equals(key)) {
+          key = pair.key;
+          count++;
+        }
+      }
+      return count;
+    }
+
+    // Processes a sorted sequence of key/value pairs to fill the given arrays/offsets. This is a
+    // single pass of the pairs
+    private int makeTagMap(
+        List<KeyValuePair> sortedPairs, int entryCount, Object[] array, int[] offsets) {
+      String key = null;
+      Object value = null;
+      int newEntryIndex = 0;
+      int valueStart = entryCount;
+      for (KeyValuePair pair : sortedPairs) {
+        if (!pair.key.equals(key)) {
+          key = pair.key;
+          array[newEntryIndex] = newEntry(key, newEntryIndex);
+          offsets[newEntryIndex] = valueStart;
+          newEntryIndex++;
+          value = null;
+        }
+        if (pair.value != null && !pair.value.equals(value)) {
+          value = pair.value;
+          array[valueStart++] = value;
+        }
+      }
+      // If someone was using the builder concurrently, all bets are off.
+      if (newEntryIndex != entryCount) {
+        throw new ConcurrentModificationException("corrupted tag map");
+      }
+      offsets[entryCount] = valueStart;
+      return valueStart;
+    }
+
+    // ---- Helpers for merging tag maps. ----
+
+    private int mergeTagMaps(
+        LightweightTagMap lhs,
+        LightweightTagMap rhs,
+        int maxEntryCount,
+        Object[] array,
+        int[] offsets) {
       // Merge values starting at the first safe offset after the largest possible number of
       // entries. We may need to copy elements later to remove any gap due to duplicate keys.
       // If the values are copied down we must remember to re-adjust the offsets as well.
-      int valueStart = maxEntries;
+      int valueStart = maxEntryCount;
       // The first offset is the start of the first values segment.
       offsets[0] = valueStart;
 
       // We must have at least one entry per map, but they can be null once we run out.
       int lhsEntryIndex = 0;
-      Map.Entry<String, SortedArraySet<Object>> lhsEntry = lhs.getEntryOrNull(lhsEntryIndex);
+      Entry<String, SortedArraySet<Object>> lhsEntry = lhs.getEntryOrNull(lhsEntryIndex);
       int rhsEntryIndex = 0;
-      Map.Entry<String, SortedArraySet<Object>> rhsEntry = rhs.getEntryOrNull(rhsEntryIndex);
+      Entry<String, SortedArraySet<Object>> rhsEntry = rhs.getEntryOrNull(rhsEntryIndex);
 
       int newEntryIndex = 0;
       while (lhsEntry != null || rhsEntry != null) {
@@ -503,23 +536,7 @@ public final class Tags {
           rhsEntry = rhs.getEntryOrNull(++rhsEntryIndex);
         }
       }
-      this.array = adjustOffsetsAndMaybeResize(array, offsets, newEntryIndex);
-      this.offsets = maybeResizeOffsetsArray(offsets);
-    }
-
-    // ---- Static constructor helper methods ----
-
-    // Count the unique keys for a sorted list of key-value pairs (provided by the builder).
-    private static int countMapEntries(List<KeyValuePair> sortedPairs) {
-      String key = null;
-      int count = 0;
-      for (KeyValuePair e : sortedPairs) {
-        if (!e.key.equals(key)) {
-          key = e.key;
-          count++;
-        }
-      }
-      return count;
+      return newEntryIndex;
     }
 
     // Called when merging maps to merge the values for a pair of entries with duplicate keys.
@@ -527,27 +544,44 @@ public final class Tags {
         SortedArraySet<?> lhs, SortedArraySet<?> rhs, Object[] array, int valueStart) {
       // The indices here are the value indices within the lhs/rhs elements, not the indices of the
       // elements in their respective maps, but the basic loop structure is very similar.
-      int lhsIdx = 0;
-      int rhsIdx = 0;
-      while (lhsIdx < lhs.size() || rhsIdx < rhs.size()) {
-        int signum = (lhsIdx == lhs.size()) ? 1 : (rhsIdx == rhs.size()) ? -1 : 0;
+      int lhsIndex = 0;
+      int rhsIndex = 0;
+      while (lhsIndex < lhs.size() || rhsIndex < rhs.size()) {
+        int signum = (lhsIndex == lhs.size()) ? 1 : (rhsIndex == rhs.size()) ? -1 : 0;
         if (signum == 0) {
-          signum = VALUE_COMPARATOR.compare(lhs.getValue(lhsIdx), rhs.getValue(rhsIdx));
+          signum = VALUE_COMPARATOR.compare(lhs.getValue(lhsIndex), rhs.getValue(rhsIndex));
         }
         // Signum can be zero here for duplicate values (unlike the entry processing loop above).
         Object value;
         if (signum < 0) {
-          value = lhs.getValue(lhsIdx++);
+          value = lhs.getValue(lhsIndex++);
         } else {
-          value = rhs.getValue(rhsIdx++);
+          value = rhs.getValue(rhsIndex++);
           if (signum == 0) {
             // Equal values means we just drop the duplicate.
-            lhsIdx++;
+            lhsIndex++;
           }
         }
         array[valueStart++] = value;
       }
       return valueStart;
+    }
+
+    // Called when merging maps to copy an entry with a unique key, and all its values.
+    private int copyEntryAndValues(
+        Map.Entry<String, SortedArraySet<Object>> entry,
+        int entryIndex,
+        int valueStart,
+        Object[] array,
+        int[] offsets) {
+      SortedArraySet<Object> values = entry.getValue();
+      int valueCount = values.getEnd() - values.getStart();
+      System.arraycopy(values.getValuesArray(), values.getStart(), array, valueStart, valueCount);
+      array[entryIndex] = newEntry(entry.getKey(), entryIndex);
+      // Record the end offset for the segment, and return it as the start of the next segment.
+      int valueEnd = valueStart + valueCount;
+      offsets[entryIndex + 1] = valueEnd;
+      return valueEnd;
     }
 
     // Called after merging two maps to see if the offset array needs adjusting.
@@ -567,8 +601,7 @@ public final class Tags {
       Object[] dstArray = array;
       int totalElementCount = offsets[entryCount];
       int valueCount = totalElementCount - entryCount;
-      if (array.length > SMALL_ARRAY_LENGTH && (9 * array.length > 10 * totalElementCount)) {
-        // More than 10% wasted in a non-trivial sized array, so right-size it and copy the entries.
+      if (mustResize(array.length, totalElementCount)) {
         dstArray = new Object[totalElementCount];
         System.arraycopy(array, 0, dstArray, 0, entryCount);
       }
@@ -579,44 +612,24 @@ public final class Tags {
       return dstArray;
     }
 
+    // ---- General constructor helper methods ----
+
     // Resize the value array if necessary.
     private static Object[] maybeResizeElementArray(Object[] array, int bestLength) {
-      // Remember we must account for the extra final offset (the end of the final segment).
-      if (array.length > SMALL_ARRAY_LENGTH && (9 * array.length > 10 * bestLength)) {
-        // More than 10% wasted in a non-trivial sized array, so right-size it and copy entries.
-        return Arrays.copyOf(array, bestLength);
-      }
-      return array;
+      return mustResize(array.length, bestLength) ? Arrays.copyOf(array, bestLength) : array;
     }
 
     // Resize the value array if necessary (separate since int[] and Object[] are not compatible).
     private static int[] maybeResizeOffsetsArray(int[] offsets) {
       // Remember we must account for the extra final offset (the end of the final segment).
       int bestLength = offsets[0] + 1;
-      if (offsets.length > SMALL_ARRAY_LENGTH && (9 * offsets.length > 10 * bestLength)) {
-        // More than 10% wasted in a non-trivial sized array, so right-size it and copy entries.
-        return Arrays.copyOf(offsets, bestLength);
-      }
-      return offsets;
+      return mustResize(offsets.length, bestLength) ? Arrays.copyOf(offsets, bestLength) : offsets;
     }
 
-    // ---- Non-static constructor helper methods ----
-
-    // Called when merging maps to copy an entry with a unique key, and all its values.
-    private int copyEntryAndValues(
-        Map.Entry<String, SortedArraySet<Object>> e,
-        int entryIdx,
-        int valueStart,
-        Object[] array,
-        int[] offsets) {
-      SortedArraySet<Object> values = e.getValue();
-      int valueCount = values.getEnd() - values.getStart();
-      System.arraycopy(values.getValuesArray(), values.getStart(), array, valueStart, valueCount);
-      array[entryIdx] = newEntry(e.getKey(), entryIdx);
-      // Record the end offset for the segment, and return it as the start of the next segment.
-      int valueEnd = valueStart + valueCount;
-      offsets[entryIdx + 1] = valueEnd;
-      return valueEnd;
+    // Common logic to decide if we're wasting too much off an array and need to "right size" it.
+    // Returns true if more than 10% wasted in a non-trivial sized array.
+    private static boolean mustResize(int actualLength, int bestLength) {
+      return actualLength > SMALL_ARRAY_LENGTH && (9 * actualLength > 10 * bestLength);
     }
 
     // Returns a new entry for this map with the given key and values read according to the
@@ -705,14 +718,14 @@ public final class Tags {
           @SuppressWarnings("unchecked")
           public T next() {
             // Copy to local variable to guard against concurrent calls to next() causing the index
-            // to become currupted and going off the end of the valid range for this iterator.
+            // to become corrupted, and going off the end of the valid range for this iterator.
             // This doesn't make concurrent iteration thread safe in general, but prevents weird
             // situations where a value for a different element could be returned by mistake.
-            int idx = n;
-            if (idx < size()) {
-              T value = (T) array[getStart() + idx];
+            int index = n;
+            if (index < size()) {
+              T value = (T) array[getStart() + index];
               // Written value is never > size(), even with concurrent iteration.
-              n = idx + 1;
+              n = index + 1;
               return value;
             }
             throw new NoSuchElementException();
