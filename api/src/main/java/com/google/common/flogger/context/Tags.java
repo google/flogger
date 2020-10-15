@@ -16,23 +16,23 @@
 
 package com.google.common.flogger.context;
 
+import static com.google.common.flogger.util.Checks.checkArgument;
 import static com.google.common.flogger.util.Checks.checkMetadataIdentifier;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 import static com.google.common.flogger.util.Checks.checkState;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
@@ -123,11 +123,42 @@ public final class Tags {
         }
       };
 
-  private static final Tags EMPTY_TAGS = new Tags(Collections.<String, Set<Object>>emptyMap());
+  // Note: This is just a "dumb" holder and doesn't have equals/hashcode defined.
+  private static final class KeyValuePair {
+    private final String key;
+    @NullableDecl private final Object value;
+
+    private KeyValuePair(String key, @NullableDecl Object value) {
+      this.key = key;
+      this.value = value;
+    }
+  }
+
+  // A stylistic choice to make the comparator separate, rather than have KeyValuePair implement
+  // Comparable, because a class which implements Comparable is usually implicitly expected to
+  // also have sensible equals/hashCode methods, but we don't need those.
+  private static final Comparator<KeyValuePair> KEY_VALUE_COMPARATOR =
+      new Comparator<KeyValuePair>() {
+        @Override
+        public int compare(KeyValuePair lhs, KeyValuePair rhs) {
+          int signum = lhs.key.compareTo(rhs.key);
+          if (signum == 0) {
+            if (lhs.value != null) {
+              signum = rhs.value != null ? VALUE_COMPARATOR.compare(lhs.value, rhs.value) : 1;
+            } else {
+              signum = rhs.value != null ? -1 : 0;
+            }
+          }
+          return signum;
+        }
+      };
+
+  private static final Tags EMPTY_TAGS =
+      new Tags(new LightweightTagMap(Collections.<KeyValuePair>emptyList()));
 
   /** A mutable builder for tags. */
   public static final class Builder {
-    private final Map<String, Set<Object>> map = new TreeMap<String, Set<Object>>();
+    private final List<KeyValuePair> keyValuePairs = new ArrayList<KeyValuePair>();
 
     /**
      * Adds an empty tag, ensuring that the given name exists in the tag map with at least an empty
@@ -139,11 +170,7 @@ public final class Tags {
      */
     @CanIgnoreReturnValue
     public Builder addTag(String name) {
-      Set<Object> values = map.get(checkMetadataIdentifier(name));
-      if (values == null) {
-        map.put(name, Collections.emptySet());
-      }
-      return this;
+      return addImpl(name, null);
     }
 
     /**
@@ -152,11 +179,8 @@ public final class Tags {
      */
     @CanIgnoreReturnValue
     public Builder addTag(String name, String value) {
-      if (value == null) {
-        throw new IllegalArgumentException("tag values cannot be null");
-      }
-      addImpl(name, value);
-      return this;
+      checkArgument(value != null, "tag value");
+      return addImpl(name, value);
     }
 
     /**
@@ -165,8 +189,7 @@ public final class Tags {
      */
     @CanIgnoreReturnValue
     public Builder addTag(String name, boolean value) {
-      addImpl(name, value);
-      return this;
+      return addImpl(name, value);
     }
 
     /**
@@ -179,8 +202,7 @@ public final class Tags {
      */
     @CanIgnoreReturnValue
     public Builder addTag(String name, long value) {
-      addImpl(name, value);
-      return this;
+      return addImpl(name, value);
     }
 
     /**
@@ -193,24 +215,23 @@ public final class Tags {
      */
     @CanIgnoreReturnValue
     public Builder addTag(String name, double value) {
-      addImpl(name, value);
-      return this;
+      return addImpl(name, value);
     }
 
-    private void addImpl(String name, Object value) {
-      // Checks and auto-boxing ensure that "value" is never null.
-      Set<Object> values = map.get(checkMetadataIdentifier(name));
-      // If a tag without a value is added, the set is empty *and* unmodifiable.
-      if (values == null || values.isEmpty()) {
-        values = new TreeSet<Object>(VALUE_COMPARATOR);
-        map.put(name, values);
-      }
-      values.add(value);
+    private Builder addImpl(String name, @NullableDecl Object value) {
+      keyValuePairs.add(new KeyValuePair(checkMetadataIdentifier(name), value));
+      return this;
     }
 
     /** Returns an immutable tags instance. */
     public Tags build() {
-      return map.isEmpty() ? EMPTY_TAGS : new Tags(map);
+      if (keyValuePairs.isEmpty()) {
+        return EMPTY_TAGS;
+      }
+      // Safe, even for a reused builder, because we never care about original value order. We
+      // could deduplicate here to guard against pathological use, but it should never matter.
+      Collections.sort(keyValuePairs, KEY_VALUE_COMPARATOR);
+      return new Tags(new LightweightTagMap(keyValuePairs));
     }
 
     @Override
@@ -262,11 +283,6 @@ public final class Tags {
   }
 
   private final LightweightTagMap map;
-
-  // Only called from the builder, where keys/values have already been checked for correctness.
-  private Tags(Map<String, Set<Object>> map) {
-    this(new LightweightTagMap(map));
-  }
 
   // Called for singleton Tags instances (but we need to check arguments here).
   private Tags(String name, Object value) {
@@ -390,15 +406,46 @@ public final class Tags {
     private Integer hashCode = null;
     private String toString = null;
 
-    LightweightTagMap(Map<String, Set<Object>> map) {
-      this.offsets = getOffsetArray(map);
-      this.array = getMapArray(map, offsets);
-    }
+    // ---- Singleton constructor ----
 
     LightweightTagMap(String name, Object value) {
       this.offsets = singletonOffsets;
       this.array = new Object[] {newEntry(name, 0), value};
     }
+
+    // ---- General constructor ----
+
+    LightweightTagMap(List<KeyValuePair> sortedPairs) {
+      int entryCount = countMapEntries(sortedPairs);
+      int[] offsets = new int[entryCount + 1];
+      // Allocate the maximum required space for entries and values. This is a bit wasteful if there
+      // are pairs with null values in (rare) or duplicates (very rare) but we might resize later.
+      Object[] array = new Object[entryCount + sortedPairs.size()];
+      String key = null;
+      Object value = null;
+      int newEntryIndex = 0;
+      int valueStart = entryCount;
+      for (KeyValuePair e : sortedPairs) {
+        if (!e.key.equals(key)) {
+          key = e.key;
+          array[newEntryIndex] = newEntry(key, newEntryIndex);
+          offsets[newEntryIndex] = valueStart;
+          newEntryIndex++;
+          value = null;
+        }
+        if (e.value != null && !e.value.equals(value)) {
+          value = e.value;
+          array[valueStart++] = value;
+        }
+      }
+      // If someone was using the builder concurrently, all bets are off.
+      checkState(newEntryIndex == entryCount, "corrupted tag map");
+      offsets[entryCount] = valueStart;
+      this.array = maybeResizeElementArray(array, valueStart);
+      this.offsets = offsets;
+    }
+
+    // ---- Merging constructor ----
 
     LightweightTagMap(LightweightTagMap lhs, LightweightTagMap rhs) {
       // We already checked that neither was empty and it's probably not worth optimizing for the
@@ -460,65 +507,19 @@ public final class Tags {
       this.offsets = maybeResizeOffsetsArray(offsets);
     }
 
-    // Builds the array of start/end offsets to the different sections of the array and determines
-    // the total size needed to hold all entries and value efficiently (that's just stored in the
-    // final element in the offset array, since it also marks the end of the last group of values).
-    private static int[] getOffsetArray(Map<String, Set<Object>> map) {
-      int currentSize = map.size();
-      // Put a value on the end so we don't have to special case the final entry.
-      int[] offsets = new int[currentSize + 1];
-      // First value group offset is immediately after the entries.
-      offsets[0] = currentSize;
-      // Fill in remaining start/end offsets.
-      int n = 1;
-      for (Set<Object> e : map.values()) {
-        currentSize += e.size();
-        offsets[n++] = currentSize;
-      }
-      // Sanity check (in case someone is using the builder instance concurrently).
-      checkState(n == offsets.length, "corrupted tag map");
-      return offsets;
-    }
+    // ---- Static constructor helper methods ----
 
-    // Builds the array in map iteration order, but since this is only called from the builder,
-    // which uses sorted sets/maps, this will preserve that order.
-    private Object[] getMapArray(Map<String, Set<Object>> map, int[] offsets) {
-      Object[] array = new Object[offsets[map.size()]];
-      int index = 0;
-      // The value offset just increases throughout the loop, starting just after the entries.
-      int n = offsets[index];
-      for (Entry<String, Set<Object>> e : map.entrySet()) {
-        // Store the lightweight entry in the initial part of the array.
-        array[index] = newEntry(e.getKey(), index);
-        for (Object v : e.getValue()) {
-          // Ensure we only store non-null values (should already be promised by the builder).
-          array[n++] = checkNotNull(v, "value");
+    // Count the unique keys for a sorted list of key-value pairs (provided by the builder).
+    private static int countMapEntries(List<KeyValuePair> sortedPairs) {
+      String key = null;
+      int count = 0;
+      for (KeyValuePair e : sortedPairs) {
+        if (!e.key.equals(key)) {
+          key = e.key;
+          count++;
         }
-        // Increment the entry index and sanity check that our offset is pointing to the start of
-        // the next set of values (or the end of the array if we've just finished the final entry).
-        index++;
-        checkState(n == offsets[index], "corrupted tag map");
       }
-      // Sanity check we processed the expected number of entries (should never fail).
-      checkState(index == offsets[0], "corrupted tag map");
-      return array;
-    }
-
-    // Called when merging maps to copy an entry with a unique key, and all its values.
-    private int copyEntryAndValues(
-        Map.Entry<String, SortedArraySet<Object>> entry,
-        int entryIdx,
-        int valueStart,
-        Object[] array,
-        int[] offsets) {
-      SortedArraySet<Object> values = entry.getValue();
-      int valueCount = values.getEnd() - values.getStart();
-      System.arraycopy(values.getValuesArray(), values.getStart(), array, valueStart, valueCount);
-      array[entryIdx] = newEntry(entry.getKey(), entryIdx);
-      // Record the end offset for the segment, and return it as the start of the next segment.
-      int valueEnd = valueStart + valueCount;
-      offsets[entryIdx + 1] = valueEnd;
-      return valueEnd;
+      return count;
     }
 
     // Called when merging maps to merge the values for a pair of entries with duplicate keys.
@@ -560,10 +561,10 @@ public final class Tags {
       if (offsetReduction == 0) {
         return array;
       }
-      Object[] dstArray = array;
       for (int i = 0; i <= entryCount; i++) {
         offsets[i] -= offsetReduction;
       }
+      Object[] dstArray = array;
       int totalElementCount = offsets[entryCount];
       int valueCount = totalElementCount - entryCount;
       if (array.length > SMALL_ARRAY_LENGTH && (9 * array.length > 10 * totalElementCount)) {
@@ -578,6 +579,17 @@ public final class Tags {
       return dstArray;
     }
 
+    // Resize the value array if necessary.
+    private static Object[] maybeResizeElementArray(Object[] array, int bestLength) {
+      // Remember we must account for the extra final offset (the end of the final segment).
+      if (array.length > SMALL_ARRAY_LENGTH && (9 * array.length > 10 * bestLength)) {
+        // More than 10% wasted in a non-trivial sized array, so right-size it and copy entries.
+        return Arrays.copyOf(array, bestLength);
+      }
+      return array;
+    }
+
+    // Resize the value array if necessary (separate since int[] and Object[] are not compatible).
     private static int[] maybeResizeOffsetsArray(int[] offsets) {
       // Remember we must account for the extra final offset (the end of the final segment).
       int bestLength = offsets[0] + 1;
@@ -586,6 +598,25 @@ public final class Tags {
         return Arrays.copyOf(offsets, bestLength);
       }
       return offsets;
+    }
+
+    // ---- Non-static constructor helper methods ----
+
+    // Called when merging maps to copy an entry with a unique key, and all its values.
+    private int copyEntryAndValues(
+        Map.Entry<String, SortedArraySet<Object>> e,
+        int entryIdx,
+        int valueStart,
+        Object[] array,
+        int[] offsets) {
+      SortedArraySet<Object> values = e.getValue();
+      int valueCount = values.getEnd() - values.getStart();
+      System.arraycopy(values.getValuesArray(), values.getStart(), array, valueStart, valueCount);
+      array[entryIdx] = newEntry(e.getKey(), entryIdx);
+      // Record the end offset for the segment, and return it as the start of the next segment.
+      int valueEnd = valueStart + valueCount;
+      offsets[entryIdx + 1] = valueEnd;
+      return valueEnd;
     }
 
     // Returns a new entry for this map with the given key and values read according to the
@@ -605,6 +636,8 @@ public final class Tags {
     private int getTotalElementCount() {
       return offsets[size()];
     }
+
+    // ---- Public API methods. ----
 
     @Override
     public Set<Entry<String, Set<Object>>> entrySet() {

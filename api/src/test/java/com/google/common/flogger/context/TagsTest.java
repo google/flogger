@@ -39,6 +39,7 @@ public class TagsTest {
   @Test
   public void testEmpty() {
     assertThat(Tags.builder().build()).isSameInstanceAs(Tags.empty());
+    assertThat(Tags.empty().asMap()).isEmpty();
   }
 
   @Test
@@ -178,6 +179,25 @@ public class TagsTest {
         .containsAtLeast("v00", "v01", "v02", "v80", "vCC", "vFC", "vFD", "vFE")
         .inOrder();
     assertThat(tagMap.keySet()).containsNoneOf("v03", "v77", "vAB", "vFF");
+  }
+
+  @Test
+  public void testBuilder_largeNumberOfDuplicates() {
+    Tags.Builder tags = Tags.builder();
+    for (int i = 0; i < 256; i++) {
+      tags.addTag("foo");
+      tags.addTag("bar");
+      for (int j = 0; j < 20; j++) {
+        String value = "v" + (5 - (j % 5));  // v5 ... v1 (reverse order)
+        tags.addTag("foo", value);
+        tags.addTag("bar", value);
+      }
+    }
+    Map<String, Set<Object>> tagMap = tags.build().asMap();
+    assertThat(tagMap).hasSize(2);
+    assertThat(tagMap.keySet()).containsExactly("bar", "foo").inOrder();
+    assertThat(tagMap.get("foo")).containsExactly("v1", "v2", "v3", "v4", "v5").inOrder();
+    assertThat(tagMap.get("bar")).containsExactly("v1", "v2", "v3", "v4", "v5").inOrder();
   }
 
   @Test
