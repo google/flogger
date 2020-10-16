@@ -246,7 +246,7 @@ public abstract class ScopedLoggingContext {
    * Foo result = ctx.newScope().withTags(Tags.of("my_tag", someValue)).call(MyClass::doFoo);
    * }</pre>
    *
-   * <p>Note that the default implementation of this method is potentially inefficent and it is
+   * <p>Note that the default implementation of this method is potentially inefficient and it is
    * strongly recommended that scoped context implementations override it with a better
    * implementation.
    */
@@ -260,17 +260,37 @@ public abstract class ScopedLoggingContext {
       @SuppressWarnings("MustBeClosedChecker")
       public LoggingScope install() {
         LoggingScope scope = withNewScope();
-        Tags tags = getTags();
-        if (tags != null && !tags.isEmpty()) {
-          addTags(tags);
+        try {
+          Tags tags = getTags();
+          if (tags != null && !tags.isEmpty()) {
+            addTags(tags);
+          }
+          LogLevelMap logLevelMap = getLogLevelMap();
+          if (logLevelMap != null) {
+            applyLogLevelMap(logLevelMap);
+          }
+          return scope;
+        } catch (Error e) {
+          forceClose(scope);
+          throw e;
+        } catch (RuntimeException e) {
+          forceClose(scope);
+          throw e;
         }
-        LogLevelMap logLevelMap = getLogLevelMap();
-        if (logLevelMap != null) {
-          applyLogLevelMap(logLevelMap);
-        }
-        return scope;
       }
     };
+  }
+
+  private static void forceClose(LoggingScope scope) {
+    // Errors in scope setup should almost never happen since no user code is being run here,
+    // but we should still protect the scope state as best we can (e.g. OutOfMemoryError).
+    // Make a best effort attempt to close the scope before re-throwing the error. Logging
+    // context implementations should never fail when closing a successfully opened context.
+    try {
+      scope.close();
+    } catch (Throwable ignored) {
+      // Ignored since we have something better to throw, and this shouldn't happen anyway.
+    }
   }
 
   /**
