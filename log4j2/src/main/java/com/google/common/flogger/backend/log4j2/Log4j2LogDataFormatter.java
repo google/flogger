@@ -19,6 +19,7 @@ package com.google.common.flogger.backend.log4j2;
 import static java.util.logging.Level.WARNING;
 
 import com.google.common.flogger.backend.LogData;
+import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
@@ -71,7 +72,7 @@ final class Log4j2LogDataFormatter {
       out.append(data.getTemplateContext().getMessage());
       out.append("\n  original arguments:");
       for (Object arg : data.getArguments()) {
-        out.append("\n    ").append(SimpleMessageFormatter.safeToString(arg));
+        out.append("\n    ").append(MessageUtils.safeToString(arg));
       }
     }
     Metadata metadata = data.getMetadata();

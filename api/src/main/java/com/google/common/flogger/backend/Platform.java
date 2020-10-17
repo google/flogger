@@ -227,6 +227,10 @@ public abstract class Platform {
     return Tags.empty();
   }
 
+  public static Metadata getInjectedMetadata() {
+    return getContextDataProvider().getMetadata();
+  }
+
   /**
    * Returns the current time from the epoch (00:00 1st Jan, 1970) with nanosecond granularity.
    * This is a non-negative signed 64-bit value, which must be in the range {@code 0 <= timestamp

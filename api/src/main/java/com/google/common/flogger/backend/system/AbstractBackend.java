@@ -50,7 +50,7 @@ abstract class AbstractBackend extends LoggerBackend {
   // Q: Why is the code below so complex ?
   //
   // The code below is (sadly) necessarily complex due to the need to cope with the possibility
-  // that the JDK logger instance we have is a sub-class generated from a custom LogManager.
+  // that the JDK logger instance we have is a subclass generated from a custom LogManager.
   //
   // Because the API docs for the "log(LogRecord)" method say that it can be overridden to capture
   // all logging, we must call it if there's a chance it was overridden.
@@ -160,7 +160,7 @@ abstract class AbstractBackend extends LoggerBackend {
           + "The Flogger library cannot modify logger log levels, which is necessary to force"
           + " log statements. This is likely due to an installed SecurityManager.\n"
           + "Forced log statements will still be published directly to log handlers, but will"
-          + " not be visible to the 'log(LogRecord)' method of Logger sub-classes.\n");
+          + " not be visible to the 'log(LogRecord)' method of Logger subclasses.\n");
       publish(logger, record);
       return;
     }

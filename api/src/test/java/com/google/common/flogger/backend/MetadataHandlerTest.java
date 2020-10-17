@@ -164,7 +164,7 @@ public class MetadataHandlerTest {
   private static void assertMetadata(
       MetadataHandler<StringBuilder> handler, FakeMetadata scope, Metadata empty, String s) {
     StringBuilder buf = new StringBuilder();
-    MetadataProcessor.of(scope, empty).process(handler, buf);
+    MetadataProcessor.forScopeAndLogSite(scope, empty).process(handler, buf);
     assertThat(buf.toString().trim()).isEqualTo(s);
   }
 
@@ -172,25 +172,19 @@ public class MetadataHandlerTest {
     c.append(k.getLabel()).append("=<<").append(v).append(">> ");
   }
 
-  private static void appendUnknownValues(MetadataKey<?> k, Iterator<Object> v, StringBuilder c) {
+  private static void appendUnknownValues(MetadataKey<?> k, Iterator<?> v, StringBuilder c) {
     appendUnknownValue(k, Joiner.on(", ").join(v), c);
   }
 
-  // Methods used as callbacks need to capture the key type so it's bound to the key that's passed
-  // into the builder (i.e. not just <? extends T>). This is unfortunate but unavoidable if we want
-  // to use the same interface for callbacks for both explicitly matched keys and default actions.
-  // In real code you can also just use a lamba and let the compiler infer the types properly.
-  private static <K extends String> void appendValue(MetadataKey<K> k, Object v, StringBuilder c) {
+  private static void appendValue(MetadataKey<?> k, Object v, StringBuilder c) {
     c.append(k.getLabel()).append("=").append(v).append(" ");
   }
 
-  private static <K extends String> void appendValues(
-      MetadataKey<K> k, Iterator<String> v, StringBuilder c) {
+  private static void appendValues(MetadataKey<?> k, Iterator<?> v, StringBuilder c) {
     appendValue(k, Iterators.toString(v), c);
   }
 
-  private static <K extends Integer> void appendSum(
-      MetadataKey<K> k, Iterator<Integer> v, StringBuilder c) {
+  private static void appendSum(MetadataKey<Integer> k, Iterator<Integer> v, StringBuilder c) {
     int n = 0;
     while (v.hasNext()) {
       n += v.next();

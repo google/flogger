@@ -29,6 +29,8 @@ import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.parser.MessageParser;
 import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
@@ -118,11 +120,25 @@ public abstract class LogContext<
      * The key associated with any injected metadata (in the form of a {@code Tags} instance.
      * <p>
      * If tags are injected, they are added after post-processing if the log site is enabled. Thus
-     * they are no available to the {@code postProcess()} method itself. The rationale is that a
+     * they are not available to the {@code postProcess()} method itself. The rationale is that a
      * log statement's behavior should only be affected by code at the log site (other than
      * "forcing" log statements, which is slightly a special case).
      */
-    public static final MetadataKey<Tags> TAGS = MetadataKey.single("tags", Tags.class);
+    public static final MetadataKey<Tags> TAGS = new MetadataKey<Tags>("tags", Tags.class, false) {
+      @Override
+      public void emit(Tags tags, KeyValueHandler out) {
+        for (Map.Entry<String, ? extends Set<Object>> e : tags.asMap().entrySet()) {
+          Set<Object> values = e.getValue();
+          if (!values.isEmpty()) {
+            for (Object v : e.getValue()) {
+              out.handle(e.getKey(), v);
+            }
+          } else {
+            out.handle(e.getKey(), null);
+          }
+        }
+      }
+    };
 
     /**
      * Key associated with the metadata for specifying additional stack information with a log

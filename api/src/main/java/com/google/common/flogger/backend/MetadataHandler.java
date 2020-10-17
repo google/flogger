@@ -45,7 +45,7 @@ public abstract class MetadataHandler<C> {
    * @param key the metadata key (not necessarily a "singleton" key).
    * @param value associated metadata value.
    * @param context an arbitrary context object supplied to the process method.
-   * @param <T> the value type.
+   * @param <T> the key/value type.
    */
   protected abstract <T> void handle(MetadataKey<T> key, T value, C context);
 
@@ -58,7 +58,7 @@ public abstract class MetadataHandler<C> {
    * @param values a lightweight iterator over all values associated with the key. Note that this
    *     instance is read-only and must not be held beyond the scope of this callback.
    * @param context an arbitrary context object supplied to the process method.
-   * @param <T> the value type.
+   * @param <T> the key/value type.
    */
   protected <T> void handleRepeated(MetadataKey<T> key, Iterator<T> values, C context) {
     while (values.hasNext()) {
@@ -90,7 +90,7 @@ public abstract class MetadataHandler<C> {
   /**
    * API for handling metadata key/value pairs individually.
    *
-   * @param <T> the value type.
+   * @param <T> the key/value type.
    * @param <C> the type of the context passed to the callbacks.
    */
   public interface ValueHandler<T, C> {
@@ -101,13 +101,13 @@ public abstract class MetadataHandler<C> {
      * @param value associated metadata value.
      * @param context an arbitrary context object supplied to the process method.
      */
-    void handle(MetadataKey<? extends T> key, T value, C context);
+    void handle(MetadataKey<T> key, T value, C context);
   }
 
   /**
    * API for handling repeated metadata key/values in a single callback.
    *
-   * @param <T> the value type.
+   * @param <T> the key/value type.
    * @param <C> the type of the context passed to the callbacks.
    */
   public interface RepeatedValueHandler<T, C> {
@@ -120,7 +120,7 @@ public abstract class MetadataHandler<C> {
      *     instance is read-only and must not be held beyond the scope of this callback.
      * @param context an arbitrary context object supplied to the process method.
      */
-    void handle(MetadataKey<? extends T> key, Iterator<T> values, C context);
+    void handle(MetadataKey<T> key, Iterator<T> values, C context);
   }
 
   /**
@@ -130,14 +130,28 @@ public abstract class MetadataHandler<C> {
    * @param <C> the context type.
    */
   public static final class Builder<C> {
-    private final Map<MetadataKey<?>, ValueHandler<?, C>> singleValueHandlers =
-        new HashMap<MetadataKey<?>, ValueHandler<?, C>>();
-    private final Map<MetadataKey<?>, RepeatedValueHandler<?, C>> repeatedValueHandlers =
-        new HashMap<MetadataKey<?>, RepeatedValueHandler<?, C>>();
-    private final ValueHandler<Object, C> defaultHandler;
-    private RepeatedValueHandler<Object, C> defaultRepeatedHandler = null;
+    // Since the context is ignored, this can safely be cast to ValueHandler<Object, C>
+    private static final ValueHandler<Object, Object> IGNORE_VALUE =
+        new ValueHandler<Object, Object>() {
+          @Override
+          public void handle(MetadataKey<Object> key, Object value, Object context) {}
+        };
 
-    private Builder(ValueHandler<Object, C> defaultHandler) {
+    // Since the context is ignored, this can safely be cast to RepeatedValueHandler<Object, C>
+    private static final RepeatedValueHandler<Object, Object> IGNORE_REPEATED_VALUE =
+        new RepeatedValueHandler<Object, Object>() {
+          @Override
+          public void handle(MetadataKey<Object> key, Iterator<Object> value, Object context) {}
+        };
+
+    private final Map<MetadataKey<?>, ValueHandler<?, ? super C>> singleValueHandlers =
+        new HashMap<MetadataKey<?>, ValueHandler<?, ? super C>>();
+    private final Map<MetadataKey<?>, RepeatedValueHandler<?, ? super C>> repeatedValueHandlers =
+        new HashMap<MetadataKey<?>, RepeatedValueHandler<?, ? super C>>();
+    private final ValueHandler<Object, ? super C> defaultHandler;
+    private RepeatedValueHandler<Object, ? super C> defaultRepeatedHandler = null;
+
+    private Builder(ValueHandler<Object, ? super C> defaultHandler) {
       this.defaultHandler = checkNotNull(defaultHandler, "default handler");
     }
 
@@ -154,7 +168,8 @@ public abstract class MetadataHandler<C> {
      * @param defaultHandler the default handler for unknown repeated keys/values.
      * @return the builder instance for chaining.
      */
-    public Builder<C> setDefaultRepeatedHandler(RepeatedValueHandler<Object, C> defaultHandler) {
+    public Builder<C> setDefaultRepeatedHandler(
+        RepeatedValueHandler<Object, ? super C> defaultHandler) {
       this.defaultRepeatedHandler = checkNotNull(defaultHandler, "handler");
       return this;
     }
@@ -164,10 +179,11 @@ public abstract class MetadataHandler<C> {
      *
      * @param key the key for which the handler should be invoked (can be a repeated key).
      * @param handler the value handler to be invoked for every value associated with the key.
-     * @param <T> the value type.
+     * @param <T> the key/value type.
      * @return the builder instance for chaining.
      */
-    public <T> Builder<C> addHandler(MetadataKey<T> key, ValueHandler<T, C> handler) {
+    public <T> Builder<C> addHandler(
+        MetadataKey<T> key, ValueHandler<? super T, ? super C> handler) {
       checkNotNull(key, "key");
       checkNotNull(handler, "handler");
       repeatedValueHandlers.remove(key);
@@ -181,11 +197,11 @@ public abstract class MetadataHandler<C> {
      *
      * @param key the repeated key for which the handler should be invoked.
      * @param handler the repeated value handler to be invoked once for all associated values.
-     * @param <T> the value type.
+     * @param <T> the key/value type.
      * @return the builder instance for chaining.
      */
     public <T> Builder<C> addRepeatedHandler(
-        MetadataKey<T> key, RepeatedValueHandler<T, C> handler) {
+        MetadataKey<? extends T> key, RepeatedValueHandler<T, ? super C> handler) {
       checkNotNull(key, "key");
       checkNotNull(handler, "handler");
       checkArgument(key.canRepeat(), "key must be repeating");
@@ -195,19 +211,64 @@ public abstract class MetadataHandler<C> {
     }
 
     /**
-     * Removes any existing handlers for the given keys. This method is useful when making several
-     * handlers with different mappings from a single builder.
+     * Registers "no op" handlers for the given keys, resulting in their values being ignored.
      *
-     * @param keys the set of keys to remove from the builder.
+     * @param key a key to ignore in the builder.
+     * @param rest additional keys to ignore in the builder.
      * @return the builder instance for chaining.
      */
-    public Builder<C> removeHandlers(MetadataKey<?>... keys) {
-      for (MetadataKey<?> key : keys) {
-        checkNotNull(key, "key");
-        singleValueHandlers.remove(key);
-        repeatedValueHandlers.remove(key);
+    public Builder<C> ignoring(MetadataKey<?> key, MetadataKey<?>... rest) {
+      checkAndIgnore(key);
+      for (MetadataKey<?> k : rest) {
+        checkAndIgnore(k);
       }
       return this;
+    }
+
+    /**
+     * Registers "no op" handlers for the given keys, resulting in their values being ignored.
+     *
+     * @param keys the keys to ignore in the builder.
+     * @return the builder instance for chaining.
+     */
+    public Builder<C> ignoring(Iterable<MetadataKey<?>> keys) {
+      for (MetadataKey<?> k : keys) {
+        checkAndIgnore(k);
+      }
+      return this;
+    }
+
+    <T> void checkAndIgnore(MetadataKey<T> key) {
+      checkNotNull(key, "key");
+      // It is more efficient to ignore a repeated key explicitly.
+      if (key.canRepeat()) {
+        addRepeatedHandler(key, IGNORE_REPEATED_VALUE);
+      } else {
+        addHandler(key, IGNORE_VALUE);
+      }
+    }
+
+    /**
+     * Removes any existing handlers for the given keys, returning them to the default handler(s).
+     * This method is useful when making several handlers with different mappings from a single
+     * builder.
+     *
+     * @param key a key to remove from the builder.
+     * @param rest additional keys to remove from the builder.
+     * @return the builder instance for chaining.
+     */
+    public Builder<C> removeHandlers(MetadataKey<?> key, MetadataKey<?>... rest) {
+      checkAndRemove(key);
+      for (MetadataKey<?> k : rest) {
+        checkAndRemove(k);
+      }
+      return this;
+    }
+
+    void checkAndRemove(MetadataKey<?> key) {
+      checkNotNull(key, "key");
+      singleValueHandlers.remove(key);
+      repeatedValueHandlers.remove(key);
     }
 
     /** Returns the immutable, map-based metadata handler. */
@@ -217,12 +278,12 @@ public abstract class MetadataHandler<C> {
   }
 
   private static final class MapBasedhandler<C> extends MetadataHandler<C> {
-    private final Map<MetadataKey<?>, ValueHandler<?, C>> singleValueHandlers =
-        new HashMap<MetadataKey<?>, ValueHandler<?, C>>();
-    private final Map<MetadataKey<?>, RepeatedValueHandler<?, C>> repeatedValueHandlers =
-        new HashMap<MetadataKey<?>, RepeatedValueHandler<?, C>>();
-    private final ValueHandler<Object, C> defaultHandler;
-    private final RepeatedValueHandler<Object, C> defaultRepeatedHandler;
+    private final Map<MetadataKey<?>, ValueHandler<?, ? super C>> singleValueHandlers =
+        new HashMap<MetadataKey<?>, ValueHandler<?, ? super C>>();
+    private final Map<MetadataKey<?>, RepeatedValueHandler<?, ? super C>> repeatedValueHandlers =
+        new HashMap<MetadataKey<?>, RepeatedValueHandler<?, ? super C>>();
+    private final ValueHandler<Object, ? super C> defaultHandler;
+    private final RepeatedValueHandler<Object, ? super C> defaultRepeatedHandler;
 
     private MapBasedhandler(Builder<C> builder) {
       this.singleValueHandlers.putAll(builder.singleValueHandlers);
@@ -231,29 +292,33 @@ public abstract class MetadataHandler<C> {
       this.defaultRepeatedHandler = builder.defaultRepeatedHandler;
     }
 
+    @SuppressWarnings("unchecked") // See comments for why casting is safe.
     @Override
     protected <T> void handle(MetadataKey<T> key, T value, C context) {
-      @SuppressWarnings("unchecked") // Safe because of how our private map is managed.
-      ValueHandler<T, C> handler = (ValueHandler<T, C>) singleValueHandlers.get(key);
+      // Safe cast because of how our private map is managed.
+      ValueHandler<T, ? super C> handler =
+          (ValueHandler<T, ? super C>) singleValueHandlers.get(key);
       if (handler != null) {
         handler.handle(key, value, context);
       } else {
-        defaultHandler.handle(key, value, context);
+        // Casting MetadataKey<T> to "<? super T>" is safe since it only produces elements of 'T'.
+        defaultHandler.handle((MetadataKey<Object>) key, value, context);
       }
     }
 
+    @SuppressWarnings("unchecked") // See comments for why casting is safe.
     @Override
     protected <T> void handleRepeated(MetadataKey<T> key, Iterator<T> values, C context) {
-      @SuppressWarnings("unchecked") // Safe because of how our private map is managed.
-      RepeatedValueHandler<T, C> handler =
-          (RepeatedValueHandler<T, C>) repeatedValueHandlers.get(key);
+      // Safe cast because of how our private map is managed.
+      RepeatedValueHandler<T, ? super C> handler =
+          (RepeatedValueHandler<T, ? super C>) repeatedValueHandlers.get(key);
       if (handler != null) {
         handler.handle(key, values, context);
       } else if (defaultRepeatedHandler != null && !singleValueHandlers.containsKey(key)) {
-        // Safe because the iterator is unmodifiable (and only produces elements of type T).
-        @SuppressWarnings("unchecked")
-        Iterator<Object> it = (Iterator<Object>) values;
-        defaultRepeatedHandler.handle(key, it, context);
+        // Casting MetadataKey<T> to "<? super T>" is safe since it only produces elements of 'T'.
+        // Casting the iterator is safe since it also only produces elements of 'T'.
+        defaultRepeatedHandler.handle(
+            (MetadataKey<Object>) key, (Iterator<Object>) values, context);
       } else {
         // Dispatches keys individually.
         super.handleRepeated(key, values, context);

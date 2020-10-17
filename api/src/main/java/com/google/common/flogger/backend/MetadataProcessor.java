@@ -50,6 +50,12 @@ import java.util.Map;
  * be done in the logging thread.
  */
 public abstract class MetadataProcessor {
+  // Immutable empty processor which never handles any metadata.
+  private static final MetadataProcessor EMPTY_PROCESSOR = new MetadataProcessor() {
+    @Override
+    public <C> void process(MetadataHandler<C> handler, C context) {}
+  };
+
   /**
    * Returns a new processor for the combined scope and log-site metadata. Note that this returned
    * instance may read directly from the supplied metadata during processing, so the supplied
@@ -60,11 +66,13 @@ public abstract class MetadataProcessor {
    *     LogData})
    * @return a processor to handle a unified view of the data
    */
-  public static MetadataProcessor of(Metadata scopeMetadata, Metadata logMetadata) {
+  public static MetadataProcessor forScopeAndLogSite(Metadata scopeMetadata, Metadata logMetadata) {
     checkNotNull(scopeMetadata, "scope metadata");
     checkNotNull(logMetadata, "log metadata");
-    if (scopeMetadata.size() + logMetadata.size()
-        <= LightweightProcessor.MAX_LIGHTWEIGHT_ELEMENTS) {
+    int totalSize = scopeMetadata.size() + logMetadata.size();
+    if (totalSize == 0) {
+      return EMPTY_PROCESSOR;
+    } else if (totalSize <= LightweightProcessor.MAX_LIGHTWEIGHT_ELEMENTS) {
       return getLightweightProcessor(scopeMetadata, logMetadata);
     } else {
       return getSimpleProcessor(scopeMetadata, logMetadata);

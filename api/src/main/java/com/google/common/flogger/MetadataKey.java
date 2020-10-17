@@ -59,7 +59,7 @@ public class MetadataKey<T> {
    * be considered distinct. The recommended approach is to always assign {@code MetadataKey}
    * instances to static final constants.
    */
-  public static <T> MetadataKey<T> single(String label, Class<T> clazz) {
+  public static <T> MetadataKey<T> single(String label, Class<? extends T> clazz) {
     return new MetadataKey<T>(label, clazz, false);
   }
 
@@ -77,7 +77,7 @@ public class MetadataKey<T> {
   }
 
   private final String label;
-  private final Class<T> clazz;
+  private final Class<? extends T> clazz;
   private final boolean canRepeat;
   private final long bloomFilterMask;
 
@@ -86,7 +86,7 @@ public class MetadataKey<T> {
    * but occasionally it can be useful to create a specific subtype to control the formatting of
    * values or to have a family of related keys with a common parent type.
    */
-  protected MetadataKey(String label, Class<T> clazz, boolean canRepeat) {
+  protected MetadataKey(String label, Class<? extends T> clazz, boolean canRepeat) {
     this.label = checkMetadataIdentifier(label);
     this.clazz = checkNotNull(clazz, "class");
     this.canRepeat = canRepeat;

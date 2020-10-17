@@ -170,14 +170,15 @@ public class GoogleLoggerTest {
 
   @Test
   public void testWithMethod_mixed() {
-    // Output order is the same as statement order.
+    // Values for repeated keys are grouped (e.g. flags come together) with the total key ordering
+    // being the distinct key encounter order (i.e. flag -> point).
     logger
         .atInfo()
         .with(FLAG, 42)
         .with(POINT, new Point(17, 29))
         .with(FLAG, 23)
         .log("¯\\_(ツ)_//¯");
-    assertingHandler.assertOnlyLog().contains("flags=42 point.x=17 point.y=29 flags=23");
+    assertingHandler.assertOnlyLog().contains("flags=42 flags=23 point.x=17 point.y=29");
   }
 
   // Ensure that forEnclosingClass() creates a logger with the expected name, either by

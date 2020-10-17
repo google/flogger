@@ -52,7 +52,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * The result is that this string should be fully reparsable (with the exception of replaced unsafe
  * characters) and easily searchable by text based tools such as "grep".
  */
-class KeyValueFormatter implements KeyValueHandler {
+public final class KeyValueFormatter implements KeyValueHandler {
   // If a single-line log message is > NEWLINE_LIMIT characters long, emit a newline first. Having
   // a limit prevents scanning very large messages just to discover they do not contain newlines.
   private static final int NEWLINE_LIMIT = 1000;
@@ -81,7 +81,7 @@ class KeyValueFormatter implements KeyValueHandler {
    * Creates a formatter using the given prefix to append key/value pairs to the current log
    * message.
    */
-  KeyValueFormatter(String prefix, String suffix, StringBuilder out) {
+  public KeyValueFormatter(String prefix, String suffix, StringBuilder out) {
     // Non-public class used frequently so skip null checks (callers are responsible).
     this.prefix = prefix;
     this.suffix = suffix;

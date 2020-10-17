@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.context;
 
+import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.Platform;
 import java.util.logging.Level;
 
@@ -87,9 +88,21 @@ public abstract class ContextDataProvider {
    * Returns a set of tags to be added to a log statement. These tags can be used to provide
    * additional contextual metadata to log statements (e.g. request IDs).
    *
-   * <p>Implementations which do not support {@link Tags} should return {@code Tags.empty()}.
+   * <p>Implementations which do not support scoped {@link Tags} should return {@code Tags.empty()}.
    */
   public Tags getTags() {
     return Tags.empty();
+  }
+
+  /**
+   * Returns metadata to be applied to a log statement. Scoped metadata can be used to provide
+   * structured data to log statements or control logging behaviour (in conjunction with a custom
+   * logger backend).
+   *
+   * <p>Implementations which do not support scoped {@link Metadata} should return {@code
+   * Metadata.empty()}.
+   */
+  public Metadata getMetadata() {
+    return Metadata.empty();
   }
 }

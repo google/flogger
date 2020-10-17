@@ -18,6 +18,7 @@ package com.google.common.flogger.backend.slf4j;
 
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
+import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
 import java.util.logging.Level;
@@ -174,7 +175,7 @@ final class Slf4jLoggerBackend extends LoggerBackend
       out.append(data.getTemplateContext().getMessage());
       out.append("\n  original arguments:");
       for (Object arg : data.getArguments()) {
-        out.append("\n    ").append(SimpleMessageFormatter.safeToString(arg));
+        out.append("\n    ").append(MessageUtils.safeToString(arg));
       }
     }
     Metadata metadata = data.getMetadata();
