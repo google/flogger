@@ -30,6 +30,36 @@ import java.util.Iterator;
  * for values with specific semantics and should not be seen as a replacement for logging arguments
  * as part of a formatted log message.
  *
+ * <p>Examples of where using {@code MetadataKey} is suitable are:
+ *
+ * <ul>
+ *   <li>Logging a value with special semantics (e.g. values that are handled specially by the
+ *       logger backend).
+ *   <li>Passing flags or configuration to a specific logger backend to modify behaviour.
+ *   <li>Logging a value in many places with consistent formatting (e.g. so it can later be
+ *       re-parsed by logs related tools).
+ * </ul>
+ *
+ * <p>If you just want to log an general "key value pair" in a small number of log statements, it's
+ * still better to just do something like {@code log("key=%s", value)}.
+ *
+ * <p>Metadata keys are expected to be singleton constants, and should never be allocated at the log
+ * site itself. They should always be referenced via static final fields. However comparing keys
+ * should still be done via {@code equals()} (rather than '==') since this will be safe in cases
+ * where non-singleton keys exist, and just as fast if the keys are singletons.
+ *
+ * <p>Metadata keys are passed to a log statement via the {@code with()} method, so it can aid
+ * readability to choose a name for the constant field which reads "fluently" as part of the log
+ * statement. For example:
+ *
+ * <pre>{@code
+ * // Prefer this...
+ * logger.atInfo().with(FILE_LOGGING_FOR, user).log("User specific log message...");
+ * // to...
+ * logger.atInfo().with(SET_LOGGING_TO_USER_FILE, user).log("User specific log message...");
+ * }</pre>
+ *
+ *
  * <p>Logger backends can act upon metadata present in log statements to modify behaviour. Any
  * metadata entries that are not handled by a backend explicitly are, by default, rendered as part
  * of the log statement in a default format.
@@ -114,13 +144,34 @@ public class MetadataKey<T> {
   /**
    * Emits one or more key/value pairs for the given metadata value. By default this method simply
    * emits the given value with this key's label, but it can be overridden to emit multiple
-   * key/value pairs if necessary. Note that if multiple key/value pairs are emitted, the following
-   * best-practice should be followed:
+   * key/value pairs if necessary.
+   *
+   * <p>Note that if multiple key/value pairs are emitted, the following best-practice should be
+   * followed:
    *
    * <ul>
    *   <li>Key names should be of the form {@code "<label>.<suffix>"}.
    *   <li>Suffixes may only contain lower case ASCII letters and underscore (i.e. [a-z_]).
    * </ul>
+   *
+   * <p>This method is called as part of logs processing and could be invoked a very large number of
+   * times in performance critical code. Implementations must be very careful to avoid calling any
+   * code which might risk deadlocks, stack overflow, concurrency issues or performance problems. In
+   * particular, implementations of this method should be careful to avoid:
+   *
+   * <ul>
+   *   <li>Calling any code which could log using the same {@code MetadataKey} instance (unless you
+   *       implement protection against reentrant calling in this method).
+   *   <li>Calling code which might block (e.g. performing file I/O or acquiring locks).
+   *   <li>Allocating non-trivial amounds of memory (e.g. recording values in an unbounded data
+   *       structure).
+   * </ul>
+   *
+   * <p>If you do implement a {@code MetadataKey} with non-trivial value processing, you should
+   * always make it very clear in the documentation that the key may not be suitable for widespread
+   * use.
+   *
+   * <p>By default this method just calls {@code out.handle(getLabel(), value)}.
    */
   public void emit(T value, KeyValueHandler out) {
     out.handle(getLabel(), value);
@@ -130,15 +181,11 @@ public class MetadataKey<T> {
    * Emits one or more key/value pairs for a sequence of repeated metadata values. By default this
    * method simply calls {@link #emit} once for each value, in order. However it could be overridden
    * to treat the sequence of values for a repeated key as a single entity (e.g. by joining elements
-   * with a separator such as {@code '/'}). Note that if multiple key/value pairs are emitted, the
-   * following best-practice should be followed:
+   * with a separator such as {@code '/'}).
    *
-   * <ul>
-   *   <li>Key names should be of the form {@code "<label>.<suffix>"}.
-   *   <li>Suffixes may only contain lower case ASCII letters and underscore (i.e. [a-z_]).
-   * </ul>
+   * <p>By default this method just calls {@code emit(value, out)} for each repeated value.
    *
-   * <p>This method should only be called for repeated keys.
+   * <p>See the {@link #emit} method for additional caveats for custom implementations.
    */
   public void emitRepeated(Iterator<T> values, KeyValueHandler out) {
     checkState(canRepeat, "non repeating key");
