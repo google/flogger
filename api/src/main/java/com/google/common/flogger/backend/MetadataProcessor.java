@@ -67,8 +67,6 @@ public abstract class MetadataProcessor {
    * @return a processor to handle a unified view of the data
    */
   public static MetadataProcessor forScopeAndLogSite(Metadata scopeMetadata, Metadata logMetadata) {
-    checkNotNull(scopeMetadata, "scope metadata");
-    checkNotNull(logMetadata, "log metadata");
     int totalSize = scopeMetadata.size() + logMetadata.size();
     if (totalSize == 0) {
       return EMPTY_PROCESSOR;
@@ -178,7 +176,7 @@ public abstract class MetadataProcessor {
     // same a little on allocations. However this is a fixed size instance and repeated keys are
     // a fairly unusual use case.
     private final class ValueIterator<T> implements Iterator<T> {
-      private MetadataKey<T> key;
+      private final MetadataKey<T> key;
       private int nextIndex;
       // For repeated keys, the bits 5-32 contain a mask of additional indices (where bit 5
       // implies index 1, since index 0 cannot apply to an additional repeated value).
