@@ -19,26 +19,49 @@ package com.google.common.flogger.util;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
- * Helper to call a static no-arg getter to obtain an instance of a specified type. This is used
- * for logging platform "plugins" which are expected to have a singleton available. It is expected
- * that these getter methods will be invoked once during logger initialization and then the results
+ * Helper to call a static no-arg getter to obtain an instance of a specified type. This is used for
+ * logging platform "plugins" which are expected to have a singleton available. It is expected that
+ * these getter methods will be invoked once during logger initialization and then the results
  * cached in the platform class (thus there is no requirement for the class being invoked to handle
  * efficient caching of the result).
  */
 public final class StaticMethodCaller {
   /**
-   * Returns the value of the specified static no-argument method, or null if the method cannot be
-   * called or the returned value is of the wrong type.
+   * Returns the value of calling the static no-argument {@code getInstance()} method on a class
+   * specified in a system property.
    *
-   * @param propertyName the name of a system property which is expected to hold a value like
-   *     {@code "com.foo.Bar#someMethod"}, where the referenced method is a public, no-argument
-   *     getter for an instance of the given type.
+   * @param propertyName the name of a system property which is expected to hold a fully qualified
+   *     class name, which has a public static no-argument {@code getInstance()} method which
+   *     returns an instance of the given type.
+   * @param defaultClassName a default class name for the system property.
    * @param type the expected type (or supertype) of the returned value (generified types are not
    *     supported).
    */
   @NullableDecl
-  public static <T> T callGetterFromSystemProperty(String propertyName, Class<T> type) {
-    String getter = readProperty(propertyName);
+  public static <T> T getInstanceFromSystemProperty(
+      String propertyName, @NullableDecl String defaultClassName, Class<T> type) {
+    String className = readProperty(propertyName, defaultClassName);
+    if (className == null) {
+      return null;
+    }
+    return callStaticMethod(className, "getInstance", type);
+  }
+
+  /**
+   * Returns the value of calling a static no-argument method specified in a system property, or
+   * {@code null} if the method cannot be called or the returned value is of the wrong type.
+   *
+   * @param propertyName the name of a system property which is expected to hold a value like {@code
+   *     "com.foo.Bar#someMethod"}, where the referenced method is a public, no-argument getter for
+   *     an instance of the given type.
+   * @param defaultValue a default value for the system property.
+   * @param type the expected type (or supertype) of the returned value (generified types are not
+   *     supported).
+   */
+  @NullableDecl
+  public static <T> T callGetterFromSystemProperty(
+      String propertyName, @NullableDecl String defaultValue, Class<T> type) {
+    String getter = readProperty(propertyName, defaultValue);
     if (getter == null) {
       return null;
     }
@@ -50,10 +73,25 @@ public final class StaticMethodCaller {
     return callStaticMethod(getter.substring(0, idx), getter.substring(idx + 1), type);
   }
 
-  private static String readProperty(String propertyName) {
+  /**
+   * Returns the value of calling a static no-argument method specified in a system property, or
+   * {@code null} if the method cannot be called or the returned value is of the wrong type.
+   *
+   * @param propertyName the name of a system property which is expected to hold a value like {@code
+   *     "com.foo.Bar#someMethod"}, where the referenced method is a public, no-argument getter for
+   *     an instance of the given type.
+   * @param type the expected type (or supertype) of the returned value (generified types are not
+   *     supported).
+   */
+  @NullableDecl
+  public static <T> T callGetterFromSystemProperty(String propertyName, Class<T> type) {
+    return callGetterFromSystemProperty(propertyName, null, type);
+  }
+
+  private static String readProperty(String propertyName, @NullableDecl String defaultValue) {
     Checks.checkNotNull(propertyName, "property name");
     try {
-      return System.getProperty(propertyName);
+      return System.getProperty(propertyName, defaultValue);
     } catch (SecurityException e) {
       error("cannot read property name %s: %s", propertyName, e);
     }
@@ -66,12 +104,13 @@ public final class StaticMethodCaller {
     } catch (ClassNotFoundException e) {
       // Expected if an optional aspect is not being used (no error).
     } catch (ClassCastException e) {
-      error("cannot cast result of calling '%s#%s' to '%s': %s\n",
+      error(
+          "cannot cast result of calling '%s#%s' to '%s': %s\n",
           className, methodName, type.getName(), e);
     } catch (Exception e) {
       // Catches SecurityException *and* ReflexiveOperationException (which doesn't exist in 1.6).
-      error("cannot call expected no-argument static method '%s#%s': %s\n",
-          className, methodName, e);
+      error(
+          "cannot call expected no-argument static method '%s#%s': %s\n", className, methodName, e);
     }
     return null;
   }
