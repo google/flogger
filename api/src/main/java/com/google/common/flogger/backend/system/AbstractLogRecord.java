@@ -35,6 +35,8 @@ import java.util.logging.LogRecord;
  * to be added easily if needed.
  */
 public abstract class AbstractLogRecord extends LogRecord {
+  private static final Object[] NO_PARAMETERS = new Object[0];
+
   private final LogData data;
   private final Metadata scope;
 
