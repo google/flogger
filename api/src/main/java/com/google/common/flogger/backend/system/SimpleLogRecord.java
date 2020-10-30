@@ -68,7 +68,7 @@ public final class SimpleLogRecord extends AbstractLogRecord implements SimpleLo
   @Override
   public void handleFormattedLogMessage(
       Level level, String message, @NullableDecl Throwable thrown) {
-    setMessage(message);
+    setMessageImpl(message);
     setThrown(thrown);
   }
 }

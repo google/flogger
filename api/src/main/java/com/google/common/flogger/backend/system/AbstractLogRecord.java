@@ -24,24 +24,35 @@ import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
+import com.google.errorprone.annotations.DoNotCall;
 import java.util.Arrays;
 import java.util.logging.LogRecord;
 
 /**
- * Abstract base class for java.util compatible log records produced by system backends.
+ * Abstract base class for {@code java.util.logging} compatible log records produced by logger
+ * backends. Note that the API in this class is not stable, and should not be relied upon outside
+ * the core Flogger libraries.
  *
- * <p>Note: Even though there is currently only one sub-class available, this class exists to allow
- * logs handling code to cast a {@link LogRecord} to a more stable API, allowing new sub-classes
- * to be added easily if needed.
+ * <p>Note that currently, due to the mismatch between Java brace-format and printf (Flogger's
+ * default placeholder syntax) these log records are always expected to have a formatted message
+ * string and no parameters. If you need to process the message in a structured way, it's best to
+ * re-parse the format string from the underlying {@link LogData} via the {@code TemplateContext}.
+ *
+ * <p>Currently any attempt to reset either the message or parameters from outside this class or its
+ * subclasses will silently fail, but in future it may start throwing {@code
+ * UnsupportedOperationException}.
  */
+// TODO(dbeaumont): Make implementation more immutable by overriding setter methods.
 public abstract class AbstractLogRecord extends LogRecord {
+  private static final Object[] NO_PARAMETERS = new Object[0];
+
   private final LogData data;
   private final Metadata scope;
 
   /**
    * Constructs a log record for normal logging without filling in format specific fields.
-   * Subclasses calling this constructor are expected to additionally call {@link #setMessage} and
-   * {@link #setThrown}.
+   * Subclasses calling this constructor are expected to additionally call {@link #setThrown} and
+   * {@link #setMessageImpl} (note that calling {@link #setMessage} has no effect).
    */
   AbstractLogRecord(LogData data, Metadata scope) {
     super(data.getLevel(), null);
@@ -54,6 +65,10 @@ public abstract class AbstractLogRecord extends LogRecord {
     setSourceMethodName(logSite.getMethodName());
     setLoggerName(data.getLoggerName());
     setMillis(NANOSECONDS.toMillis(data.getTimestampNanos()));
+
+    // Some code resets parameters when it discovers "null", so preempt that here by setting the
+    // empty array (but remember to do it via the parent class method which isn't a no-op).
+    super.setParameters(NO_PARAMETERS);
   }
 
   /**
@@ -69,7 +84,34 @@ public abstract class AbstractLogRecord extends LogRecord {
     StringBuilder errorMsg =
         new StringBuilder("LOGGING ERROR: ").append(error.getMessage()).append('\n');
     safeAppend(data, errorMsg);
-    setMessage(errorMsg.toString());
+    setMessageImpl(errorMsg.toString());
+  }
+
+  /** @deprecated {@code AbstractLogRecord} does not support having parameters set. */
+  @Deprecated
+  @DoNotCall
+  @Override
+  public final void setParameters(Object[] parameters) {
+    // Eventually this should throw an UnsupportedOperationException for non null/empty parameters.
+  }
+
+  /**
+   * @deprecated {@code AbstractLogRecord} does not support resetting its message (use {@link
+   *     #setMessageImpl(String)} from subclasses).
+   */
+  @Deprecated
+  @DoNotCall
+  @Override
+  public final void setMessage(String message) {
+    // Eventually this should throw an UnsupportedOperationException.
+  }
+
+  /**
+   * Protected method for subclasses to set the formatted log message (setting the log message from
+   * outside the class hierarchy is not permitted).
+   */
+  protected final void setMessageImpl(String message) {
+    super.setMessage(message);
   }
 
   /**
@@ -109,7 +151,7 @@ public abstract class AbstractLogRecord extends LogRecord {
   private static void safeAppend(LogData data, StringBuilder out) {
     out.append("  original message: ");
     if (data.getTemplateContext() == null) {
-      out.append(data.getLiteralArgument());
+      out.append(MessageUtils.safeToString(data.getLiteralArgument()));
     } else {
       // We know that there's at least one argument to display here.
       out.append(data.getTemplateContext().getMessage());
@@ -122,11 +164,13 @@ public abstract class AbstractLogRecord extends LogRecord {
     if (metadata.size() > 0) {
       out.append("\n  metadata:");
       for (int n = 0; n < metadata.size(); n++) {
-        out.append("\n    ");
-        out.append(metadata.getKey(n).getLabel()).append(": ").append(metadata.getValue(n));
+        out.append("\n    ")
+            .append(metadata.getKey(n).getLabel())
+            .append(": ")
+            .append(MessageUtils.safeToString(metadata.getValue(n)));
       }
     }
-    out.append("\n  level: ").append(data.getLevel());
+    out.append("\n  level: ").append(MessageUtils.safeToString(data.getLevel()));
     out.append("\n  timestamp (nanos): ").append(data.getTimestampNanos());
     out.append("\n  class: ").append(data.getLogSite().getClassName());
     out.append("\n  method: ").append(data.getLogSite().getMethodName());

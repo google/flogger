@@ -60,7 +60,7 @@ public class AssertingLogger extends Logger {
     public void flush() {}
 
     @Override
-    public void close() throws SecurityException {}
+    public void close() {}
   }
 
   private final List<AssertingLogger.LogEntry> entries = new ArrayList<AssertingLogger.LogEntry>();
@@ -81,7 +81,7 @@ public class AssertingLogger extends Logger {
   }
 
   public void assertLogCount(int count) {
-    assertThat(entries.size()).isEqualTo(count);
+    assertThat(entries).hasSize(count);
   }
 
   public void assertLogEntry(int index, Level level, String message, Object... parameters) {
@@ -89,7 +89,9 @@ public class AssertingLogger extends Logger {
     assertThat(entry.level).isEqualTo(level);
     assertThat(entry.message).isEqualTo(message);
     if (parameters.length == 0) {
-      assertThat(entry.parameters).isNull();
+      if (entry.parameters != null) {
+        assertThat(entry.parameters).isEmpty();
+      }
     } else {
       assertWithMessage(
               "Wrong number of parameters: expected=%s, actual=%s",

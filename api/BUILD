@@ -68,6 +68,7 @@ java_library(
     deps = [
         ":api",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
+        "@google_bazel_common//third_party/java/error_prone:annotations",
     ],
 )
 
