@@ -55,7 +55,7 @@ public class SimpleLogRecordTest {
 
     assertThat(record.getLevel()).isEqualTo(Level.WARNING);
     assertThat(record.getMessage()).isEqualTo("literal message");
-    assertThat(record.getParameters()).isEmpty();
+    assertThat(record.getParameters()).isNull();
 
     // We'll test these once here as it should be the same for all records.
     assertThat(record.getLoggerName()).isEqualTo(data.getLoggerName());
@@ -71,7 +71,7 @@ public class SimpleLogRecordTest {
 
     assertThat(record.getLevel()).isEqualTo(Level.WARNING);
     assertThat(record.getMessage()).isEqualTo("null");
-    assertThat(record.getParameters()).isEmpty();
+    assertThat(record.getParameters()).isNull();
   }
 
   @Test
@@ -82,7 +82,7 @@ public class SimpleLogRecordTest {
 
     assertThat(record.getLevel()).isEqualTo(Level.FINE);
     assertThat(record.getMessage()).isEqualTo("Answer=42");
-    assertThat(record.getParameters()).isEmpty();
+    assertThat(record.getParameters()).isNull();
   }
 
   @Test
@@ -93,7 +93,7 @@ public class SimpleLogRecordTest {
 
     assertThat(record.getLevel()).isEqualTo(Level.INFO);
     assertThat(record.getMessage()).isEqualTo("Hex=0x00c0de, Int=49374");
-    assertThat(record.getParameters()).isEmpty();
+    assertThat(record.getParameters()).isNull();
   }
 
   @Test
@@ -137,14 +137,14 @@ public class SimpleLogRecordTest {
 
     assertThat(record.getLevel()).isEqualTo(Level.INFO);
     assertThat(record.getMessage()).isEqualTo("Foo='bar' [CONTEXT count=23 id=\"test ID\" ]");
-    assertThat(record.getParameters()).isEmpty();
+    assertThat(record.getParameters()).isNull();
     // Just do this once for sanity checking - it's only for debugging.
     record.setMillis(123456789);
     assertThat(record.toString())
         .isEqualTo(
             "SimpleLogRecord {\n"
                 + "  message: Foo='bar' [CONTEXT count=23 id=\"test ID\" ]\n"
-                + "  arguments: []\n"
+                + "  arguments: <none>\n"
                 + "  original message: Foo='%s'\n"
                 + "  original arguments:\n"
                 + "    bar\n"
@@ -261,13 +261,13 @@ public class SimpleLogRecordTest {
     String toString = SimpleLogRecord.create(data, Metadata.empty()).toString();
     // From the SimpleLogRecord point of view, we don't have arguments after formatting.
     assertThat(toString).contains("  message: Answer=42");
-    assertThat(toString).contains("  arguments: []");
+    assertThat(toString).contains("  arguments: <none>");
     assertThat(toString).contains("  original message: Answer=%d");
 
     data = FakeLogData.of("Literal String");
     toString = SimpleLogRecord.create(data, Metadata.empty()).toString();
     assertThat(toString).contains("  message: Literal String");
-    assertThat(toString).contains("  arguments: []");
+    assertThat(toString).contains("  arguments: <none>");
     assertThat(toString).contains("  original message: Literal String");
   }
 }
