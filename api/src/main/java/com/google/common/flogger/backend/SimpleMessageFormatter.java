@@ -55,6 +55,37 @@ public final class SimpleMessageFormatter {
   private static final MetadataHandler<KeyValueHandler> DEFAULT_HANDLER =
       MetadataKeyValueHandlers.getDefaultHandler(DEFAULT_KEYS_TO_IGNORE);
 
+  private static final LogMessageFormatter DEFAULT_FORMATTER =
+      new LogMessageFormatter() {
+        @Override
+        public StringBuilder append(LogData logData, Metadata scope, StringBuilder out) {
+          return SimpleMessageFormatter.appendFormatted(logData, scope, out);
+        }
+
+        @Override
+        public String format(LogData logData, Metadata scope) {
+          return SimpleMessageFormatter.format(logData, scope);
+        }
+      };
+
+  /**
+   * Returns the singleton default log message formatter. This formats log messages in the form:
+   *
+   * <pre>{@code
+   * Log message [CONTEXT key="value" id=42 ]
+   * }</pre>
+   *
+   * <p>with context from the log data and scope, merged together in a sequence of key/value pairs
+   * after the formatted message. If the log message is long or multi-line, then the context suffix
+   * will be formatted on a single separate line.
+   *
+   * <p>Only the "cause" is omitted from the context section, since it's handled separately by most
+   * logger backends and not considered part of the formatted message.
+   */
+  public static LogMessageFormatter getDefaultFormatter() {
+    return DEFAULT_FORMATTER;
+  }
+
   /**
    * Appends the formatted message and metadata to the given buffer using the default metadata
    * handler. See {@link #appendFormatted(LogData, Metadata, MetadataHandler, StringBuilder)} for
@@ -88,15 +119,41 @@ public final class SimpleMessageFormatter {
    * @param buffer destination buffer in to which the log message and metadata will be appended.
    * @return the given destination buffer (for method chaining).
    */
+  // TODO: Inline this and remove (it's just not worth it for 2 lines of code).
   public static StringBuilder appendFormatted(
       LogData logData,
       Metadata scope,
       MetadataHandler<KeyValueHandler> metadataHandler,
       StringBuilder buffer) {
     BaseMessageFormatter.appendFormattedMessage(logData, buffer);
+    return appendContext(
+        MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata()),
+        metadataHandler,
+        buffer);
+  }
+
+  /**
+   * Appends formatted context information to the given buffer using the supplied metadata handler.
+   * A custom metadata handler is useful if the logger backend wishes to:
+   *
+   * <ul>
+   *   <li>Ignore more than just the default set of metadata keys (currently just the "cause").
+   *   <li>Intercept and capture metadata values for additional processing or logging control.
+   * </ul>
+   *
+   * @param metadataProcessor snapshot of the metadata to be processed ({@link MetadataProcessor} is
+   *     reusable so passing one in can save repeated processing of the same metadata).
+   * @param metadataHandler a metadata handler for intercepting and dispatching metadata during
+   *     formatting.
+   * @param buffer destination buffer into which the log message and metadata will be appended.
+   * @return the given destination buffer (for method chaining).
+   */
+  public static StringBuilder appendContext(
+      MetadataProcessor metadataProcessor,
+      MetadataHandler<KeyValueHandler> metadataHandler,
+      StringBuilder buffer) {
     KeyValueFormatter kvf = new KeyValueFormatter("[CONTEXT ", " ]", buffer);
-    MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata())
-        .process(metadataHandler, kvf);
+    metadataProcessor.process(metadataHandler, kvf);
     kvf.done();
     return buffer;
   }
@@ -158,17 +215,17 @@ public final class SimpleMessageFormatter {
   }
 
   /**
-   * Callback made when formatting of a log message is complete. This is preferable to having the
-   * formatter itself hold state because in some common situations an instance of the formatter need
-   * not even be allocated.
+   * Helper method to format the log message and any metadata with the default formatting. This is
+   * exposed in a public API by the default log message formatter (but also used in deprecated
+   * methods for now).
    */
-  public interface SimpleLogHandler {
-    /**
-     * Handles a single formatted log statement with the given level, message and "cause". This is
-     * called back exactly once, from the same thread, for every call made to {@link #format}.
-     */
-    void handleFormattedLogMessage(Level level, String message, @NullableDecl Throwable thrown);
+  private static String format(LogData logData, Metadata scope) {
+    return mustBeFormatted(logData, scope, DEFAULT_KEYS_TO_IGNORE)
+        ? appendFormatted(logData, scope, DEFAULT_HANDLER, new StringBuilder()).toString()
+        : getLiteralLogMessage(logData);
   }
+
+  // ---- Everything below this point is deprecated and will be removed. ----
 
   /**
    * Applies the default formatting to the log message and any metadata, calling the supplied
@@ -180,6 +237,7 @@ public final class SimpleMessageFormatter {
    *   <li>Default formatting is desired and no additional formatting is applied to the result.
    *   <li>Only the "cause" metadata (keyed off {@link LogContext.Key#LOG_CAUSE}) is handled
    *       separately.
+   *   <li>The caller has no existing buffer into which the log message is being appended.
    * </ul>
    *
    * <p>If any of these points do not apply, then you should use {@link #appendFormatted(LogData,
@@ -193,23 +251,17 @@ public final class SimpleMessageFormatter {
    * @param scope additional scoped metadata (use {@code Metadata.empty()} if the logging backend
    *     does not support scoped metadata).
    * @param receiver callback handler for the completed log message and additional data.
+   * @deprecated Use a {@link LogMessageFormatter} and obtain the level and cause separately.
    */
+  @Deprecated
   public static void format(LogData logData, Metadata scope, SimpleLogHandler receiver) {
-    String message;
-    if (mustBeFormatted(logData, scope, DEFAULT_KEYS_TO_IGNORE)) {
-      message = appendFormatted(logData, scope, DEFAULT_HANDLER, new StringBuilder()).toString();
-    } else {
-      message = getLiteralLogMessage(logData);
-    }
-    Throwable cause = logData.getMetadata().findValue(LogContext.Key.LOG_CAUSE);
-    receiver.handleFormattedLogMessage(logData.getLevel(), message, cause);
+    receiver.handleFormattedLogMessage(
+        logData.getLevel(),
+        format(logData, scope),
+        logData.getMetadata().findValue(LogContext.Key.LOG_CAUSE));
   }
 
-  // ---- Everything below this point is deprecated and will be removed. ----
-
-  /**
-   * @deprecated You must obtain and pass in scoped metadata (or explicitly pass an empty scope).
-   */
+  /** @deprecated Use a {@link LogMessageFormatter} and obtain the level and cause separately. */
   @Deprecated
   public static void format(LogData logData, SimpleLogHandler receiver) {
     format(logData, Metadata.empty(), receiver);
@@ -252,6 +304,16 @@ public final class SimpleMessageFormatter {
         format(logData, Metadata.empty(), receiver);
         break;
     }
+  }
+
+  /** @deprecated Use a {@link LogMessageFormatter} and obtain the level and cause separately. */
+  @Deprecated
+  public interface SimpleLogHandler {
+    /**
+     * Handles a single formatted log statement with the given level, message and "cause". This is
+     * called back exactly once, from the same thread, for every call made to {@link #format}.
+     */
+    void handleFormattedLogMessage(Level level, String message, @NullableDecl Throwable thrown);
   }
 
   /**

@@ -89,6 +89,21 @@ public class SimpleMessageFormatterTest {
         .isEqualTo("answer=42 [CONTEXT int=1 int=2 string=\"Hello\" first=\"foo\" last=\"bar\" ]");
   }
 
+  @Test
+  public void testLogMessageFormatter() {
+    LogMessageFormatter formatter = SimpleMessageFormatter.getDefaultFormatter();
+    FakeLogData logData = FakeLogData.of("message");
+
+    FakeMetadata scope = new FakeMetadata();
+    scope.add(STRING_KEY, "Hello");
+    Tags tags = Tags.builder().addTag("last", "bar").addTag("first", "foo").build();
+    logData.addMetadata(LogContext.Key.TAGS, tags);
+    assertThat(formatter.format(logData, scope))
+        .isEqualTo("message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
+    assertThat(formatter.append(logData, scope, new StringBuilder("PREFIX: ")).toString())
+        .isEqualTo("PREFIX: message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
+  }
+
   @SuppressWarnings("deprecation")  // Old APIs.
   @Test
   public void testFormatWithOption() {
