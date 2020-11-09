@@ -67,7 +67,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         ":api",
-        "//java/com/google/common/annotations",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
     ],
 )
