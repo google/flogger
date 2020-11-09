@@ -201,8 +201,8 @@ public abstract class AbstractLogRecord extends LogRecord {
    * cached.
    */
   public final StringBuilder appendFormattedMessageTo(StringBuilder buffer) {
-    String underlyingMessage = super.getMessage();
-    if (underlyingMessage == null) {
+    String cachedMessage = super.getMessage();
+    if (cachedMessage == null) {
       // This code path is critical for optimized use of AbstractLogRecord. If the log message was
       // not reset at any point up to now, we can append the formatted message directly to an output
       // buffer without first creating a copy in a String instance. This mean that by using
@@ -213,8 +213,8 @@ public abstract class AbstractLogRecord extends LogRecord {
       getLogMessageFormatter().append(data, scope, buffer);
     } else if (getParameters().length == 0) {
       // If getMessage() was called then the cost of making a String copy was already made, so just
-      // append it here (or this could be a user supplied string).
-      buffer.append(underlyingMessage);
+      // append it here (or this could be a user supplied string without additional parameters).
+      buffer.append(cachedMessage);
     } else {
       // User supplied message and parameters means we just default to standard Java behaviour every
       // time, which is fine because this should almost never happen.
