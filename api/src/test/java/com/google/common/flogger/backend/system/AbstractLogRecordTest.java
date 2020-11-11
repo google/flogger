@@ -77,11 +77,13 @@ public final class AbstractLogRecordTest {
     // Without parameters, the placeholders are not processed.
     assertThat(record.appendFormattedMessageTo(new StringBuilder()).toString())
         .isEqualTo("Custom {0}");
+    assertThat(record.getFormattedMessage()).isEqualTo("Custom {0}");
 
     record.setParameters(new Object[] {"Parameter"});
     assertThat(record.getParameters()).asList().containsExactly("Parameter");
     assertThat(record.appendFormattedMessageTo(new StringBuilder()).toString())
         .isEqualTo("Custom Parameter");
+    assertThat(record.getFormattedMessage()).isEqualTo("Custom Parameter");
   }
 
   @Test
@@ -109,5 +111,15 @@ public final class AbstractLogRecordTest {
     mutable.insert(0, "IGNORED");
     assertThat(record.appendFormattedMessageTo(new StringBuilder()).toString())
         .isEqualTo("Copied: Hello World");
+  }
+
+  @Test
+  public void testGetFormattedMessage_doesCacheByDefault() {
+    StringBuilder mutable = new StringBuilder("World");
+    AbstractLogRecord record = new TestRecord("Hello %s", mutable);
+
+    String message = record.getFormattedMessage();
+    assertThat(message).isEqualTo("Copied: Hello World");
+    assertThat(record.getFormattedMessage()).isSameInstanceAs(message);
   }
 }

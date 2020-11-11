@@ -223,6 +223,20 @@ public abstract class AbstractLogRecord extends LogRecord {
     return buffer;
   }
 
+  /**
+   * Returns the formatted log message, caching the result in the common case. This method only
+   * differs from {@link #getMessage()} if this log record was modified externally after creation
+   * by resetting the log message or parameters.
+   *
+   * <p>Use {@link appendFormattedMessageTo(StringBuilder)} whenever a buffer is already available.
+   */
+  public final String getFormattedMessage() {
+    if (getParameters().length == 0) {
+      return getMessage();
+    }
+    return jdkMessageFormatter.formatMessage(this);
+  }
+
   // Unsupported by AbstractLogRecord.
   @Override
   public final void setResourceBundle(ResourceBundle bundle) {}
