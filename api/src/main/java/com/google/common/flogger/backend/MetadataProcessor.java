@@ -54,6 +54,9 @@ public abstract class MetadataProcessor {
   private static final MetadataProcessor EMPTY_PROCESSOR = new MetadataProcessor() {
     @Override
     public <C> void process(MetadataHandler<C> handler, C context) {}
+
+    @Override
+    public <C> void handle(MetadataKey<?> key, MetadataHandler<C> handler, C context) {}
   };
 
   /**
@@ -116,6 +119,12 @@ public abstract class MetadataProcessor {
    */
   public abstract <C> void process(MetadataHandler<C> handler, C context);
 
+  /**
+   * Invokes the metadata handlers for the specified key, if present in this processor. The handler
+   * method invoked depends on whether the key is single-valued or repeated.
+   */
+  public abstract <C> void handle(MetadataKey<?> key, MetadataHandler<C> handler, C context);
+
   /*
    * The values in the keyMap array are structured as:
    *     [ bits 31-5 : bitmap of additional repeated indices | bits 4-0 first value index ]
@@ -159,6 +168,14 @@ public abstract class MetadataProcessor {
       for (int i = 0; i < keyCount; i++) {
         int n = keyMap[i];
         dispatch(getKey(n & 0x1F), n, handler, context);
+      }
+    }
+
+    @Override
+    public <C> void handle(MetadataKey<?> key, MetadataHandler<C> handler, C context) {
+      int index = indexOf(key, keyMap, keyCount);
+      if (index >= 0) {
+        dispatch(key, keyMap[index], handler, context);
       }
     }
 
@@ -322,6 +339,14 @@ public abstract class MetadataProcessor {
     public <C> void process(MetadataHandler<C> handler, C context) {
       for (Map.Entry<MetadataKey<?>, Object> e : map.entrySet()) {
         dispatch(e.getKey(), e.getValue(), handler, context);
+      }
+    }
+
+    @Override
+    public <C> void handle(MetadataKey<?> key, MetadataHandler<C> handler, C context) {
+      Object value = map.get(key);
+      if (value != null) {
+        dispatch(key, value, handler, context);
       }
     }
 

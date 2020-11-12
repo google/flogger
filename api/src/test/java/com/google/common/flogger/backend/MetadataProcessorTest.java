@@ -175,6 +175,21 @@ public class MetadataProcessorTest {
   }
 
   @Test
+  public void testSingleKeyHandling() {
+    FakeMetadata scope = new FakeMetadata();
+    scope.add(REP_1, "first");
+    scope.add(KEY_1, "single");
+    scope.add(REP_1, "second");
+
+    FakeMetadata logged = new FakeMetadata();
+    logged.add(REP_1, "third");
+
+    assertSingleKey(REP_1, scope, logged, "R1=[first, second, third]");
+    assertSingleKey(KEY_1, scope, logged, "K1=single");
+    assertSingleKey(KEY_3, scope, logged, null);
+  }
+
+  @Test
   public void testReadOnlyIterable() {
     FakeMetadata scope = new FakeMetadata();
     scope.add(REP_1, "one");
@@ -221,6 +236,28 @@ public class MetadataProcessorTest {
     List<String> entries = new ArrayList<>();
     processor.process(new CollectingHandler(), entries);
     expect.withMessage(message).that(entries).containsExactlyElementsIn(expected).inOrder();
+  }
+
+  private void assertSingleKey(
+      MetadataKey<?> key, Metadata scope, Metadata logged, String expected) {
+    assertSingleKey(
+        "Lightweight Processor",
+        key,
+        MetadataProcessor.getLightweightProcessor(scope, logged),
+        expected);
+    assertSingleKey(
+        "Simple Processor", key, MetadataProcessor.getSimpleProcessor(scope, logged), expected);
+  }
+
+  private void assertSingleKey(
+      String message, MetadataKey<?> key, MetadataProcessor processor, String expected) {
+    List<String> entries = new ArrayList<>();
+    processor.handle(key, new CollectingHandler(), entries);
+    if (expected != null) {
+      expect.withMessage(message).that(entries).containsExactly(expected);
+    } else {
+      expect.withMessage(message).that(entries).isEmpty();
+    }
   }
 
   private static class CollectingHandler extends MetadataHandler<List<String>> {

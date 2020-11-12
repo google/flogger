@@ -46,7 +46,16 @@ import java.util.Iterator;
  * <p>Metadata keys are expected to be singleton constants, and should never be allocated at the log
  * site itself. They should always be referenced via static final fields. However comparing keys
  * should still be done via {@code equals()} (rather than '==') since this will be safe in cases
- * where non-singleton keys exist, and just as fast if the keys are singletons.
+ * where non-singleton keys exist, and is just as fast if the keys are singletons.
+ *
+ * <p>It is strongly recommended that any public {@link MetadataKey} instances are defined as
+ * {@code public static final} fields in a top-level or nested class which does no logging. Ideally
+ * a separate class would be defined to hold only the keys, since this allows keys to be loaded very
+ * early in the logging platform lifecycle without risking any static initialization issues.
+ *
+ * <p>Additionally, custom keys which override either of the {@link #emit} methods should ensure
+ * that any code in those methods cannot trigger reentrant logging. This is important if keys are
+ * used as part of logging scopes, since it will otherwise trigger infinite recursion.
  *
  * <p>Metadata keys are passed to a log statement via the {@code with()} method, so it can aid
  * readability to choose a name for the constant field which reads "fluently" as part of the log
@@ -68,6 +77,7 @@ import java.util.Iterator;
  * limiting), but a metadata entry remains present to record the fact that rate limiting was
  * enabled.
  */
+// TODO(dbeaumont): Figure out an efficient way to protect from reentrant logging during "emit".
 public class MetadataKey<T> {
   /**
    * Callback interface to handle additional contextual {@code Metadata} in log statements. This

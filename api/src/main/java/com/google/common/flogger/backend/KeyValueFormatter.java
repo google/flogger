@@ -69,6 +69,27 @@ public final class KeyValueFormatter implements KeyValueHandler {
               Float.class,
               Double.class));
 
+  /**
+   * Helper method to emit metadata key/value pairs in a format consistent with JSON. String
+   * values which need to be quoted are JSON escaped, while other values are appended without
+   * quoting or escaping. Labels are expected to be JSON "safe", and are never quoted. This format
+   * is compatible with various "lightweight" JSON representations.
+   */
+  public static void appendJsonFormattedKeyAndValue(String label, Object value, StringBuilder out) {
+    out.append(label).append('=');
+    // We could also consider enums as safe if we used name() rather than toString().
+    if (value == null) {
+      // Alternately just emit the label without '=' to indicate presence without a value.
+      out.append(true);
+    } else if (FUNDAMENTAL_TYPES.contains(value.getClass())) {
+      out.append(value);
+    } else {
+      out.append('"');
+      appendEscaped(out, value.toString());
+      out.append('"');
+    }
+  }
+
   // The prefix to add before the key/value pairs (e.g. [<prefix>[ foo=bar ])
   private final String prefix;
   private final String suffix;
@@ -100,18 +121,7 @@ public final class KeyValueFormatter implements KeyValueHandler {
       out.append(prefix);
       haveSeenValues = true;
     }
-    out.append(label).append('=');
-    // We could also consider enums as safe if we used name() rather than toString().
-    if (value == null) {
-      // Alternately just emit the label without '=' to indicate presence without a value.
-      out.append(true);
-    } else if (FUNDAMENTAL_TYPES.contains(value.getClass())) {
-      out.append(value);
-    } else {
-      out.append('"');
-      appendEscaped(out, value.toString());
-      out.append('"');
-    }
+    appendJsonFormattedKeyAndValue(label, value, out);
   }
 
   /** Terminates handling of key/value pairs, leaving the originally supplied buffer modified. */
