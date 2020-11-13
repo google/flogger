@@ -20,8 +20,7 @@ java_library(
     name = "api",
     srcs = glob(
         ["src/main/java/**/*.java"],
-        exclude =
-            SYSTEM_BACKEND_SRCS,
+        exclude = SYSTEM_BACKEND_SRCS,
     ),
     javacopts = ["-source 1.6 -target 1.6"],
     tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
