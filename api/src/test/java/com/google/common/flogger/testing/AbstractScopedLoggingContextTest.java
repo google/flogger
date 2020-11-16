@@ -16,25 +16,31 @@
 
 package com.google.common.flogger.testing;
 
+import static com.google.common.flogger.testing.MetadataSubject.assertThat;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.MetadataKey;
+import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import com.google.common.truth.BooleanSubject;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * A helper class to allow implementations of {@link ContextDataProvider} to be tested against a
- * suite of common tests.
+ * A JUnit4 compatible helper class to allow implementations of {@link ContextDataProvider} to be
+ * tested against a suite of common tests.
  */
 public abstract class AbstractScopedLoggingContextTest {
+  private static final MetadataKey<String> FOO_KEY = MetadataKey.single("FOO", String.class);
+  private static final MetadataKey<String> BAR_KEY = MetadataKey.repeated("BAR", String.class);
 
   protected abstract ContextDataProvider getImplementationUnderTest();
 
@@ -59,14 +65,48 @@ public abstract class AbstractScopedLoggingContextTest {
     this.testWasDone = true;
   }
 
+  private Map<String, Set<Object>> getTagMap() {
+    return dataProvider.getTags().asMap();
+  }
+
+  private Metadata getMetadata() {
+    return dataProvider.getMetadata();
+  }
+
+  private BooleanSubject assertLogging(String name, Level level) {
+    return assertWithMessage("shouldForceLogging(\"%s\", %s, false)", name, level)
+        .that(dataProvider.shouldForceLogging(name, level, false));
+  }
+
   @Test
   public void testNewScope_withTags() {
-    assertThat(dataProvider.getTags().asMap()).isEmpty();
-    context.newScope().withTags(Tags.of("foo", "bar")).run(() -> {
-      assertThat(dataProvider.getTags().asMap()).containsExactly("foo", ImmutableSet.of("bar"));
-      markTestAsDone();
-    });
-    assertThat(dataProvider.getTags().asMap()).isEmpty();
+    assertThat(getTagMap()).isEmpty();
+    context
+        .newScope()
+        .withTags(Tags.of("foo", "bar"))
+        .run(
+            () -> {
+              assertThat(getTagMap()).hasSize(1);
+              assertThat(getTagMap().get("foo")).containsExactly("bar");
+              markTestAsDone();
+            });
+    assertThat(getTagMap()).isEmpty();
+    checkDone();
+  }
+
+  @Test
+  public void testNewScope_withMetadata() {
+    assertThat(getMetadata()).hasSize(0);
+    context
+        .newScope()
+        .withMetadata(FOO_KEY, "foo")
+        .run(
+            () -> {
+              assertThat(getMetadata()).containsEntries(FOO_KEY, "foo");
+              assertThat(getMetadata().findValue(FOO_KEY)).isEqualTo("foo");
+              markTestAsDone();
+            });
+    assertThat(getMetadata()).hasSize(0);
     checkDone();
   }
 
@@ -74,36 +114,83 @@ public abstract class AbstractScopedLoggingContextTest {
   public void testNewScope_withLogLevelMap() {
     assertThat(dataProvider.shouldForceLogging("foo.bar.Bar", Level.FINE, false)).isFalse();
     LogLevelMap levelMap = LogLevelMap.create(ImmutableMap.of("foo.bar", Level.FINE), Level.FINE);
-    context.newScope().withLogLevelMap(levelMap).run(() -> {
-      assertThat(dataProvider.shouldForceLogging("foo.bar.Bar", Level.FINE, false)).isTrue();
-      markTestAsDone();
-    });
+    context
+        .newScope()
+        .withLogLevelMap(levelMap)
+        .run(
+            () -> {
+              assertThat(dataProvider.shouldForceLogging("foo.bar.Bar", Level.FINE, false))
+                  .isTrue();
+              markTestAsDone();
+            });
     assertThat(dataProvider.shouldForceLogging("foo.bar.Bar", Level.FINE, false)).isFalse();
     checkDone();
   }
 
   @Test
   public void testNewScopes_withMergedTags() {
-    assertNoTags();
+    assertThat(getTagMap()).isEmpty();
     context
         .newScope()
         .withTags(Tags.of("foo", "bar"))
         .run(
             () -> {
-              assertTagValues("foo", "bar");
+              assertThat(getTagMap()).hasSize(1);
+              assertThat(getTagMap().get("foo")).containsExactly("bar");
               context
                   .newScope()
                   .withTags(Tags.of("foo", "baz"))
                   .run(
                       () -> {
-                        assertTagValues("foo", "bar", "baz");
+                        assertThat(getTagMap()).hasSize(1);
+                        assertThat(getTagMap().get("foo")).containsExactly("bar", "baz").inOrder();
                         markTestAsDone();
                       });
               // Everything is restored after a scope.
-              assertTagValues("foo", "bar");
+              assertThat(getTagMap()).hasSize(1);
+              assertThat(getTagMap().get("foo")).containsExactly("bar");
             });
     // Everything is restored after a scope.
-    assertNoTags();
+    assertThat(getTagMap()).isEmpty();
+    checkDone();
+  }
+
+  @Test
+  public void testNewScopes_withConcatenatedMetadata() {
+    assertThat(getMetadata()).hasSize(0);
+    context
+        .newScope()
+        .withMetadata(FOO_KEY, "first")
+        .withMetadata(BAR_KEY, "one")
+        .run(
+            () -> {
+              assertThat(getMetadata()).hasSize(2);
+              assertThat(getMetadata()).containsEntries(FOO_KEY, "first");
+              assertThat(getMetadata().findValue(FOO_KEY)).isEqualTo("first");
+              assertThat(getMetadata()).containsEntries(BAR_KEY, "one");
+              context
+                  .newScope()
+                  .withMetadata(FOO_KEY, "second")
+                  .withMetadata(BAR_KEY, "two")
+                  .run(
+                      () -> {
+                        // Enumerating entries allows single-values keys to appear multiple times
+                        // (because merging is expensive and it's handled by MetadataProcessor
+                        // anyway).
+                        assertThat(getMetadata()).hasSize(4);
+                        assertThat(getMetadata()).containsEntries(FOO_KEY, "first", "second");
+                        assertThat(getMetadata().findValue(FOO_KEY)).isEqualTo("second");
+                        assertThat(getMetadata()).containsEntries(BAR_KEY, "one", "two");
+                        markTestAsDone();
+                      });
+              // Everything is restored after a scope.
+              assertThat(getMetadata()).hasSize(2);
+              assertThat(getMetadata()).containsEntries(FOO_KEY, "first");
+              assertThat(getMetadata().findValue(FOO_KEY)).isEqualTo("first");
+              assertThat(getMetadata()).containsEntries(BAR_KEY, "one");
+            });
+    // Everything is restored after a scope.
+    assertThat(getMetadata()).hasSize(0);
     checkDone();
   }
 
@@ -147,18 +234,5 @@ public abstract class AbstractScopedLoggingContextTest {
     assertLogging("foo.bar", Level.FINE).isFalse();
     assertLogging("foo.bar.Baz", Level.FINE).isFalse();
     checkDone();
-  }
-
-  private void assertNoTags() {
-    assertThat(dataProvider.getTags().asMap()).isEmpty();
-  }
-
-  private void assertTagValues(String key, String... values) {
-    assertThat(dataProvider.getTags().asMap()).containsEntry(key, ImmutableSet.copyOf(values));
-  }
-
-  private BooleanSubject assertLogging(String name, Level level) {
-    return assertWithMessage("shouldForceLogging(\"%s\", %s, false)", name, level)
-        .that(dataProvider.shouldForceLogging(name, level, false));
   }
 }

@@ -19,6 +19,7 @@ package com.google.common.flogger.context;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 import static com.google.common.flogger.util.Checks.checkState;
 
+import com.google.common.flogger.MetadataKey;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.Closeable;
@@ -37,8 +38,8 @@ import java.util.concurrent.Callable;
  *       parameter).
  * </ul>
  *
- * <p>Scopes are nestable and new scopes can be added to provide additional metadata which will
- * be available to logging as long as the scope is installed.
+ * <p>Scopes are nestable and new scopes can be added to provide additional metadata which will be
+ * available to logging as long as the scope is installed.
  *
  * <p>Note that in the current API scopes are also modifiable after creation, but this usage is
  * discouraged and may be removed in future. The problem with modifying scopes after creation is
@@ -91,13 +92,13 @@ public abstract class ScopedLoggingContext {
    */
   public abstract class Builder {
     private Tags tags = null;
+    private ScopeMetadata.Builder metadata = null;
     private LogLevelMap logLevelMap = null;
 
     protected Builder() {}
 
     /**
-     * Sets the tags to be used with the scope being built. This method should be called at most
-     * once for any builder.
+     * Sets the tags to be used with the scope. This method can be called at most once per builder.
      */
     @CheckReturnValue
     public final Builder withTags(Tags tags) {
@@ -108,8 +109,21 @@ public abstract class ScopedLoggingContext {
     }
 
     /**
-     * Sets the log level map to be used with the scope being built. This method should be called at
-     * most once for any builder.
+     * Adds a single metadata key/value pair to the scope. This method can be called multiple times
+     * on a builder.
+     */
+    @CheckReturnValue
+    public final <T> Builder withMetadata(MetadataKey<T> key, T value) {
+      if (metadata == null) {
+        metadata = ScopeMetadata.builder();
+      }
+      metadata.add(key, value);
+      return this;
+    }
+
+    /**
+     * Sets the log level map to be used with the scope being built. This method can be called at
+     * most once per builder.
      */
     @CheckReturnValue
     public final Builder withLogLevelMap(LogLevelMap logLevelMap) {
@@ -214,12 +228,26 @@ public abstract class ScopedLoggingContext {
     @CheckReturnValue
     public abstract LoggingScope install();
 
-    /** Returns the configured tags, or null. */
+    /**
+     * Returns the configured tags, or null. This method may do work and results should be cached by
+     * context implementations.
+     */
     protected final Tags getTags() {
       return tags;
     }
 
-    /** Returns the configured log level map, or null. */
+    /**
+     * Returns the configured scope metadata, or null. This method may do work and results should be
+     * cached by context implementations.
+     */
+    protected final ScopeMetadata getMetadata() {
+      return metadata != null ? metadata.build() : null;
+    }
+
+    /**
+     * Returns the configured log level map, or null. This method may do work and results should be
+     * cached by context implementations.
+     */
     protected final LogLevelMap getLogLevelMap() {
       return logLevelMap;
     }
@@ -250,6 +278,7 @@ public abstract class ScopedLoggingContext {
    * strongly recommended that scoped context implementations override it with a better
    * implementation.
    */
+  // TODO(dbeaumont): Verify this is no longer needed and make it abstract instead.
   @CheckReturnValue
   public Builder newScope() {
     // This implementation only exists while the scoped context implementations do not all support
@@ -265,6 +294,14 @@ public abstract class ScopedLoggingContext {
           if (tags != null && !tags.isEmpty()) {
             addTags(tags);
           }
+          // Adding metadata one at a time is very inefficient. Subclass implementations can do
+          // better by simply setting the metadata directly.
+          ScopeMetadata metadata = getMetadata();
+          if (metadata != null) {
+            for (int n = 0, size = metadata.size(); n < size; n++) {
+              add(metadata.getKey(n), metadata.getValue(n));
+            }
+          }
           LogLevelMap logLevelMap = getLogLevelMap();
           if (logLevelMap != null) {
             applyLogLevelMap(logLevelMap);
@@ -277,6 +314,11 @@ public abstract class ScopedLoggingContext {
           forceClose(scope);
           throw e;
         }
+      }
+
+      // Recapture the key type so we can cast the value.
+      <T> void add(MetadataKey<T> key, Object value) {
+        addMetadata(key, key.cast(value));
       }
     };
   }
@@ -374,7 +416,7 @@ public abstract class ScopedLoggingContext {
    * Runs a runnable directly within a new context scope.
    *
    * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
-   * they are installed.
+   *     they are installed.
    */
   @Deprecated
   public final void run(Runnable r) {
@@ -385,7 +427,7 @@ public abstract class ScopedLoggingContext {
    * Calls a callable directly within a new context scope.
    *
    * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
-   * they are installed.
+   *     they are installed.
    */
   @Deprecated
   public final <R> R call(Callable<R> c) throws Exception {
@@ -405,7 +447,25 @@ public abstract class ScopedLoggingContext {
    *
    * @return false if there is no current scope, or scoped contexts are not supported.
    */
-  public abstract boolean addTags(Tags tags);
+  public boolean addTags(Tags tags) {
+    checkNotNull(tags, "tags");
+    return false;
+  }
+
+  /**
+   * Adds a single metadata key/value pair to the current scope.
+   *
+   * <p>Unlike {@link Tags}, which have a well defined value ordering, independent of the order in
+   * which values were added, scope metadata preserves the order of addition. As such, it is not
+   * advised to add values for the same metadata key from multiple threads, since that may create
+   * non-deterministic ordering. It is recommended (where possible) to add metadata when building a
+   * new scope, rather than adding it to context visible to multiple threads.
+   */
+  public <T> boolean addMetadata(MetadataKey<T> key, T value) {
+    checkNotNull(key, "key");
+    checkNotNull(value, "value");
+    return false;
+  }
 
   /**
    * Applies the given log level map to the current scope. Log level settings are merged with any
@@ -413,15 +473,18 @@ public abstract class ScopedLoggingContext {
    * log statement if:
    *
    * <ul>
-   *   <li>it was enabled by the given map.
-   *   <li>it was already enabled by the current context.
+   *   <li>It was enabled by the given map.
+   *   <li>It was already enabled by the current context.
    * </ul>
    *
    * <p>The effects of this call will be undone only when the current scope terminates.
    *
    * @return false if there is no current scope, or scoped contexts are not supported.
    */
-  public abstract boolean applyLogLevelMap(LogLevelMap m);
+  public boolean applyLogLevelMap(LogLevelMap logLevelMap) {
+    checkNotNull(logLevelMap, "log level map");
+    return false;
+  }
 
   private static void closeAndMaybePropagateError(LoggingScope scope, boolean callerHasError) {
     // Because LoggingScope is not just a "Closeable" there's no risk of it throwing any checked
