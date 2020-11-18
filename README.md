@@ -112,7 +112,7 @@ non-Google code, since its API should remain more stable over time.
 
 In addition to the `flogger-systemd-backend`, pull in an other backend, such as `flogger-log4j[2]-backend` or `flogger-slf4j-backend`, and set `flogger.backend_factory` system property according to the [instructions of the backend](https://github.com/google/flogger/blob/master/log4j/src/main/java/com/google/common/flogger/backend/log4j/Log4jBackendFactory.java#L30).
 
-To use `slf4j`, an other option is using the third-party `jul-to-slf4j` library. Note that `flogger-slf4j-backend` and `jul-to-slf4j` differ in [how they map](https://github.com/google/flogger/issues/69#issuecomment-723043052) the `FINER` level.
+To use `slf4j`, another option is using the third-party `jul-to-slf4j` library. Note that `flogger-slf4j-backend` and `jul-to-slf4j` differ in [how they map](https://github.com/google/flogger/issues/69#issuecomment-723043052) the `FINER` level.
 
 ## More information
 
