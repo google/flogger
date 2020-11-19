@@ -108,7 +108,7 @@ non-Google code, since its API should remain more stable over time.
 
 <a name="more-information"></a>
 
-## Using a different logging interface
+## Using a different Flogger backend
 
 In addition to the `flogger-systemd-backend`, pull in an other backend, such as `flogger-log4j[2]-backend` or `flogger-slf4j-backend`, and set `flogger.backend_factory` system property according to the [instructions of the backend](https://github.com/google/flogger/blob/master/log4j/src/main/java/com/google/common/flogger/backend/log4j/Log4jBackendFactory.java#L30).
 
