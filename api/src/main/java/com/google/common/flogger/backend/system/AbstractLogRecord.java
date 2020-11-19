@@ -16,7 +16,6 @@
 
 package com.google.common.flogger.backend.system;
 
-import static com.google.common.flogger.util.Checks.checkNotNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.logging.Level.WARNING;
 
@@ -25,6 +24,7 @@ import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LogMessageFormatter;
 import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
+import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
 import java.util.Arrays;
 import java.util.ResourceBundle;
@@ -104,7 +104,7 @@ public abstract class AbstractLogRecord extends LogRecord {
   private static final Object[] NO_PARAMETERS = new Object[0];
 
   private final LogData data;
-  private final Metadata scope;
+  private final MetadataProcessor metadata;
 
   /**
    * Constructs a log record for normal logging without filling in format specific fields.
@@ -114,7 +114,7 @@ public abstract class AbstractLogRecord extends LogRecord {
   protected AbstractLogRecord(LogData data, Metadata scope) {
     super(data.getLevel(), null);
     this.data = data;
-    this.scope = checkNotNull(scope, "scope");
+    this.metadata = MetadataProcessor.forScopeAndLogSite(scope, data.getMetadata());
 
     // Apply any data which is known or easily available without any effort.
     LogSite logSite = data.getLogSite();
@@ -182,7 +182,7 @@ public abstract class AbstractLogRecord extends LogRecord {
     if (cachedMessage != null) {
       return cachedMessage;
     }
-    String formattedMessage = getLogMessageFormatter().format(data, scope);
+    String formattedMessage = getLogMessageFormatter().format(data, metadata);
     super.setMessage(formattedMessage);
     return formattedMessage;
   }
@@ -210,7 +210,7 @@ public abstract class AbstractLogRecord extends LogRecord {
       // class, you can avoid making a complete copy of the message  during logging. Formatters
       // which don't specialize and call getMessage() instead will get the same result, just with an
       // extra String copy.
-      getLogMessageFormatter().append(data, scope, buffer);
+      getLogMessageFormatter().append(data, metadata, buffer);
     } else if (getParameters().length == 0) {
       // If getMessage() was called then the cost of making a String copy was already made, so just
       // append it here (or this could be a user supplied string without additional parameters).
@@ -246,6 +246,31 @@ public abstract class AbstractLogRecord extends LogRecord {
   public final void setResourceBundleName(String name) {}
 
   /**
+   * Returns a snapshot of this log record, copied and flattened to a plain, mutable {@link
+   * LogRecord} instance. The log message of the new log record is the formatted message from this
+   * instance, so the new new log record never has any parameters.
+   *
+   * <p>Since {@code AbstractLogRecord} has synthetic fields, it's not safely mutable itself. Once
+   * copied, the plain LogRecord will not benefit from some of the potential optimizations which
+   * {@code AbstractLogRecord} can be subject to.
+   */
+  public final LogRecord toMutableLogRecord() {
+    LogRecord copy = new LogRecord(getLevel(), getFormattedMessage());
+    copy.setParameters(NO_PARAMETERS);
+    copy.setSourceClassName(getSourceClassName());
+    copy.setSourceMethodName(getSourceMethodName());
+    copy.setLoggerName(getLoggerName());
+    copy.setMillis(getMillis());
+    copy.setThrown(getThrown());
+
+    // Not set explicitly normally, but a copy should be safe (even if it's null). We don't copy
+    // the sequence number since that's intended to be unique per LogRecord, and resource bundles
+    // are not supported.
+    copy.setThreadID(getThreadID());
+    return copy;
+  }
+
+  /**
    * Returns the {@link LogData} instance encapsulating the current fluent log statement.
    *
    * <p>The LogData instance is effectively owned by this log record but must still be considered
@@ -256,12 +281,12 @@ public abstract class AbstractLogRecord extends LogRecord {
   }
 
   /**
-   * Returns the immutable {@link Metadata} scope which should be applied to the current log
-   * statement. Scope metadata should be merged with log-site metadata to form a unified view. This
-   * is best handled via the {@code MetadataProcessor} API.
+   * Returns the immutable {@link MetadataProcessor} which provides a unified view of scope and log
+   * site metadata. This should be used in preference to {@link Metadata} available from {@link
+   * LogData} which represents only the log site.
    */
-  public final Metadata getScope() {
-    return scope;
+  public final MetadataProcessor getMetadataProcessor() {
+    return metadata;
   }
 
   @Override

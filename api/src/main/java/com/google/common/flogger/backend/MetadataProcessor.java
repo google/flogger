@@ -20,12 +20,14 @@ import static com.google.common.flogger.util.Checks.checkArgument;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.MetadataKey;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Processor combining scope and log-site metadata into a single view. This is necessary when
@@ -57,6 +59,21 @@ public abstract class MetadataProcessor {
 
     @Override
     public <C> void handle(MetadataKey<?> key, MetadataHandler<C> handler, C context) {}
+
+    @Override
+    public <T> T getSingleValue(MetadataKey<T> key) {
+      return null;
+    }
+
+    @Override
+    public int keyCount() {
+      return 0;
+    }
+
+    @Override
+    public Set<MetadataKey<?>> keySet() {
+      return Collections.emptySet();
+    }
   };
 
   /**
@@ -93,8 +110,9 @@ public abstract class MetadataProcessor {
   private MetadataProcessor() {}
 
   /**
-   * Processes a combined view of the scope and log-site metadata in this processor by calling the
-   * given handler for each distinct metadata key.
+   * Processes a combined view of the scope and log-site metadata in this processor by invoking the
+   * given handler for each distinct metadata key. The handler method invoked depends on whether the
+   * key is single valued or repeated.
    *
    * <p>Rules for merging scope and log-site metadata are as follows:
    *
@@ -120,10 +138,32 @@ public abstract class MetadataProcessor {
   public abstract <C> void process(MetadataHandler<C> handler, C context);
 
   /**
-   * Invokes the metadata handlers for the specified key, if present in this processor. The handler
-   * method invoked depends on whether the key is single-valued or repeated.
+   * Invokes the given handler for the combined scope and log-site metadata for a specified key. The
+   * handler method invoked depends on whether the key is single valued or repeated. If no metadata
+   * is present for the given key, the handler is not invoked.
    */
   public abstract <C> void handle(MetadataKey<?> key, MetadataHandler<C> handler, C context);
+
+  /**
+   * Returns the unique value for a single valued key, or {@code null} if not present.
+   *
+   * @throws IllegalArgumentException if passed a repeatable key (even if that key has one value).
+   */
+  public abstract <T> T getSingleValue(MetadataKey<T> key);
+
+  /**
+   * Returns the number of unique keys represented by this processor. This is the same as the size
+   * of {@link #keySet()}, but a separate method to avoid needing to allocate anything just to know
+   * the number of keys.
+   */
+  public abstract int keyCount();
+
+  /**
+   * Returns the set of {@link MetadataKey}s known to this processor, in the order in which they
+   * will be processed. Note that this implementation is lightweight, but not necessarily performant
+   * for things like containment testing.
+   */
+  public abstract Set<MetadataKey<?>> keySet();
 
   /*
    * The values in the keyMap array are structured as:
@@ -177,6 +217,48 @@ public abstract class MetadataProcessor {
       if (index >= 0) {
         dispatch(key, keyMap[index], handler, context);
       }
+    }
+
+    @Override
+    public <T> T getSingleValue(MetadataKey<T> key) {
+      checkArgument(!key.canRepeat(), "key must be single valued");
+      int index = indexOf(key, keyMap, keyCount);
+      // For single keys, the keyMap values are just the value index.
+      return (index >= 0) ? key.cast(getValue(keyMap[index])) : null;
+    }
+
+    @Override
+    public int keyCount() {
+      return keyCount;
+    }
+
+    @Override
+    public Set<MetadataKey<?>> keySet() {
+      // We may want to cache this, since it's effectively immutable, but it's also a small and
+      // likely short lived instance, so quite possibly not worth it for the cost of another field.
+      return new AbstractSet<MetadataKey<?>>() {
+        @Override
+        public int size() {
+          return keyCount;
+        }
+
+        @Override
+        public Iterator<MetadataKey<?>> iterator() {
+          return new Iterator<MetadataKey<?>>() {
+            private int i = 0;
+
+            @Override
+            public boolean hasNext() {
+              return i < keyCount;
+            }
+
+            @Override
+            public MetadataKey<?> next() {
+              return getKey(keyMap[i++] & 0x1F);
+            }
+          };
+        }
+      };
     }
 
     // Separate method to re-capture the value type.
@@ -299,23 +381,24 @@ public abstract class MetadataProcessor {
    * during processing.
    */
   private static final class SimpleProcessor extends MetadataProcessor {
-    private final LinkedHashMap<MetadataKey<?>, Object> map =
-        new LinkedHashMap<MetadataKey<?>, Object>();
+    private final Map<MetadataKey<?>, Object> map;
 
     private SimpleProcessor(Metadata scope, Metadata logged) {
-      addToMap(scope);
-      addToMap(logged);
+      LinkedHashMap<MetadataKey<?>, Object> map = new LinkedHashMap<MetadataKey<?>, Object>();
+      addTo(map, scope);
+      addTo(map, logged);
       // Wrap any repeated value lists to make them unmodifiable (required for correctness).
       for (Map.Entry<MetadataKey<?>, Object> e : map.entrySet()) {
         if (e.getKey().canRepeat()) {
           e.setValue(Collections.unmodifiableList((List<?>) e.getValue()));
         }
       }
+      this.map = Collections.unmodifiableMap(map);
     }
 
     // Unlike the LightweightProcessor, we copy references from the Metadata eagerly, so can "cast"
     // values to their key-types early, ensuring safe casting when dispatching.
-    private void addToMap(Metadata metadata) {
+    private static void addTo(Map<MetadataKey<?>, Object> map, Metadata metadata) {
       for (int i = 0; i < metadata.size(); i++) {
         MetadataKey<?> key = metadata.getKey(i);
         Object value = map.get(key);
@@ -350,8 +433,27 @@ public abstract class MetadataProcessor {
       }
     }
 
+    // It's safe to ignore warnings since single keys are only ever 'T' when added to the map.
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T getSingleValue(MetadataKey<T> key) {
+      checkArgument(!key.canRepeat(), "key must be single valued");
+      Object value = map.get(key);
+      return (value != null) ? (T) value : null;
+    }
+
+    @Override
+    public int keyCount() {
+      return map.size();
+    }
+
+    @Override
+    public Set<MetadataKey<?>> keySet() {
+      return map.keySet();
+    }
+
     // It's safe to ignore warnings here since we know that repeated keys only ever get 'List<T>'
-    // and single keys are only ever 'T' when we add them to the map.
+    // and single keys are only ever 'T' when added to the map.
     @SuppressWarnings("unchecked")
     private static <T, C> void dispatch(
         MetadataKey<T> key, Object value, MetadataHandler<C> handler, C context) {

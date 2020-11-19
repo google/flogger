@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LogMessageFormatter;
 import com.google.common.flogger.backend.Metadata;
+import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
 import com.google.common.flogger.testing.FakeLogData;
 import org.junit.Test;
@@ -29,19 +30,22 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class AbstractLogRecordTest {
+  private static final LogMessageFormatter DEFAULT_FORMATTER =
+      SimpleMessageFormatter.getDefaultFormatter();
 
   private static final LogMessageFormatter TEST_MESSAGE_FORMATTER =
       new LogMessageFormatter() {
         @Override
-        public StringBuilder append(LogData logData, Metadata scope, StringBuilder out) {
+        public StringBuilder append(
+            LogData logData, MetadataProcessor metadata, StringBuilder out) {
           out.append("Appended: ");
-          SimpleMessageFormatter.getDefaultFormatter().append(logData, scope, out);
+          DEFAULT_FORMATTER.append(logData, metadata, out);
           return out;
         }
 
         @Override
-        public String format(LogData logData, Metadata scope) {
-          return "Copied: " + SimpleMessageFormatter.getDefaultFormatter().format(logData, scope);
+        public String format(LogData logData, MetadataProcessor metadata) {
+          return "Copied: " + DEFAULT_FORMATTER.format(logData, metadata);
         }
       };
 

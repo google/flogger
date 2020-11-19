@@ -16,19 +16,16 @@
 
 package com.google.common.flogger.backend.system;
 
+import com.google.common.flogger.LogContext;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.Metadata;
-import com.google.common.flogger.backend.SimpleMessageFormatter;
-import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * An eagerly evaluating {@link LogRecord} which is created by the Fluent Logger frontend and can be
  * passed to a normal log {@link java.util.logging.Handler} instance for output.
  */
-public final class SimpleLogRecord extends AbstractLogRecord implements SimpleLogHandler {
+public final class SimpleLogRecord extends AbstractLogRecord {
   /** Creates a {@link SimpleLogRecord} for a normal log statement from the given data. */
   public static SimpleLogRecord create(LogData data, Metadata scope) {
     return new SimpleLogRecord(data, scope);
@@ -57,18 +54,14 @@ public final class SimpleLogRecord extends AbstractLogRecord implements SimpleLo
     // This would avoid formatting when the caller will just get the structured data via the
     // LogData API, or when the record is filtered. However neither of these are happening at the
     // moment and when structured data is required, a different log record should be used.
-    SimpleMessageFormatter.format(data, scope, this);
+    //
+    // Calling getMessage() formats and caches the formatted message in the AbstractLogRecord.
+    getMessage();
+    setThrown(getMetadataProcessor().getSingleValue(LogContext.Key.LOG_CAUSE));
   }
 
   private SimpleLogRecord(RuntimeException error, LogData data, Metadata scope) {
     // In the case of an error, the base class handles everything as there's no specific formatting.
     super(error, data, scope);
-  }
-
-  @Override
-  public void handleFormattedLogMessage(
-      Level level, String message, @NullableDecl Throwable thrown) {
-    setMessage(message);
-    setThrown(thrown);
   }
 }

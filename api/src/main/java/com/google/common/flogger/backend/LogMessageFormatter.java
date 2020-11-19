@@ -28,28 +28,29 @@ package com.google.common.flogger.backend;
 // expected to be used for formatting) so it is not suitable as a general purpose API yet.
 public abstract class LogMessageFormatter {
   /**
-   * Returns a formatted representation of the log data and scope metadata. Currently this class is
+   * Returns a formatted representation of the log message and metadata. Currently this class is
    * only responsible for formatting the main body of the log message and not thing like log site,
    * timestamps or thread information.
    *
    * <p>By default this method just returns:
    *
-   * <pre>{@code append(logData, scope, new StringBuilder()).toString()}</pre>
+   * <pre>{@code append(logData, metadata, new StringBuilder()).toString()}</pre>
    *
    * <p>Formatter implementations may be able to implement it more efficiently (e.g. if they can
    * safely detect when no formatting is required). See also the helper methods in {@link
    * SimpleMessageFormatter}.
    */
-  public String format(LogData logData, Metadata scope) {
-    return append(logData, scope, new StringBuilder()).toString();
+  public String format(LogData logData, MetadataProcessor metadata) {
+    return append(logData, metadata, new StringBuilder()).toString();
   }
 
   /**
-   * Formats the log data and scope metadata onto the given buffer. Currently this class is only
+   * Formats the log message and metadata into the given buffer. Currently this class is only
    * responsible for formatting the main body of the log message and not thing like log site,
    * timestamps or thread information.
    *
    * @return the given buffer for method chaining.
    */
-  public abstract StringBuilder append(LogData logData, Metadata scope, StringBuilder buffer);
+  public abstract StringBuilder append(
+      LogData logData, MetadataProcessor metadata, StringBuilder buffer);
 }

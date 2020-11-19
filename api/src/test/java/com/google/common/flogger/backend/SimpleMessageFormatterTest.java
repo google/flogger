@@ -98,13 +98,15 @@ public class SimpleMessageFormatterTest {
     scope.add(STRING_KEY, "Hello");
     Tags tags = Tags.builder().addTag("last", "bar").addTag("first", "foo").build();
     logData.addMetadata(LogContext.Key.TAGS, tags);
-    assertThat(formatter.format(logData, scope))
+
+    MetadataProcessor metadata = MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata());
+    assertThat(formatter.format(logData, metadata))
         .isEqualTo("message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
-    assertThat(formatter.append(logData, scope, new StringBuilder("PREFIX: ")).toString())
+    assertThat(formatter.append(logData, metadata, new StringBuilder("PREFIX: ")).toString())
         .isEqualTo("PREFIX: message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
   }
 
-  @SuppressWarnings("deprecation")  // Old APIs.
+  @SuppressWarnings("deprecation") // Old APIs.
   @Test
   public void testFormatWithOption() {
     FakeLogData logData = FakeLogData.of("Hello World");
@@ -118,18 +120,18 @@ public class SimpleMessageFormatterTest {
   }
 
   private static String format(LogData logData, Metadata scope) {
-    SimpleLogHandler handler = getSimpleLogHandler();
-    SimpleMessageFormatter.format(logData, scope, handler);
-    return handler.toString();
+    MetadataProcessor metadata = MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata());
+    return SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
   }
 
   private static String appendFormatted(LogData logData, Metadata scope) {
-    StringBuilder out = new StringBuilder();
-    SimpleMessageFormatter.appendFormatted(logData, scope, out);
-    return out.toString();
+    MetadataProcessor metadata = MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata());
+    return SimpleMessageFormatter.getDefaultFormatter()
+        .append(logData, metadata, new StringBuilder())
+        .toString();
   }
 
-  @SuppressWarnings("deprecation")  // Old APIs.
+  @SuppressWarnings("deprecation") // Old APIs.
   private static String logWithOption(LogData logData, Option option) {
     SimpleLogHandler handler = getSimpleLogHandler();
     SimpleMessageFormatter.format(logData, handler, option);
