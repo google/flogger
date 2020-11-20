@@ -17,6 +17,7 @@
 package com.google.common.flogger.backend.system;
 
 import com.google.common.flogger.backend.LogData;
+import com.google.common.flogger.backend.Platform;
 import java.util.logging.Logger;
 
 /** A logging backend that uses the {@code java.util.logging} classes to output log statements. */
@@ -28,11 +29,11 @@ public class SimpleLoggerBackend extends AbstractBackend {
 
   @Override
   public void log(LogData data) {
-    log(SimpleLogRecord.create(data), data.wasForced());
+    log(SimpleLogRecord.create(data, Platform.getInjectedMetadata()), data.wasForced());
   }
 
   @Override
   public void handleError(RuntimeException error, LogData badData) {
-    log(SimpleLogRecord.error(error, badData), badData.wasForced());
+    log(SimpleLogRecord.error(error, badData, Platform.getInjectedMetadata()), badData.wasForced());
   }
 }
