@@ -75,8 +75,6 @@ included when the binary is run. If you have a modularized build, you can
 include this dependency by the root module that builds your app/binary, and can
 be `runtime` scope.
 
-> Note: The `flogger-system-backend` uses `JUL` logging. See further below on using a different interface.
-
 <!-- TODO(dbeaumont): link to docs for how to specify a backend. -->
 
 ### 2. Add an import for [`FluentLogger`]
@@ -107,13 +105,6 @@ designed for use in Google's codebase. The `FluentLogger` API is recommended for
 non-Google code, since its API should remain more stable over time.
 
 <a name="more-information"></a>
-
-## Using a different Flogger backend
-
-In addition to the `flogger-systemd-backend`, pull in an other backend, such as `flogger-log4j[2]-backend` or `flogger-slf4j-backend`, and set `flogger.backend_factory` system property according to the [instructions of the backend](https://github.com/google/flogger/blob/master/log4j/src/main/java/com/google/common/flogger/backend/log4j/Log4jBackendFactory.java#L30).
-
-To use `slf4j`, another option is using the third-party `jul-to-slf4j` library. Note that `flogger-slf4j-backend` and `jul-to-slf4j` differ in [how they map](https://github.com/google/flogger/issues/69#issuecomment-723043052) the `FINER` level.
-
 ## More information
 
 Flogger was designed and implemented by David Beaumont, with invaluable help

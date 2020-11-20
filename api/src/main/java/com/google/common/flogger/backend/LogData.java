@@ -58,6 +58,10 @@ public interface LogData {
   /**
    * Returns any additional metadata for this log statement. If no additional metadata is present,
    * the immutable empty metadata instance is returned.
+   *
+   * <p>IMPORTANT: The returned instance is restricted to metadata added at the log site, and will
+   * not include any scoped metadata to be applied to the log statement. To process combined log
+   * site and scoped metadata, obtain or create a {@link MetadataProcessor}.
    */
   Metadata getMetadata();
 
