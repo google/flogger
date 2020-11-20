@@ -22,8 +22,6 @@ import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.NoOpContextDataProvider;
 import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.context.ContextDataProvider;
-import com.google.common.flogger.context.Tags;
-import java.util.logging.Level;
 
 /**
  * The default fluent logger platform for a server-side Java environment. The default platform
@@ -80,7 +78,10 @@ public class DefaultPlatform extends Platform {
 
   // Visible for testing
   DefaultPlatform(
-      BackendFactory factory, LoggingContext context, Clock clock, LogCallerFinder callerFinder) {
+      BackendFactory factory,
+      ContextDataProvider context,
+      Clock clock,
+      LogCallerFinder callerFinder) {
     this.backendFactory = factory;
     this.context = context;
     this.clock = clock;
@@ -100,16 +101,6 @@ public class DefaultPlatform extends Platform {
   @Override
   protected ContextDataProvider getContextDataProviderImpl() {
     return context;
-  }
-
-  @Override
-  protected boolean shouldForceLoggingImpl(String loggerName, Level level, boolean isEnabled) {
-    return context.shouldForceLogging(loggerName, level, isEnabled);
-  }
-
-  @Override
-  protected Tags getInjectedTagsImpl() {
-    return context.getTags();
   }
 
   @Override

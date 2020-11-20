@@ -57,11 +57,10 @@ public abstract class Platform {
         DEFAULT_PLATFORM
       };
 
-  // Use the lazy holder idiom here to avoid class loading issues. Loading the sub-class directly
-  // must be able to load the parent class fully first, which would not be possible if the INSTANCE
-  // was resolved directly during the static initialization for the parent class. This does mean
-  // that any errors in platform loading are deferred until the first time one of the Platform's
-  // static methods is actually invoked, but this seems unavoidable.
+  // Use the lazy holder idiom here to avoid class loading issues. Loading the Platform sub-class
+  // will trigger static initialization of the Platform class first, which would not be possible if
+  // the INSTANCE field were a static field in Platform. This means that any errors in platform
+  // loading are deferred until the first time one of the Platform's static methods is invoked.
   private static final class LazyHolder {
     private static final Platform INSTANCE = loadFirstAvailablePlatform(AVAILABLE_PLATFORMS);
 
@@ -208,25 +207,16 @@ public abstract class Platform {
    *     {@code isLoggable()} on the backend instance)
    */
   public static boolean shouldForceLogging(String loggerName, Level level, boolean isEnabled) {
-    // TODO: Switch to using a cached field from getContextDataProvider() when all platforms are
-    // updated, and deprecate/remove the "impl" method below.
-    return LazyHolder.INSTANCE.shouldForceLoggingImpl(loggerName, level, isEnabled);
+    return getContextDataProvider().shouldForceLogging(loggerName, level, isEnabled);
   }
 
-  protected boolean shouldForceLoggingImpl(String loggerName, Level level, boolean isEnabled) {
-    return false;
-  }
-
+  /** Returns {@link Tags} from with the current context to be injected into log statements. */
   public static Tags getInjectedTags() {
-    // TODO: Switch to using a cached field from getContextDataProvider() when all platforms are
-    // updated, and deprecate/remove the "impl" method below.
-    return LazyHolder.INSTANCE.getInjectedTagsImpl();
+    return getContextDataProvider().getTags();
   }
 
-  protected Tags getInjectedTagsImpl() {
-    return Tags.empty();
-  }
-
+  /** Returns {@link Metadata} from with the current context to be injected into log statements. */
+  // TODO(dbeaumont): Make this return either an extensible MetadataProcessor or ScopeMetadata.
   public static Metadata getInjectedMetadata() {
     return getContextDataProvider().getMetadata();
   }

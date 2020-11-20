@@ -20,8 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.Platform.LogCallerFinder;
-import com.google.common.flogger.context.Tags;
-import java.util.logging.Level;
+import com.google.common.flogger.context.ContextDataProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,11 +36,12 @@ import org.mockito.MockitoAnnotations;
  */
 @RunWith(JUnit4.class)
 public class DefaultPlatformTest {
-  private static final Tags TEST_TAGS = Tags.builder().addTag("test").build();
-
   private static final class FakeDefaultPlatform extends DefaultPlatform {
     FakeDefaultPlatform(
-        BackendFactory factory, LoggingContext context, Clock clock, LogCallerFinder callerFinder) {
+        BackendFactory factory,
+        ContextDataProvider context,
+        Clock clock,
+        LogCallerFinder callerFinder) {
       super(factory, context, clock, callerFinder);
     }
 
@@ -56,23 +56,13 @@ public class DefaultPlatformTest {
     }
 
     @Override
-    protected boolean shouldForceLoggingImpl(String loggerName, Level level, boolean isEnabled) {
-      return super.shouldForceLoggingImpl(loggerName, level, isEnabled);
-    }
-
-    @Override
-    protected Tags getInjectedTagsImpl() {
-      return super.getInjectedTagsImpl();
-    }
-
-    @Override
     protected long getCurrentTimeNanosImpl() {
       return super.getCurrentTimeNanosImpl();
     }
   }
 
   @Mock BackendFactory mockBackendFactory;
-  @Mock LoggingContext mockContext;
+  @Mock ContextDataProvider mockContext;
   @Mock Clock mockClock;
   @Mock LogCallerFinder mockCallerFinder;
   private FakeDefaultPlatform platform;
@@ -102,22 +92,13 @@ public class DefaultPlatformTest {
   }
 
   @Test
-  public void testForcedLogging() {
-    Mockito.when(mockContext.shouldForceLogging("logger.name", Level.INFO, false))
-        .thenReturn(true);
-    assertThat(platform.shouldForceLoggingImpl("logger.name", Level.INFO, false)).isTrue();
-    assertThat(platform.shouldForceLoggingImpl("logger.other.name", Level.INFO, false)).isFalse();
-  }
-
-  @Test
-  public void testInjectedTags() {
-    Mockito.when(mockContext.getTags()).thenReturn(TEST_TAGS);
-    assertThat(platform.getInjectedTagsImpl()).isEqualTo(TEST_TAGS);
+  public void testContextProvider() {
+    assertThat(platform.getContextDataProviderImpl()).isSameInstanceAs(mockContext);
   }
 
   @Test
   public void testLogCallerFinder() {
-    assertThat(platform.getCallerFinderImpl()).isEqualTo(mockCallerFinder);
+    assertThat(platform.getCallerFinderImpl()).isSameInstanceAs(mockCallerFinder);
   }
 
   @Test
