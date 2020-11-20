@@ -34,9 +34,14 @@ public class ScopedLoggingContextTest {
   private static final ScopedLoggingContext ERROR_CONTEXT =
       new ScopedLoggingContext() {
         @Override
-        public LoggingScope withNewScope() {
-          return () -> {
-            throw new IllegalArgumentException("BAD CONTEXT");
+        public ScopedLoggingContext.Builder newScope() {
+          return new ScopedLoggingContext.Builder() {
+            @Override
+            public LoggingScope install() {
+              return () -> {
+                throw new IllegalArgumentException("BAD CONTEXT");
+              };
+            }
           };
         }
 

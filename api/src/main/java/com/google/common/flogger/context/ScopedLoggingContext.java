@@ -24,6 +24,7 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.Closeable;
 import java.util.concurrent.Callable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * A user facing API for creating and modifying scoped logging contexts in applications.
@@ -232,7 +233,7 @@ public abstract class ScopedLoggingContext {
      * Returns the configured tags, or null. This method may do work and results should be cached by
      * context implementations.
      */
-    protected final Tags getTags() {
+    @NullableDecl protected final Tags getTags() {
       return tags;
     }
 
@@ -240,7 +241,7 @@ public abstract class ScopedLoggingContext {
      * Returns the configured scope metadata, or null. This method may do work and results should be
      * cached by context implementations.
      */
-    protected final ScopeMetadata getMetadata() {
+    @NullableDecl protected final ScopeMetadata getMetadata() {
       return metadata != null ? metadata.build() : null;
     }
 
@@ -248,7 +249,7 @@ public abstract class ScopedLoggingContext {
      * Returns the configured log level map, or null. This method may do work and results should be
      * cached by context implementations.
      */
-    protected final LogLevelMap getLogLevelMap() {
+    @NullableDecl protected final LogLevelMap getLogLevelMap() {
       return logLevelMap;
     }
   }
@@ -274,66 +275,11 @@ public abstract class ScopedLoggingContext {
    * Foo result = ctx.newScope().withTags(Tags.of("my_tag", someValue)).call(MyClass::doFoo);
    * }</pre>
    *
-   * <p>Note that the default implementation of this method is potentially inefficient and it is
-   * strongly recommended that scoped context implementations override it with a better
-   * implementation.
+   * <p>Implementations of this API must return a subclass of {@link Builder} which can install all
+   * necessary metadata into a new scope from the builder's current state.
    */
-  // TODO(dbeaumont): Verify this is no longer needed and make it abstract instead.
   @CheckReturnValue
-  public Builder newScope() {
-    // This implementation only exists while the scoped context implementations do not all support
-    // this method directly. It should be removed once implementations are updated to support
-    // creating contexts directly with state, rather than creating and then modifying them.
-    return new Builder() {
-      @Override
-      @SuppressWarnings("MustBeClosedChecker")
-      public LoggingScope install() {
-        LoggingScope scope = withNewScope();
-        try {
-          Tags tags = getTags();
-          if (tags != null && !tags.isEmpty()) {
-            addTags(tags);
-          }
-          // Adding metadata one at a time is very inefficient. Subclass implementations can do
-          // better by simply setting the metadata directly.
-          ScopeMetadata metadata = getMetadata();
-          if (metadata != null) {
-            for (int n = 0, size = metadata.size(); n < size; n++) {
-              add(metadata.getKey(n), metadata.getValue(n));
-            }
-          }
-          LogLevelMap logLevelMap = getLogLevelMap();
-          if (logLevelMap != null) {
-            applyLogLevelMap(logLevelMap);
-          }
-          return scope;
-        } catch (Error e) {
-          forceClose(scope);
-          throw e;
-        } catch (RuntimeException e) {
-          forceClose(scope);
-          throw e;
-        }
-      }
-
-      // Recapture the key type so we can cast the value.
-      <T> void add(MetadataKey<T> key, Object value) {
-        addMetadata(key, key.cast(value));
-      }
-    };
-  }
-
-  private static void forceClose(LoggingScope scope) {
-    // Errors in scope setup should almost never happen since no user code is being run here,
-    // but we should still protect the scope state as best we can (e.g. OutOfMemoryError).
-    // Make a best effort attempt to close the scope before re-throwing the error. Logging
-    // context implementations should never fail when closing a successfully opened context.
-    try {
-      scope.close();
-    } catch (Throwable ignored) {
-      // Ignored since we have something better to throw, and this shouldn't happen anyway.
-    }
-  }
+  public abstract Builder newScope();
 
   /**
    * Installs a new context scope to which additional logging metadata can be attached. The caller
@@ -379,10 +325,13 @@ public abstract class ScopedLoggingContext {
    * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
    *     they are installed.
    */
+  // TODO(dbeaumont): Once no subclasses have custom implementations, make this final.
   @Deprecated
   @MustBeClosed
   @CheckReturnValue
-  public abstract LoggingScope withNewScope();
+  public LoggingScope withNewScope() {
+    return newScope().install();
+  }
 
   /**
    * Wraps a runnable so it will execute within a new context scope.

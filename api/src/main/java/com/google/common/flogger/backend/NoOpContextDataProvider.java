@@ -60,12 +60,15 @@ public final class NoOpContextDataProvider extends ContextDataProvider {
       }
     }
 
-    // The ScopedLoggingContext methods are not themselves called by the core library, so this
-    // should not risk any issues with logging during logger initialisation.
     @Override
-    public LoggingScope withNewScope() {
-      logWarningOnceOnly();
-      return this;
+    public ScopedLoggingContext.Builder newScope() {
+      return new ScopedLoggingContext.Builder() {
+        @Override
+        public LoggingScope install() {
+          logWarningOnceOnly();
+          return NoOpScopedLoggingContext.this;
+        }
+      };
     }
 
     @Override

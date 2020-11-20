@@ -23,9 +23,10 @@ import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.ScopedLoggingContext.LoggingScope;
 
 /**
- * Deprecated context API, to be replaced by {@link ContextDataProvider} and {@link
- * ScopedLoggingContext}.
+ * @deprecated Replaced by ContextDataProvider.
  */
+// TODO(b/173778154): Delete this class once nothing external relies on it.
+@Deprecated
 public abstract class LoggingContext extends ContextDataProvider {
   // Needed temporarily while old LoggingContext based implementations are migrated away from.
   private static final ScopedLoggingContext NO_OP_API = new NoOpScopedLoggingContext();
@@ -38,8 +39,13 @@ public abstract class LoggingContext extends ContextDataProvider {
   private static final class NoOpScopedLoggingContext extends ScopedLoggingContext
       implements LoggingScope {
     @Override
-    public LoggingScope withNewScope() {
-      return this;
+    public ScopedLoggingContext.Builder newScope() {
+      return new ScopedLoggingContext.Builder() {
+        @Override
+        public LoggingScope install() {
+          return NoOpScopedLoggingContext.this;
+        }
+      };
     }
 
     @Override
