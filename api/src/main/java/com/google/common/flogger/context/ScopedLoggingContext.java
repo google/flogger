@@ -325,11 +325,13 @@ public abstract class ScopedLoggingContext {
    * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
    *     they are installed.
    */
-  // TODO(dbeaumont): Once no subclasses have custom implementations, make this final.
+  // TODO(dbeaumont): Consider using @InlineMe to migrate these depending on usage patterns
+  // (e.g. don't just inline if it's a common pattern to do ctx.withNewScope() --> ctx.addTags() in
+  // the same bit of code, or maybe catch that with an errorprone check).
   @Deprecated
   @MustBeClosed
   @CheckReturnValue
-  public LoggingScope withNewScope() {
+  public final LoggingScope withNewScope() {
     return newScope().install();
   }
 
