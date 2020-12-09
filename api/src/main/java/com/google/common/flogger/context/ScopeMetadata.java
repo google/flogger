@@ -27,9 +27,10 @@ import java.util.List;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
- * Immutable {@link Metadata} implementation intended for use in nested scopes. Scope metadata can
- * be concatenated to inherit metadata from a parent scope. This class is only expected to be needed
- * by implementations of {@link ScopedLoggingContext} and should not be considered a stable API.
+ * Immutable {@link Metadata} implementation intended for use in nested contexts. Scope metadata can
+ * be concatenated to inherit metadata from a parent context. This class is only expected to be
+ * needed by implementations of {@link ScopedLoggingContext} and should not be considered a stable
+ * API.
  */
 public abstract class ScopeMetadata extends Metadata {
   private static final class Entry<T> {
@@ -51,7 +52,7 @@ public abstract class ScopeMetadata extends Metadata {
     private static final Entry<?>[] EMPTY_ARRAY = new Entry<?>[0];
 
     // Set an explicitly small initial capacity to avoid excessive allocations when we only ever
-    // expect one or two keys to be added per scope. We don't optimize for the case of zero keys,
+    // expect one or two keys to be added per context. We don't optimize for the case of zero keys,
     // since the scoped context builder shouldn't create a builder until the first key is added.
     private final List<Entry<?>> entries = new ArrayList<Entry<?>>(2);
 
@@ -91,7 +92,7 @@ public abstract class ScopeMetadata extends Metadata {
   private ScopeMetadata() {}
 
   /**
-   * Concatenates the given scope metadata <em>after</em> this instance. Key value pairs are simply
+   * Concatenates the given context metadata <em>after</em> this instance. Key value pairs are simply
    * concatenated (rather than being merged) which may result in multiple single valued keys
    * existing in the resulting sequence.
    *

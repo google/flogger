@@ -30,7 +30,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * A user facing API for creating and modifying scoped logging contexts in applications.
  *
  * <p>Scoped contexts provide a way for application code to attach metadata and control the
- * behaviour of logging within well defined scopes. This is most often associated with making "per
+ * behaviour of logging within well defined contexts. This is most often associated with making "per
  * request" modifications to logging behaviour such as:
  *
  * <ul>
@@ -39,13 +39,13 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  *       parameter).
  * </ul>
  *
- * <p>Scopes are nestable and new scopes can be added to provide additional metadata which will be
- * available to logging as long as the scope is installed.
+ * <p>Contexts are nestable and new contexts can be added to provide additional metadata which will
+ * be available to logging as long as the context is installed.
  *
- * <p>Note that in the current API scopes are also modifiable after creation, but this usage is
- * discouraged and may be removed in future. The problem with modifying scopes after creation is
- * that, since scopes can be shared between threads, it is potentially confusing if tags are added
- * to a scope when it is being used concurrently by multiple threads.
+ * <p>Note that in the current API contexts are also modifiable after creation, but this usage is
+ * discouraged and may be removed in future. The problem with modifying contexts after creation is
+ * that, since contexts can be shared between threads, it is potentially confusing if tags are added
+ * to a context when it is being used concurrently by multiple threads.
  *
  * <p>Note that since logging contexts are designed to be modified by code in libraries and helper
  * functions which do not know about each other, the data structures and behaviour of logging
@@ -53,19 +53,19 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * particular:
  *
  * <ul>
- *   <li>Tags can only be added to scopes, never modified or removed.
- *   <li>Logging that's enabled by one scope cannot be disabled from within a nested scope.
+ *   <li>Tags can only be added to contexts, never modified or removed.
+ *   <li>Logging that's enabled by one context cannot be disabled from within a nested context.
  * </ul>
  *
  * <p>One possibly surprising result of this behaviour is that it's not possible to disable logging
- * from within a scope. However this is quite intentional, since overly verbose logging should be
+ * from within a context. However this is quite intentional, since overly verbose logging should be
  * fixed by other mechanisms (code changes, global logging configuration), and not on a "per
  * request" basis.
  *
- * <p>Depending on the framework used, it's possible that the current logging scope will be
- * automatically propagated to some or all threads or sub-tasks started from within the scope. This
- * is not guaranteed however and the semantic behaviour of scope propagation is not defined by this
- * class.
+ * <p>Depending on the framework used, it's possible that the current logging context will be
+ * automatically propagated to some or all threads or sub-tasks started from within the context.
+ * This is not guaranteed however and the semantic behaviour of context propagation is not defined
+ * by this class.
  *
  * <p>Context support and automatic propagation is heavily reliant on Java platform capabilities,
  * and precise behaviour is likely to differ between runtime environments or frameworks. Context
@@ -76,7 +76,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * of any modification methods called (e.g. {@link #addTags(Tags)}).
  */
 public abstract class ScopedLoggingContext {
-  /** A logging scope which must be closed in the reverse order to which it was created. */
+  /** A logging context which must be closed in the reverse order to which it was created. */
   // If Flogger is bumped to JDK 1.7, this should be switched to AutoCloseable.
   public interface LoggingScope extends Closeable {
     // Overridden to remove the throws clause allowing simple try-with-resources use.
@@ -85,8 +85,8 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * A fluent builder API for creating and installing new context scopes. This API should be used
-   * whenever the metadata to be added to a scope it known at the time the scope is created.
+   * A fluent builder API for creating and installing new contexts. This API should be used whenever
+   * the metadata to be added to a context it known at the time the context is created.
    *
    * <p>This class is intended to be used only as part of a fluent statement, and retaining a
    * reference to a builder instance for any length of time is not recommended.
@@ -99,7 +99,8 @@ public abstract class ScopedLoggingContext {
     protected Builder() {}
 
     /**
-     * Sets the tags to be used with the scope. This method can be called at most once per builder.
+     * Sets the tags to be used with the context. This method can be called at most once per
+     * builder.
      */
     @CheckReturnValue
     public final Builder withTags(Tags tags) {
@@ -110,8 +111,8 @@ public abstract class ScopedLoggingContext {
     }
 
     /**
-     * Adds a single metadata key/value pair to the scope. This method can be called multiple times
-     * on a builder.
+     * Adds a single metadata key/value pair to the context. This method can be called multiple
+     * times on a builder.
      */
     @CheckReturnValue
     public final <T> Builder withMetadata(MetadataKey<T> key, T value) {
@@ -123,7 +124,7 @@ public abstract class ScopedLoggingContext {
     }
 
     /**
-     * Sets the log level map to be used with the scope being built. This method can be called at
+     * Sets the log level map to be used with the context being built. This method can be called at
      * most once per builder.
      */
     @CheckReturnValue
@@ -135,12 +136,12 @@ public abstract class ScopedLoggingContext {
     }
 
     /**
-     * Wraps a runnable so it will execute within a new context scope based on the state of the
-     * builder. Note that each time this runnable is executed, a new scope will be installed
-     * extending from the currently installed scope at the time of execution.
+     * Wraps a runnable so it will execute within a new context based on the state of the builder.
+     * Note that each time this runnable is executed, a new context will be installed extending from
+     * the currently installed context at the time of execution.
      *
-     * @throws InvalidLoggingScopeStateException if the scope created during this method cannot be
-     *     closed correctly (e.g. if a nested scope has also been opened, but not closed).
+     * @throws InvalidLoggingScopeStateException if the context created during this method cannot be
+     *     closed correctly (e.g. if a nested context has also been opened, but not closed).
      */
     @CheckReturnValue
     public final Runnable wrap(final Runnable r) {
@@ -149,25 +150,25 @@ public abstract class ScopedLoggingContext {
         @SuppressWarnings("MustBeClosedChecker")
         public void run() {
           // JDK 1.6 does not have "try-with-resources"
-          LoggingScope scope = install();
+          LoggingScope context = install();
           boolean hasError = true;
           try {
             r.run();
             hasError = false;
           } finally {
-            closeAndMaybePropagateError(scope, hasError);
+            closeAndMaybePropagateError(context, hasError);
           }
         }
       };
     }
 
     /**
-     * Wraps a callable so it will execute within a new context scope based on the state of the
-     * builder. Note that each time this runnable is executed, a new scope will be installed
-     * extending from the currently installed scope at the time of execution.
+     * Wraps a callable so it will execute within a new context based on the state of the builder.
+     * Note that each time this runnable is executed, a new context will be installed extending from
+     * the currently installed context at the time of execution.
      *
-     * @throws InvalidLoggingScopeStateException if the scope created during this method cannot be
-     *     closed correctly (e.g. if a nested scope has also been opened, but not closed).
+     * @throws InvalidLoggingScopeStateException if the context created during this method cannot be
+     *     closed correctly (e.g. if a nested context has also been opened, but not closed).
      */
     @CheckReturnValue
     public final <R> Callable<R> wrap(final Callable<R> c) {
@@ -175,53 +176,53 @@ public abstract class ScopedLoggingContext {
         @Override
         @SuppressWarnings("MustBeClosedChecker")
         public R call() throws Exception {
-          LoggingScope scope = install();
+          LoggingScope context = install();
           boolean hasError = true;
           try {
             R result = c.call();
             hasError = false;
             return result;
           } finally {
-            closeAndMaybePropagateError(scope, hasError);
+            closeAndMaybePropagateError(context, hasError);
           }
         }
       };
     }
 
-    /** Runs a runnable directly within a new context scope installed from this builder. */
+    /** Runs a runnable directly within a new context installed from this builder. */
     public final void run(Runnable r) {
       wrap(r).run();
     }
 
-    /** Calls a callable directly within a new context scope installed from this builder. */
+    /** Calls a callable directly within a new context installed from this builder. */
     public final <R> R call(Callable<R> c) throws Exception {
       return wrap(c).call();
     }
 
     /**
-     * Installs a new context scope based on the state of the builder. The caller is
-     * <em>required</em> to invoke {@link LoggingScope#close() close()} on the returned instances in
-     * the reverse order to which they were obtained. For JDK 1.7 and above, this is best achieved
-     * by using a try-with-resources construction in the calling code.
+     * Installs a new context based on the state of the builder. The caller is <em>required</em> to
+     * invoke {@link LoggingScope#close() close()} on the returned instances in the reverse order to
+     * which they were obtained. For JDK 1.7 and above, this is best achieved by using a
+     * try-with-resources construction in the calling code.
      *
      * <pre>{@code
      * ScopedLoggingContext ctx = ScopedLoggingContext.getInstance();
      * try (LoggingScope scope = ctx.newScope().withTags(Tags.of("my_tag", someValue).install()) {
-     *   // Any logging by code called from within this scope will contain the additional metadata.
+     *   // Any logging by code called from within this context will contain the additional metadata.
      *   logger.atInfo().log("Log message should contain tag value...");
      * }
      * }</pre>
      *
-     * <p>To avoid the need to manage scopes manually, it is strongly recommended that the helper
+     * <p>To avoid the need to manage contexts manually, it is strongly recommended that the helper
      * methods, such as {@link #wrap(Runnable)} or {@link #run(Runnable)} are used to simplify the
-     * handling of scopes. This method is intended primarily to be overridden by context
+     * handling of contexts. This method is intended primarily to be overridden by context
      * implementations rather than being invoked as a normal part of context use.
      *
-     * <p>An implementation of scoped contexts must preserve any existing metadata when a scope is
+     * <p>An implementation of scoped contexts must preserve any existing metadata when a context is
      * opened, and restore the previous state when it terminates.
      *
      * <p>Note that the returned {@link LoggingScope} is not required to enforce the correct closure
-     * of nested scopes, and while it is permitted to throw a {@link
+     * of nested contexts, and while it is permitted to throw a {@link
      * InvalidLoggingScopeStateException} in the face of mismatched or invalid usage, it is not
      * required.
      */
@@ -233,15 +234,17 @@ public abstract class ScopedLoggingContext {
      * Returns the configured tags, or null. This method may do work and results should be cached by
      * context implementations.
      */
-    @NullableDecl protected final Tags getTags() {
+    @NullableDecl
+    protected final Tags getTags() {
       return tags;
     }
 
     /**
-     * Returns the configured scope metadata, or null. This method may do work and results should be
-     * cached by context implementations.
+     * Returns the configured context metadata, or null. This method may do work and results should
+     * be cached by context implementations.
      */
-    @NullableDecl protected final ScopeMetadata getMetadata() {
+    @NullableDecl
+    protected final ScopeMetadata getMetadata() {
       return metadata != null ? metadata.build() : null;
     }
 
@@ -249,7 +252,8 @@ public abstract class ScopedLoggingContext {
      * Returns the configured log level map, or null. This method may do work and results should be
      * cached by context implementations.
      */
-    @NullableDecl protected final LogLevelMap getLogLevelMap() {
+    @NullableDecl
+    protected final LogLevelMap getLogLevelMap() {
       return logLevelMap;
     }
   }
@@ -267,8 +271,8 @@ public abstract class ScopedLoggingContext {
   protected ScopedLoggingContext() {}
 
   /**
-   * Creates a new context scope builder to which additional logging metadata can be attached before
-   * being installed or used to wrap some existing code.
+   * Creates a new context builder to which additional logging metadata can be attached before being
+   * installed or used to wrap some existing code.
    *
    * <pre>{@code
    * ScopedLoggingContext ctx = ScopedLoggingContext.getInstance();
@@ -276,40 +280,40 @@ public abstract class ScopedLoggingContext {
    * }</pre>
    *
    * <p>Implementations of this API must return a subclass of {@link Builder} which can install all
-   * necessary metadata into a new scope from the builder's current state.
+   * necessary metadata into a new context from the builder's current state.
    */
   @CheckReturnValue
   public abstract Builder newScope();
 
   /**
-   * Installs a new context scope to which additional logging metadata can be attached. The caller
-   * is <em>required</em> to invoke {@link LoggingScope#close() close()} on the returned instances
-   * in the reverse order to which they were obtained. For JDK 1.7 and above, this is best achieved
-   * by using a try-with-resources construction in the calling code.
+   * Installs a new context to which additional logging metadata can be attached. The caller is
+   * <em>required</em> to invoke {@link LoggingScope#close() close()} on the returned instances in
+   * the reverse order to which they were obtained. For JDK 1.7 and above, this is best achieved by
+   * using a try-with-resources construction in the calling code.
    *
    * <pre>{@code
    * ScopedLoggingContext ctx = ScopedLoggingContext.getInstance();
-   * try (LoggingScope scope = ctx.withNewScope()) {
+   * try (LoggingScope context = ctx.withNewScope()) {
    *   // Now add metadata to the installed context (returns false if not supported).
    *   ctx.addTags(Tags.of("my_tag", someValue));
    *
-   *   // Any logging by code called from within this scope will contain the additional metadata.
+   *   // Any logging by code called from within this context will contain the additional metadata.
    *   logger.atInfo().log("Log message should contain tag value...");
    * }
    * }</pre>
    *
-   * <p>To avoid the need to manage scopes manually, it is strongly recommended that the helper
+   * <p>To avoid the need to manage contexts manually, it is strongly recommended that the helper
    * methods, such as {@link #wrap(Runnable)} or {@link #run(Runnable)} are used to simplify the
-   * handling of scopes. This method is intended primarily to be overridden by context
+   * handling of contexts. This method is intended primarily to be overridden by context
    * implementations rather than being invoked as a normal part of context use.
    *
-   * <p>An implementation of scoped contexts must preserve any existing metadata when a scope is
+   * <p>An implementation of scoped contexts must preserve any existing metadata when a context is
    * opened, and restore the previous state when it terminates. In particular:
    *
    * <pre>{@code
    * ScopedLoggingContext ctx = ScopedLoggingContext.getInstance();
    * logger.atInfo().log("Some log statement with existing tags and behaviour...");
-   * try (LoggingScope scope = ctx.withNewScope()) {
+   * try (LoggingScope context = ctx.withNewScope()) {
    *   logger.atInfo().log("This log statement is the same as the first...");
    *   ctx.addTags(Tags.of("my_tag", someValue));
    *   logger.atInfo().log("This log statement has the new tag present...");
@@ -318,11 +322,11 @@ public abstract class ScopedLoggingContext {
    * }</pre>
    *
    * <p>Note that the returned {@link LoggingScope} is not required to enforce the correct closure
-   * of nested scopes, and while it is permitted to throw a {@link
+   * of nested contexts, and while it is permitted to throw a {@link
    * InvalidLoggingScopeStateException} in the face of mismatched or invalid usage, it is not
    * required.
    *
-   * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
+   * @deprecated Prefer using {@link #newScope()} and the builder API to configure contexts before
    *     they are installed.
    */
   // TODO(dbeaumont): Consider using @InlineMe to migrate these depending on usage patterns
@@ -336,11 +340,11 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Wraps a runnable so it will execute within a new context scope.
+   * Wraps a runnable so it will execute within a new context.
    *
-   * @throws InvalidLoggingScopeStateException if the scope created during this method cannot be
-   *     closed correctly (e.g. if a nested scope has also been opened, but not closed).
-   * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
+   * @throws InvalidLoggingScopeStateException if the context created during this method cannot be
+   *     closed correctly (e.g. if a nested context has also been opened, but not closed).
+   * @deprecated Prefer using {@link #newScope()} and the builder API to configure contexts before
    *     they are installed.
    */
   @Deprecated
@@ -350,11 +354,11 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Wraps a callable so it will execute within a new context scope.
+   * Wraps a callable so it will execute within a new context.
    *
-   * @throws InvalidLoggingScopeStateException if the scope created during this method cannot be
-   *     closed correctly (e.g. if a nested scope has also been opened, but not closed).
-   * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
+   * @throws InvalidLoggingScopeStateException if the context created during this method cannot be
+   *     closed correctly (e.g. if a nested context has also been opened, but not closed).
+   * @deprecated Prefer using {@link #newScope()} and the builder API to configure contexts before
    *     they are installed.
    */
   @Deprecated
@@ -364,9 +368,9 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Runs a runnable directly within a new context scope.
+   * Runs a runnable directly within a new context.
    *
-   * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
+   * @deprecated Prefer using {@link #newScope()} and the builder API to configure contexts before
    *     they are installed.
    */
   @Deprecated
@@ -375,9 +379,9 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Calls a callable directly within a new context scope.
+   * Calls a callable directly within a new context.
    *
-   * @deprecated Prefer using {@link #newScope()} and the builder API to configure scopes before
+   * @deprecated Prefer using {@link #newScope()} and the builder API to configure contexts before
    *     they are installed.
    */
   @Deprecated
@@ -386,7 +390,7 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Adds tags to the current set of log tags for the current scope. Tags are merged together and
+   * Adds tags to the current set of log tags for the current context. Tags are merged together and
    * existing tags cannot be modified. This is deliberate since two pieces of code may not know
    * about each other and could accidentally use the same tag name; in that situation it's important
    * that both tag values are preserved.
@@ -396,7 +400,7 @@ public abstract class ScopedLoggingContext {
    * important that they resulting string representation is reliably cacheable and can be calculated
    * without invoking arbitrary code (e.g. the {@code toString()} method of some unknown user type).
    *
-   * @return false if there is no current scope, or scoped contexts are not supported.
+   * @return false if there is no current context, or scoped contexts are not supported.
    */
   public boolean addTags(Tags tags) {
     checkNotNull(tags, "tags");
@@ -404,13 +408,13 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Adds a single metadata key/value pair to the current scope.
+   * Adds a single metadata key/value pair to the current context.
    *
    * <p>Unlike {@link Tags}, which have a well defined value ordering, independent of the order in
-   * which values were added, scope metadata preserves the order of addition. As such, it is not
+   * which values were added, context metadata preserves the order of addition. As such, it is not
    * advised to add values for the same metadata key from multiple threads, since that may create
    * non-deterministic ordering. It is recommended (where possible) to add metadata when building a
-   * new scope, rather than adding it to context visible to multiple threads.
+   * new context, rather than adding it to context visible to multiple threads.
    */
   public <T> boolean addMetadata(MetadataKey<T> key, T value) {
     checkNotNull(key, "key");
@@ -419,8 +423,8 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Applies the given log level map to the current scope. Log level settings are merged with any
-   * existing setting from the current (or parent) scopes such that logging will be enabled for a
+   * Applies the given log level map to the current context. Log level settings are merged with any
+   * existing setting from the current (or parent) contexts such that logging will be enabled for a
    * log statement if:
    *
    * <ul>
@@ -428,22 +432,22 @@ public abstract class ScopedLoggingContext {
    *   <li>It was already enabled by the current context.
    * </ul>
    *
-   * <p>The effects of this call will be undone only when the current scope terminates.
+   * <p>The effects of this call will be undone only when the current context terminates.
    *
-   * @return false if there is no current scope, or scoped contexts are not supported.
+   * @return false if there is no current context, or scoped contexts are not supported.
    */
   public boolean applyLogLevelMap(LogLevelMap logLevelMap) {
     checkNotNull(logLevelMap, "log level map");
     return false;
   }
 
-  private static void closeAndMaybePropagateError(LoggingScope scope, boolean callerHasError) {
+  private static void closeAndMaybePropagateError(LoggingScope context, boolean callerHasError) {
     // Because LoggingScope is not just a "Closeable" there's no risk of it throwing any checked
     // exceptions. Inparticular, when this is switched to use AutoCloseable, there's no risk of
     // having to deal with InterruptedException. That's why having an extended interface is always
     // better than using [Auto]Closeable directly.
     try {
-      scope.close();
+      context.close();
     } catch (RuntimeException e) {
       // This method is always called from a finally block which may be about to rethrow a user
       // exception, so ignore any errors during close() if that's the case.
@@ -456,9 +460,9 @@ public abstract class ScopedLoggingContext {
   }
 
   /**
-   * Thrown if it can be determined that context scopes have been closed incorrectly. Note that the
-   * point at which this exception is thrown may not itself be the point where the mishandling
-   * occurred, but simply where it was first detected.
+   * Thrown if it can be determined that contexts have been closed incorrectly. Note that the point
+   * at which this exception is thrown may not itself be the point where the mishandling occurred,
+   * but simply where it was first detected.
    */
   public static final class InvalidLoggingScopeStateException extends IllegalStateException {
     public InvalidLoggingScopeStateException(String message, Throwable cause) {
