@@ -488,49 +488,50 @@ public abstract class LogContext<
    * @return true if the logging backend should be invoked to output the current log statement.
    */
   protected boolean postProcess(@NullableDecl LogSiteKey logSiteKey) {
-    if (metadata != null && logSiteKey != null) {
-      // This code still gets reached if a "cause" was set, but as that's far more likely than any
-      // other metadata that might suppress logging, it's not worth any more "early out" checks.
-      // If we have a cause, we're almost certainly logging it, and that's expensive anyway.
-      Integer rateLimitCount = metadata.findValue(Key.LOG_EVERY_N);
-      RateLimitPeriod rateLimitPeriod = metadata.findValue(Key.LOG_AT_MOST_EVERY);
-      LogSiteStats stats = LogSiteStats.getStatsForKey(logSiteKey);
-      if (rateLimitCount != null && !stats.incrementAndCheckInvocationCount(rateLimitCount)) {
-        return false;
+    // Without metadata there's nothing to post-process.
+    if (metadata != null) {
+      // Without a log site we ignore any log-site specific behaviour.
+      if (logSiteKey != null) {
+        // Don't "return true" early from this code since we also need to handle stack size.
+        Integer rateLimitCount = metadata.findValue(Key.LOG_EVERY_N);
+        RateLimitPeriod rateLimitPeriod = metadata.findValue(Key.LOG_AT_MOST_EVERY);
+        LogSiteStats stats = LogSiteStats.getStatsForKey(logSiteKey);
+        if (rateLimitCount != null && !stats.incrementAndCheckInvocationCount(rateLimitCount)) {
+          return false;
+        }
+
+        if (rateLimitPeriod != null
+            && !stats.checkLastTimestamp(getTimestampNanos(), rateLimitPeriod)) {
+          return false;
+        }
       }
 
-      if (rateLimitPeriod != null
-          && !stats.checkLastTimestamp(getTimestampNanos(), rateLimitPeriod)) {
-        return false;
+      // This does not affect whether logging will occur, only what additional data it contains.
+      StackSize stackSize = metadata.findValue(Key.CONTEXT_STACK_SIZE);
+      if (stackSize != null) {
+        // we add this information to the stack trace exception so it doesn't need to go here.
+        removeMetadata(Key.CONTEXT_STACK_SIZE);
+        // IMPORTANT: Skipping at least 1 stack frame below is essential for correctness, since
+        // postProcess() can be overridden, so the stack could look like:
+        //
+        // ^  UserCode::someMethod       << we want to start here and skip everything below
+        // |  LogContext::log
+        // |  LogContext::shouldLog
+        // |  OtherChildContext::postProcess
+        // |  ChildContext::postProcess  << this is *not* the caller of LogContext we're after
+        // \- LogContext::postProcess    << we are here
+        //
+        // By skipping the initial code inside this method, we don't trigger any stack capture until
+        // after the "log" method.
+        LogSiteStackTrace context =
+            new LogSiteStackTrace(
+                getMetadata().findValue(Key.LOG_CAUSE),
+                stackSize,
+                getStackForCallerOf(LogContext.class, new Throwable(), stackSize.getMaxDepth(), 1));
+        // The "cause" is a unique metadata key, we must replace any existing value.
+        addMetadata(Key.LOG_CAUSE, context);
       }
     }
-
-    // This does not affect whether logging will occur, only what additional data it contains.
-    StackSize stackSize = getMetadata().findValue(Key.CONTEXT_STACK_SIZE);
-    if (stackSize != null) {
-      // we add this information to the stack trace exception so it doesn't need to go here.
-      removeMetadata(Key.CONTEXT_STACK_SIZE);
-      // IMPORTANT: Skipping at least 1 stack frame below is essential for correctness, since
-      // postProcess() can be overridden, so the stack could look like:
-      //
-      // ^  UserCode::someMethod       << we want to start here and skip everything below
-      // |  LogContext::log
-      // |  LogContext::shouldLog
-      // |  OtherChildContext::postProcess
-      // |  ChildContext::postProcess  << this is not the caller of LogContext we're after
-      // \- LogContext::postProcess    << we are here
-      //
-      // By skipping the initial code inside this method, we don't trigger any stack capture until
-      // after the "log" method.
-      LogSiteStackTrace context =
-          new LogSiteStackTrace(
-              getMetadata().findValue(LogContext.Key.LOG_CAUSE),
-              stackSize,
-              getStackForCallerOf(LogContext.class, new Throwable(), stackSize.getMaxDepth(), 1));
-      // The "cause" is a unique metadata key, we must replace any existing value.
-      addMetadata(LogContext.Key.LOG_CAUSE, context);
-    }
-
     // By default, no restrictions apply so we should log.
     return true;
   }

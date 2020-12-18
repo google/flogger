@@ -60,7 +60,8 @@ public abstract class ContextDataProvider {
    * logging is forced for a log statement it will be emitted regardless or the normal log level
    * configuration of the logger and ignoring any rate limiting or other filtering.
    *
-   * <p>Implementations which do not support forcing logging should return {@code false}.
+   * <p>Implementations which do not support forced logging should not override this method; the
+   * default implementation returns {@code false}.
    *
    * <p>{@code loggerName} can be used to look up specific configuration, such as log level, for the
    * logger, to decide if a log statement should be forced. This information might vary depending on
@@ -88,7 +89,8 @@ public abstract class ContextDataProvider {
    * Returns a set of tags to be added to a log statement. These tags can be used to provide
    * additional contextual metadata to log statements (e.g. request IDs).
    *
-   * <p>Implementations which do not support scoped {@link Tags} should return {@code Tags.empty()}.
+   * <p>Implementations which do not support scoped {@link Tags} should not override this method;
+   * the default implementation returns {@code Tags.empty()}.
    */
   public Tags getTags() {
     return Tags.empty();
@@ -99,8 +101,8 @@ public abstract class ContextDataProvider {
    * structured data to log statements or control logging behaviour (in conjunction with a custom
    * logger backend).
    *
-   * <p>Implementations which do not support scoped {@link Metadata} should return {@code
-   * Metadata.empty()}.
+   * <p>Implementations which do not support scoped {@link Metadata} should not override this
+   * method; the default implementation returns {@code Metadata.empty()}.
    */
   public Metadata getMetadata() {
     return Metadata.empty();

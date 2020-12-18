@@ -91,7 +91,7 @@ public abstract class ScopedLoggingContext {
    * <p>This class is intended to be used only as part of a fluent statement, and retaining a
    * reference to a builder instance for any length of time is not recommended.
    */
-  public abstract class Builder {
+  public abstract static class Builder {
     private Tags tags = null;
     private ScopeMetadata.Builder metadata = null;
     private LogLevelMap logLevelMap = null;

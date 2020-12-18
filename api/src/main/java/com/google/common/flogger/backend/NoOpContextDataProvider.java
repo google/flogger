@@ -25,6 +25,11 @@ import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.context.LogLevelMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Fallback context data provider used when no other implementation is available to the platform.
+ * This method returns default/empty values for all the methods, effectively ignoring all scope
+ * related operations.
+ */
 public final class NoOpContextDataProvider extends ContextDataProvider {
   private static final ContextDataProvider NO_OP_INSTANCE = new NoOpContextDataProvider();
 
@@ -37,7 +42,7 @@ public final class NoOpContextDataProvider extends ContextDataProvider {
     return NO_OP_INSTANCE;
   }
 
-  public static final class NoOpScopedLoggingContext extends ScopedLoggingContext
+  private static final class NoOpScopedLoggingContext extends ScopedLoggingContext
       implements LoggingScope {
     // Since the ContextDataProvider class is loaded during Platform initialization we must be very
     // careful to avoid any attempt to obtain a logger instance until we can be sure logging config
