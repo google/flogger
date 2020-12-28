@@ -16,7 +16,7 @@
 
 package com.google.common.flogger.testing;
 
-import com.google.common.flogger.AbstractLogger;
+import com.google.common.flogger.AbstractMessageLogger;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LoggingApi;
 import com.google.common.flogger.backend.LoggerBackend;
@@ -31,7 +31,7 @@ import java.util.logging.Level;
  *
  * <p>This class is mutable and not thread safe.
  */
-public final class TestLogger extends AbstractLogger<TestLogger.Api> {
+public final class TestLogger extends AbstractMessageLogger<TestLogger.Api> {
   // Midnight Jan 1st, 2000 (GMT)
   private static final long DEFAULT_TIMESTAMP_NANOS = 946684800000000000L;
 

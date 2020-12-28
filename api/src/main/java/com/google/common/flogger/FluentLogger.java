@@ -24,7 +24,7 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.logging.Level;
 
 /**
- * The default implementation of {@link AbstractLogger} which returns the basic {@link LoggingApi}
+ * The default implementation of {@link AbstractMessageLogger} which returns the basic {@link LoggingApi}
  * and uses the default parser and system configured backend.
  * <p>
  * Note that when extending the logging API or specifying a new parser, you will need to create a
@@ -36,7 +36,7 @@ import java.util.logging.Level;
  * a specific logger implementation always get the same behavior.
  */
 @CheckReturnValue
-public final class FluentLogger extends AbstractLogger<FluentLogger.Api> {
+public final class FluentLogger extends AbstractMessageLogger<FluentLogger.Api> {
   /**
    * The non-wildcard, fully specified, logging API for this logger. Fluent logger implementations
    * should specify a non-wildcard API like this with which to generify the abstract logger.

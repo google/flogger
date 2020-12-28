@@ -80,7 +80,7 @@ be `runtime` scope.
 ### 2. Add an import for [`FluentLogger`]
 
 ```java
-import com.google.common.flogger.FluentLogger;
+
 ```
 
 ### 3. Create a `private static final` instance
