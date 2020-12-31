@@ -16,12 +16,31 @@
 
 package com.google.common.flogger;
 
-public interface AggregatedLoggingApi<API extends AggregatedLoggingApi> {
-	//void log();
-	API timeWindow(int seconds);
-	API numberWindow(int number);
+import com.google.errorprone.annotations.CheckReturnValue;
 
-	//API add(String event, String content);
-	//API add(int perfValue);
-	//API inc(int delta);
+/**
+ * The basic aggregated logging API. An implementation of this API (or an extension of it) will be
+ * returned by any {@link FluentAggregatedLogger}, and forms the basis of the call chain.
+ */
+@CheckReturnValue
+public interface AggregatedLoggingApi<API extends AggregatedLoggingApi> {
+	/**
+	 * Set aggregated logger time window.
+	 * If time window is set, aggregated logger will periodically flush log.
+	 *
+	 * @param seconds
+	 * @return
+	 */
+	API timeWindow(int seconds);
+
+	/**
+	 * Set aggregated logger number window.
+	 *
+	 * If number window is set, aggregated logger will flush log when log number
+	 * is equal or more than number window.
+	 *
+	 * @param number
+	 * @return
+	 */
+	API numberWindow(int number);
 }
