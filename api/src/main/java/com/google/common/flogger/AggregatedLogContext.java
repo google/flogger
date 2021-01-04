@@ -225,8 +225,7 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	}
 
 	/**
-	 * Flush aggregated data in new Thread if number window is full.
-	 * Please always call shouldFlush() first.
+	 * Flush aggregated data in new Thread.
 	 */
 	protected void flush(){
 		new Thread(new Runnable() {

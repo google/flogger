@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * EventAggregator is used to log many same type events. The typical scenario is api request and response.
@@ -109,13 +110,30 @@ public class EventAggregator extends AggregatedLogContext<FluentAggregatedLogger
 	 * @param event   the event
 	 * @param content the content
 	 */
-	public void add(String event, String content){
-		eventList.offer(new EventPair(event, content));
-		increaseCounter();
+	public void add(String event, String content) {
+		//try 3 times
+		int i = 0;
+		while(i++ < 3) {
+			try {
+				if(eventList.offer(new EventPair(event, content), 1, TimeUnit.MILLISECONDS)) {
+					increaseCounter();
 
-		if(shouldFlush()){
-			flush();
-		}
+					if(shouldFlush()){
+						flush();
+					}
+
+					break;
+				} else {
+					//If BlockingQueue is full, just immediately flush
+					flush();
+				}
+			} catch (InterruptedException e) {
+				if(i == 2) {
+					//Do not log anything, just print stacktrace
+					e.printStackTrace();
+				}
+			};
+		};
 	}
 
 	@Override

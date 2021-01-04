@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -114,12 +115,29 @@ public class StatAggregator extends AggregatedLogContext<FluentAggregatedLogger,
 			return;
 		}
 
-		valueList.offer(value);
-		increaseCounter();
+		//try 3 times
+		int i = 0;
+		while(i++ < 3) {
+			try {
+				if(valueList.offer(value, 1, TimeUnit.MILLISECONDS)) {
+					increaseCounter();
 
-		if(shouldFlush()){
-			flush();
-		}
+					if(shouldFlush()){
+						flush();
+					}
+
+					break;
+				} else {
+					//If BlockingQueue is full, just immediately flush
+					flush();
+				}
+			} catch (InterruptedException e) {
+				if(i == 2) {
+					//Do not log anything, just print stacktrace
+					e.printStackTrace();
+				}
+			};
+		};
 	}
 
 	@Override
