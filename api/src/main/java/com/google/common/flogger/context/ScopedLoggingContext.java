@@ -86,7 +86,7 @@ public abstract class ScopedLoggingContext {
 
   /**
    * A fluent builder API for creating and installing new contexts. This API should be used whenever
-   * the metadata to be added to a context it known at the time the context is created.
+   * the metadata to be added to a context is known at the time the context is created.
    *
    * <p>This class is intended to be used only as part of a fluent statement, and retaining a
    * reference to a builder instance for any length of time is not recommended.
