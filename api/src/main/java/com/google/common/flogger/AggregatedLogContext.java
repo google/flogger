@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Flogger Authors.
+ * Copyright (C) 2020 The Flogger Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,9 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 		@Override
 		public void run() {
 			log();
+
+			LogData logData = getLogData(getName() + " periodically flush log finished");
+			getLogger().write(logData);
 		}
 	}
 
@@ -72,7 +75,7 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	private AtomicLong counter = new AtomicLong(0);
 
 	//Runnable for time window
-	private LogFlusher flusher;
+	private volatile LogFlusher flusher;
 
 	//Only one thread will flush log
 	private AtomicBoolean flushLock = new AtomicBoolean(false);
@@ -115,36 +118,54 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 		this.pool = checkNotNull(pool, "pool");
 	}
 
-	/**
-	 * Schedule log flusher at fixed rate
-	 *
-	 * @param period
-	 */
-	private void start(long period){
-		flusher = new LogFlusher();
-		pool.scheduleAtFixedRate(flusher, 2, period, TimeUnit.SECONDS);
+	public String getName() {
+		return name;
 	}
 
-	@Override
-	public synchronized API timeWindow(int seconds) {
-		if(flusher != null){
-			return self();
-		}
+	/**
+	 * Schedule log flusher at fixed rate of time window.
+	 * Please call withTimeWindow() before start() to set time window.
+	 *
+	 */
+	 public synchronized API start(){
+	 	if(flusher != null){
+	 		return self();
+	 	}
 
-		Checks.checkArgument(seconds > 0, "Time window should be larger than 0");
-
-		metadata.addValue(Key.TIME_WINDOW, seconds); //just for logger backend to print CONTEXT
-		start(seconds);
+	 	Integer period = metadata.findValue(Key.TIME_WINDOW);
+	 	if(period == null){
+	 		throw new RuntimeException("Call withTimeWindow to set time window first");
+	    }
+		flusher = new LogFlusher();
+		pool.scheduleAtFixedRate(flusher, 2, period, TimeUnit.SECONDS);
 
 		return self();
 	}
 
 	@Override
-	public API numberWindow(int number) {
-		Checks.checkArgument(number > 0, "Number window should be larger than 0");
+	public API withTimeWindow(int seconds) {
+		if(flusher != null){
+	 		throw new RuntimeException("Please do not change time window after logger start.");
+	    }
+
+		Checks.checkArgument(seconds > 0 && seconds <= 3600, "Time window range should be (0,60]");
+
+		metadata.addValue(Key.TIME_WINDOW, seconds);
+
+		return self();
+	}
+
+	@Override
+	public API withNumberWindow(int number) {
+		Checks.checkArgument(number > 0 && number <= 1000 * 1000, "Number window range should be (0, 1000000])");
 
 		metadata.addValue(Key.NUMBER_WINDOW, number);
 		return self();
+	}
+
+	protected int getWindowNumber(){
+		Integer numberWindows = metadata.findValue(Key.NUMBER_WINDOW);
+		return numberWindows == null ? 100 : numberWindows;
 	}
 
 	/**
@@ -170,7 +191,7 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	 * Increase counter.
 	 */
 	protected void increaseCounter(){
-		increaseCounter(0);
+		increaseCounter(1);
 	}
 
 	/**
@@ -183,22 +204,23 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	}
 
 	/**
-	 * Check if it's time to flush data. Only for number window.
+	 * Check if it's time to flush data. Only check for number window.
 	 * No need to check for time window because executor service pool will periodically flush data.
+	 *
+	 * Notice: visible for test directly calling.
 	 *
 	 * @return the boolean
 	 */
 	protected boolean shouldFlush() {
 		//check number window
-		Long currentCounter = counter.get();
-		int numberWindows = metadata.findValue(Key.NUMBER_WINDOW);
+		long currentCounter = counter.get();
 
 		//No need to check if currentCounter < 0
-		if(currentCounter % numberWindows == 0){
-			return true;
+		if(currentCounter == 0 || currentCounter % getWindowNumber() != 0){
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
 	/**
@@ -206,7 +228,7 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	 *
 	 * @return the log data
 	 */
-	protected LogData data() {
+	protected LogData getLogData(String message) {
 		long timestampNanos = Platform.getCurrentTimeNanos();
 		String loggerName = getLogger().getBackend().getLoggerName();
 
@@ -214,8 +236,6 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 		logData.setMetadata(getMetadata());
 
 		logData.setLogSite(logSite);
-
-		String message = message();
 		logData.setTemplateContext(new TemplateContext(DefaultPrintfMessageParser.getInstance(), message));
 
 		//use empty array for avoiding null exception
@@ -236,20 +256,18 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 		}).start();
 	}
 
-	private void log(){
+	/**
+	 * 	Visible for test.Because real logging action is done in different thread,
+	 * 	junit will not get the async logging data when running unit test.
+	 * 	So call log method directly in junit testcase.
+	 */
+	void log(){
 		if(flushLock.compareAndSet(false,true)) {
 			try {
-				do {
-					boolean have = haveData();
-
-					//even if there is no data to log, we still write a empty log to show timer is working.
-					LogData logData = data();
+				while (haveData()) {
+					LogData logData = getLogData(message());
 					getLogger().write(logData);
-
-					if(!have){
-						break;
-					}
-				}while (true);
+				};
 			}
 			finally {
 				flushLock.compareAndSet(true, false);

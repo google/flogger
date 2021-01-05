@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Flogger Authors.
+ * Copyright (C) 2020 The Flogger Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public interface AggregatedLoggingApi<API extends AggregatedLoggingApi> {
 	 * @param seconds
 	 * @return
 	 */
-	API timeWindow(int seconds);
+	API withTimeWindow(int seconds);
 
 	/**
 	 * Set aggregated logger number window.
@@ -42,5 +42,5 @@ public interface AggregatedLoggingApi<API extends AggregatedLoggingApi> {
 	 * @param number
 	 * @return
 	 */
-	API numberWindow(int number);
+	API withNumberWindow(int number);
 }

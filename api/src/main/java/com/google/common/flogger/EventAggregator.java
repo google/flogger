@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Flogger Authors.
+ * Copyright (C) 2020 The Flogger Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.google.common.flogger;
+
+import com.google.errorprone.annotations.CheckReturnValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +40,7 @@ import java.util.concurrent.TimeUnit;
  * and use {@link FluentLogger} to log detailed information for error requests and responses.
  *
  */
+@CheckReturnValue
 public class EventAggregator extends AggregatedLogContext<FluentAggregatedLogger, EventAggregator> {
 
 	/**
@@ -144,7 +147,7 @@ public class EventAggregator extends AggregatedLogContext<FluentAggregatedLogger
 	@Override
 	protected String message(){
 		List<EventPair> eventBuffer = new ArrayList<EventPair>();
-		eventList.drainTo(eventBuffer, getMetadata().findValue(Key.NUMBER_WINDOW));
+		eventList.drainTo(eventBuffer, getWindowNumber());
 
 		return formatMessage(eventBuffer);
 	}

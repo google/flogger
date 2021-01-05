@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Flogger Authors.
+ * Copyright (C) 2020 The Flogger Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,8 @@ public final class FluentAggregatedLogger extends AbstractLogger {
 	//Cache the AggregatedLogContext instance for multi threads
 	private final Map<String, AggregatedLogContext> aggregatorMap = new ConcurrentHashMap<String, AggregatedLogContext>();
 
-	private FluentAggregatedLogger(LoggerBackend backend) {
+	//Visible for unit testing
+	protected FluentAggregatedLogger(LoggerBackend backend) {
 		super(backend);
 	}
 

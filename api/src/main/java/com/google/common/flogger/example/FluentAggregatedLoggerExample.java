@@ -34,13 +34,13 @@ public class FluentAggregatedLoggerExample {
 	public static void main(String[] args) throws InterruptedException {
 		logger1.at(Level.INFO).log("hello, world");
 
-		EventAggregator eventAggregator = logger2.getEvent("get-user-api-resp").timeWindow(5).numberWindow(20);
+		EventAggregator eventAggregator = logger2.getEvent("get-user-api-resp").withTimeWindow(5).withNumberWindow(20).start();
 		for(int i = 0; i < 92; i++) {
 			eventAggregator.add("requestId=10" + i, "200");
 		}
 
 		StatAggregator statAggregator = logger2.getStat("get-user-api-perf")
-				.numberWindow(10).setSampleRate(3).setUnit("ms");
+				.withNumberWindow(10).setSampleRate(3).setUnit("ms");
 		for(int i = 0; i < 100; i++) {
 			statAggregator.add(i);
 		}
