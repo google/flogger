@@ -88,34 +88,6 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	protected abstract API self();
 
 	/**
-	 * Check if there are enough data to log based on number window configuration.
-	 *
-	 * @return true: flush now; false: not flush.
-	 */
-	protected abstract boolean shouldFlushByNumber();
-
-	/**
-	 * Check if there are some data to log.
-	 *
-	 * @return the amount of data
-	 */
-	protected abstract int haveData();
-
-	/**
-	 *
-	 *
-	 * @return the string
-	 */
-	/**
-	 * Format aggregated data to string for logging.
-	 *
-	 * @param count the amount of data, 0: all, >0: specified amount
-	 *
-	 * @return formatted string content for LogData
-	 */
-	protected abstract String message(int count);
-
-	/**
 	 * Instantiates a new AggregatedLogContext.
 	 *
 	 * @param name    the name

@@ -151,17 +151,17 @@ public class StatAggregator extends AggregatedLogContext<FluentAggregatedLogger,
 	}
 
 	@Override
-	protected boolean shouldFlushByNumber() {
+	public boolean shouldFlushByNumber() {
 		return valueList.size() >= getNumberWindow();
 	}
 
 	@Override
-	protected int haveData() {
+	public int haveData() {
 		return valueList.size();
 	}
 
 	@Override
-	protected String message(int count) {
+	public String message(int count) {
 		Checks.checkArgument(count >= 0, "count should be larger than 0");
 
 		List<Long> valueBuffer = new ArrayList<Long>();
