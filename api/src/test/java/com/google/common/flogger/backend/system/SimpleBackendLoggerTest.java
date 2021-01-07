@@ -169,7 +169,7 @@ public class SimpleBackendLoggerTest {
     backend.log(withPrintfStyle("Seconds=%tS", cal.getTimeInMillis()));
 
     logger.assertLogCount(4);
-    logger.assertLogEntry(0, INFO, "Day=SAT 13, Month=July, Year=1985");
+    logger.assertLogEntry(0, INFO, "Day=SAT 13, Month=Jul, Year=1985");
     logger.assertLogEntry(1, INFO, "Time=5:20:03 AM");
     logger.assertLogEntry(2, INFO, "Sat Jul 13 05:20:03 GMT 1985  "); // padded
     logger.assertLogEntry(3, INFO, "Seconds=03");
