@@ -157,7 +157,11 @@ public class SimpleBackendLoggerTest {
     AssertingLogger logger = new AssertingLogger();
     LoggerBackend backend = newBackend(logger);
 
-    Calendar cal = new GregorianCalendar(1985, 6, 13, 5, 20, 3);
+    // Use "May" as the month here since some JDK setups render other month abbreviations
+    // differently (e.g. "Jul" vs "July") , and "May" is short enough to never need abbreviation.
+    // This isn't great, and the right thing would be to test against a value derived from the
+    // current system in which the test is being run.
+    Calendar cal = new GregorianCalendar(1985, 4, 13, 5, 20, 3);
     cal.setTimeZone(TimeZone.getTimeZone("GMT"));
 
     backend.log(withPrintfStyle("Day=%1$Ta %1$te, Month=%1$tB, Year=%1$tY", cal));
@@ -169,9 +173,9 @@ public class SimpleBackendLoggerTest {
     backend.log(withPrintfStyle("Seconds=%tS", cal.getTimeInMillis()));
 
     logger.assertLogCount(4);
-    logger.assertLogEntry(0, INFO, "Day=SAT 13, Month=July, Year=1985");
+    logger.assertLogEntry(0, INFO, "Day=MON 13, Month=May, Year=1985");
     logger.assertLogEntry(1, INFO, "Time=5:20:03 AM");
-    logger.assertLogEntry(2, INFO, "Sat Jul 13 05:20:03 GMT 1985  "); // padded
+    logger.assertLogEntry(2, INFO, "Mon May 13 05:20:03 GMT 1985  "); // padded
     logger.assertLogEntry(3, INFO, "Seconds=03");
   }
 
