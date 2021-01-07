@@ -31,193 +31,192 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * StatAggregator can aggregate many same type performance data and simply calc the min/max/total/avg value.
  * For example:
- *  API: get-user-api
- *  min:60, max:87, total:735, count:10, avg:73.5.
- *  [CONTEXT number_window=10 sample_rate=3 unit="ms" ]
+ * API: get-user-api
+ * min:60, max:87, total:735, count:10, avg:73.5.
+ * [CONTEXT number_window=10 sample_rate=3 unit="ms" ]
  * <p>
  * You can combine {@link EventAggregator} and {@link StatAggregator} and {@link FluentLogger}
  * to log full information for API or other kind of event like this:
- *     - use {@link EventAggregator} to log key information like request id and response code.
- *     - use {@link StatAggregator} to log performance information
- *     - use {@link FluentLogger} to log detailed information for error requests or responses.
- *
+ * - use {@link EventAggregator} to log key information like request id and response code.
+ * - use {@link StatAggregator} to log performance information
+ * - use {@link FluentLogger} to log detailed information for error requests or responses.
  */
 public class StatAggregator extends AggregatedLogContext<FluentAggregatedLogger, StatAggregator> {
 
-	public static final class Key {
-		private Key() {
-		}
+  /**
+   * Use LinkedBlockingQueue to store values.
+   * <p>
+   * Two reasons for using LinkedBlockingQueue:
+   * 1. Thread-safe: many threads will use the same {@link StatAggregator} to log same type values.
+   * 2. Async log: logging aggregated value is a time-consuming action. It's better to use separate thread to do it.
+   */
+  protected final BlockingQueue<Long> valueList;
+  private final AtomicInteger sampleCounter = new AtomicInteger(1);
+  //Only calc some data
+  private volatile int sampleRate = 1; //Calc all data by default.
 
-		public static final MetadataKey<Integer> SAMPLE_RATE =
-				MetadataKey.single("sample_rate", Integer.class);
+  protected StatAggregator(String name, FluentAggregatedLogger logger, LogSite logSite,
+                           ScheduledExecutorService pool, int capacity) {
+    super(name, logger, logSite, pool);
+    valueList = new LinkedBlockingQueue<Long>(capacity);
+  }
 
-		public static final MetadataKey<String> UNIT_STRING =
-				MetadataKey.single("unit", String.class);
-	}
+  @Override
+  protected StatAggregator self() {
+    return this;
+  }
 
-	//Only calc some data
-	private volatile int sampleRate = 1; //Calc all data by default.
-	private final AtomicInteger sampleCounter = new AtomicInteger(1);
+  /**
+   * Set sample rate
+   *
+   * @param sampleRate
+   * @return
+   */
+  public StatAggregator withSampleRate(int sampleRate) {
+    Checks.checkArgument(sampleRate > 0 && sampleRate <= 1000,
+      "Sample rate range should be (0,1000]");
 
-	/**
-	 * Use LinkedBlockingQueue to store values.
-	 * <p>
-	 * Two reasons for using LinkedBlockingQueue:
-	 * 1. Thread-safe: many threads will use the same {@link StatAggregator} to log same type values.
-	 * 2. Async log: logging aggregated value is a time-consuming action. It's better to use separate thread to do it.
-	 */
-	protected final BlockingQueue<Long> valueList;
+    this.sampleRate = sampleRate;
+    metadata.addValue(Key.SAMPLE_RATE, sampleRate); //Just for log context
 
-	protected StatAggregator(String name, FluentAggregatedLogger logger, LogSite logSite,
-	                         ScheduledExecutorService pool, int capacity) {
-		super(name, logger, logSite, pool);
-		valueList = new LinkedBlockingQueue<Long>(capacity);
-	}
+    return self();
+  }
 
-	@Override
-	protected StatAggregator self() {
-		return this;
-	}
+  public int getSampleRate() {
+    return sampleRate;
+  }
 
-	/**
-	 * Set sample rate
-	 *
-	 * @param sampleRate
-	 * @return
-	 */
-	public StatAggregator withSampleRate(int sampleRate){
-		Checks.checkArgument(sampleRate > 0 && sampleRate <= 1000,
-				"Sample rate range should be (0,1000]");
+  /**
+   * Set unit for log context.
+   *
+   * @param unit
+   * @return
+   */
+  public StatAggregator withUnit(String unit) {
+    metadata.addValue(Key.UNIT_STRING, unit);
 
-		this.sampleRate = sampleRate;
-		metadata.addValue(Key.SAMPLE_RATE, sampleRate); //Just for log context
+    return self();
+  }
 
-		return self();
-	}
+  public String getUnit() {
+    String unit = metadata.findValue(Key.UNIT_STRING);
+    return unit;
+  }
 
-	public int getSampleRate(){
-		return sampleRate;
-	}
+  /**
+   * Add value
+   *
+   * @param value
+   */
+  public void add(long value) {
+    if (!sample()) {
+      return;
+    }
 
-	/**
-	 * Set unit for log context.
-	 *
-	 * @param unit
-	 * @return
-	 */
-	public StatAggregator withUnit(String unit){
-		metadata.addValue(Key.UNIT_STRING, unit);
+    //try 3 times
+    int i = 0;
+    while (i++ < 3) {
+      try {
+        if (valueList.offer(value, 1, TimeUnit.MILLISECONDS)) {
+          if (shouldFlushByNumber()) {
+            asyncFlush(getNumberWindow());
+          }
 
-		return self();
-	}
+          break;
+        } else {
+          //If BlockingQueue is full, just immediately flush
+          asyncFlush(0);
+          Thread.sleep(1);
+        }
+      } catch (InterruptedException e) {
+        if (i == 2) {
+          //Do not log anything, just print stacktrace
+          e.printStackTrace();
+        }
+      }
+      ;
+    }
+    ;
+  }
 
-	public String getUnit(){
-		String unit = metadata.findValue(Key.UNIT_STRING);
-		return unit;
-	}
+  @Override
+  public boolean shouldFlushByNumber() {
+    return valueList.size() >= getNumberWindow();
+  }
 
-	/**
-	 * Add value
-	 *
-	 * @param value
-	 */
-	public void add(long value){
-		if(!sample()){
-			return;
-		}
+  @Override
+  public int haveData() {
+    return valueList.size();
+  }
 
-		//try 3 times
-		int i = 0;
-		while(i++ < 3) {
-			try {
-				if(valueList.offer(value, 1, TimeUnit.MILLISECONDS)) {
-					if(shouldFlushByNumber()){
-						asyncFlush(getNumberWindow());
-					}
+  @Override
+  public String message(int count) {
+    Checks.checkArgument(count >= 0, "count should be larger than 0");
 
-					break;
-				} else {
-					//If BlockingQueue is full, just immediately flush
-					asyncFlush(0);
-					Thread.sleep(1);
-				}
-			} catch (InterruptedException e) {
-				if(i == 2) {
-					//Do not log anything, just print stacktrace
-					e.printStackTrace();
-				}
-			};
-		};
-	}
+    List<Long> valueBuffer = new ArrayList<Long>();
+    if (count == 0) {
+      valueList.drainTo(valueBuffer);
+    } else {
+      valueList.drainTo(valueBuffer, count);
+    }
 
-	@Override
-	public boolean shouldFlushByNumber() {
-		return valueList.size() >= getNumberWindow();
-	}
+    return formatMessage(valueBuffer);
+  }
 
-	@Override
-	public int haveData() {
-		return valueList.size();
-	}
+  /**
+   * Sample data
+   *
+   * @return true: log; false: skip
+   */
+  protected boolean sample() {
+    return sampleRate == 1 || (sampleCounter.getAndIncrement() % sampleRate == 0);
+  }
 
-	@Override
-	public String message(int count) {
-		Checks.checkArgument(count >= 0, "count should be larger than 0");
+  private String formatMessage(List<Long> valueBuffer) {
 
-		List<Long> valueBuffer = new ArrayList<Long>();
-		if(count == 0){
-			valueList.drainTo(valueBuffer);
-		} else {
-			valueList.drainTo(valueBuffer, count);
-		}
+    long min = Long.MAX_VALUE;
+    long max = Long.MIN_VALUE;
+    long total = 0;
+    double avg = 0;
 
-		return formatMessage(valueBuffer);
-	}
+    for (Long e : valueBuffer) {
+      if (e > max) {
+        max = e;
+      }
 
-	/**
-	 * Sample data
-	 *
-	 * @return true: log; false: skip
-	 */
-	protected boolean sample(){
-		return sampleRate == 1 || (sampleCounter.getAndIncrement() % sampleRate == 0);
-	}
+      if (e < min) {
+        min = e;
+      }
 
-	private String formatMessage(List<Long> valueBuffer){
+      total += e;
+    }
 
-		long min = Long.MAX_VALUE;
-		long max = Long.MIN_VALUE;
-		long total = 0;
-		double avg = 0;
+    StringBuilder builder = new StringBuilder();
+    builder.append(name).append("\n");
 
-		for(Long e : valueBuffer){
-			if(e > max){
-				max = e;
-			}
+    if (!valueBuffer.isEmpty()) {
+      avg = Double.valueOf(total) / valueBuffer.size();
 
-			if(e < min){
-				min = e;
-			}
+      String sep = ", ";
+      builder.append("min:").append(min).append(sep)
+        .append("max:").append(max).append(sep)
+        .append("total:").append(total).append(sep)
+        .append("count:").append(valueBuffer.size()).append(sep)
+        .append("avg:").append(avg).append(".");
+    } else {
+      builder.append(" ");
+    }
 
-			total += e;
-		}
+    return builder.toString();
+  }
 
-		StringBuilder builder = new StringBuilder();
-		builder.append(name).append("\n");
+  public static final class Key {
+    public static final MetadataKey<Integer> SAMPLE_RATE =
+      MetadataKey.single("sample_rate", Integer.class);
+    public static final MetadataKey<String> UNIT_STRING =
+      MetadataKey.single("unit", String.class);
 
-		if(!valueBuffer.isEmpty()) {
-			avg = Double.valueOf(total) / valueBuffer.size();
-
-			String sep = ", ";
-			builder.append("min:").append(min).append(sep)
-					.append("max:").append(max).append(sep)
-					.append("total:").append(total).append(sep)
-					.append("count:").append(valueBuffer.size()).append(sep)
-					.append("avg:").append(avg).append(".");
-		} else {
-			builder.append(" ");
-		}
-
-		return builder.toString();
-	}
+    private Key() {
+    }
+  }
 }

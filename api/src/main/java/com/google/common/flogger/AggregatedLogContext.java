@@ -38,204 +38,196 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
  */
 @CheckReturnValue
 public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
-		API extends AggregatedLoggingApi> implements AggregatedLoggingApi {
+  API extends AggregatedLoggingApi> implements AggregatedLoggingApi {
 
-	/**
-	 * Available configuration Key
-	 */
-	public static final class Key {
-		private Key() {}
+  protected final MutableMetadata metadata = new MutableMetadata();
+  protected final String name;
+  protected final FluentAggregatedLogger logger;
+  protected final LogSite logSite;
+  protected final ScheduledExecutorService pool;
+  //Runnable for time window
+  private volatile LogFlusher flusher;
+  //Only one thread will flush log
+  private AtomicBoolean flushLock = new AtomicBoolean(false);
+  /**
+   * Instantiates a new AggregatedLogContext.
+   *
+   * @param name    the name
+   * @param logger  the logger (see {@link FluentAggregatedLogger}).
+   * @param logSite the log site (see {@link LogSite}).
+   * @param pool    the executor service pool used to periodically log data.
+   */
+  protected AggregatedLogContext(String name, FluentAggregatedLogger logger, LogSite logSite, ScheduledExecutorService pool) {
+    this.name = checkNotNull(name, "name");
+    this.logger = checkNotNull(logger, "logger");
+    this.logSite = checkNotNull(logSite, "logSite");
+    this.pool = checkNotNull(pool, "pool");
+  }
 
-		/**
-		 * Time window for aggregating log.
-		 * {@link AbstractLogger} will log all data at the end of the time window.
-		 */
-		public static final MetadataKey<Integer> TIME_WINDOW =
-				MetadataKey.single("time_window", Integer.class);
+  protected abstract API self();
 
-		/**
-		 * Number window for aggregating log.
-		 * {@link AbstractLogger} will log data when the number of data is up to number window.
-		 */
-		public static final MetadataKey<Integer> NUMBER_WINDOW =
-				MetadataKey.single("number_window", Integer.class);
-	}
+  public String getName() {
+    return name;
+  }
 
-	private final class LogFlusher implements Runnable {
-		@Override
-		public void run() {
-			flush(0); // Always flush all data
+  /**
+   * Schedule log flusher at fixed rate of time window.
+   * Please call withTimeWindow() before start() to set time window.
+   */
+  public synchronized API start() {
+    if (flusher != null) {
+      return self();
+    }
 
-			// Write one more log to show timer is running when there is no any data.
-			LogData logData = getLogData(getName() + " periodically flush log finished");
-			getLogger().write(logData);
-		}
-	}
+    int period = getTimeWindow();
+    flusher = new LogFlusher();
+    pool.scheduleAtFixedRate(flusher, 2, period, TimeUnit.SECONDS);
 
-	//Runnable for time window
-	private volatile LogFlusher flusher;
+    return self();
+  }
 
-	//Only one thread will flush log
-	private AtomicBoolean flushLock = new AtomicBoolean(false);
+  @Override
+  public API withTimeWindow(int seconds) {
+    if (flusher != null) {
+      throw new RuntimeException("Please do not change time window after logger start.");
+    }
 
-	protected final MutableMetadata metadata = new MutableMetadata();
+    Checks.checkArgument(seconds > 0 && seconds <= 3600,
+      "Time window range should be (0,3600]");
 
-	protected final String name;
-	protected final FluentAggregatedLogger logger;
-	protected final LogSite logSite;
-	protected final ScheduledExecutorService pool;
+    metadata.addValue(Key.TIME_WINDOW, seconds);
 
-	protected abstract API self();
+    return self();
+  }
 
-	/**
-	 * Instantiates a new AggregatedLogContext.
-	 *
-	 * @param name    the name
-	 * @param logger  the logger (see {@link FluentAggregatedLogger}).
-	 * @param logSite the log site (see {@link LogSite}).
-	 * @param pool    the executor service pool used to periodically log data.
-	 */
-	protected AggregatedLogContext(String name, FluentAggregatedLogger logger, LogSite logSite, ScheduledExecutorService pool){
-		this.name = checkNotNull(name, "name");
-		this.logger = checkNotNull(logger, "logger");
-		this.logSite = checkNotNull(logSite, "logSite");
-		this.pool = checkNotNull(pool, "pool");
-	}
+  @Override
+  public API withNumberWindow(int number) {
+    Checks.checkArgument(number > 0 && number <= 1000 * 1000,
+      "Number window range should be (0, 1000000])");
 
-	public String getName() {
-		return name;
-	}
+    metadata.addValue(Key.NUMBER_WINDOW, number);
+    return self();
+  }
 
-	/**
-	 * Schedule log flusher at fixed rate of time window.
-	 * Please call withTimeWindow() before start() to set time window.
-	 *
-	 */
-	 public synchronized API start(){
-	 	if(flusher != null){
-	 		return self();
-	 	}
+  /**
+   * Get time window configuration. Default value is 60(seconds).
+   */
+  @Override
+  public int getTimeWindow() {
+    Integer timeWindow = metadata.findValue(Key.TIME_WINDOW);
+    return timeWindow == null ? 60 : timeWindow; // Default 60 seconds
+  }
 
-	 	int period = getTimeWindow();
-		flusher = new LogFlusher();
-		pool.scheduleAtFixedRate(flusher, 2, period, TimeUnit.SECONDS);
+  /**
+   * Get number window configuration. Default value is 100.
+   */
+  @Override
+  public int getNumberWindow() {
+    Integer numberWindow = metadata.findValue(Key.NUMBER_WINDOW);
+    return numberWindow == null ? 100 : numberWindow;  // Default 100
+  }
 
-		return self();
-	}
+  /**
+   * Gets metadata.
+   *
+   * @return the metadata
+   */
+  protected Metadata getMetadata() {
+    return metadata != null ? metadata : Metadata.empty();
 
-	@Override
-	public API withTimeWindow(int seconds) {
-		if(flusher != null){
-	 		throw new RuntimeException("Please do not change time window after logger start.");
-	    }
+  }
 
-		Checks.checkArgument(seconds > 0 && seconds <= 3600,
-				"Time window range should be (0,3600]");
+  /**
+   * Gets logger.
+   *
+   * @return the logger
+   */
+  protected FluentAggregatedLogger getLogger() {
+    return logger;
+  }
 
-		metadata.addValue(Key.TIME_WINDOW, seconds);
+  /**
+   * Generate {@link LogData} for logger backend.
+   *
+   * @return the log data
+   */
+  protected LogData getLogData(String message) {
+    long timestampNanos = Platform.getCurrentTimeNanos();
+    String loggerName = getLogger().getBackend().getLoggerName();
 
-		return self();
-	}
+    DefaultLogData logData = new DefaultLogData(timestampNanos, loggerName);
+    logData.setMetadata(getMetadata());
 
-	@Override
-	public API withNumberWindow(int number) {
-		Checks.checkArgument(number > 0 && number <= 1000 * 1000,
-				"Number window range should be (0, 1000000])");
+    logData.setLogSite(logSite);
+    logData.setTemplateContext(new TemplateContext(DefaultPrintfMessageParser.getInstance(), message));
 
-		metadata.addValue(Key.NUMBER_WINDOW, number);
-		return self();
-	}
+    //use empty array for avoiding null exception
+    logData.setArgs(new Object[]{});
 
-	/**
-	 * Get time window configuration. Default value is 60(seconds).
-	 *
-	 */
-	@Override
-	public int getTimeWindow() {
-		Integer timeWindow = metadata.findValue(Key.TIME_WINDOW);
-		return timeWindow == null ? 60 : timeWindow; // Default 60 seconds
-	}
+    return logData;
+  }
 
-	/**
-	 * Get number window configuration. Default value is 100.
-	 *
-	 */
-	@Override
-	public int getNumberWindow() {
-		Integer numberWindow = metadata.findValue(Key.NUMBER_WINDOW);
-		return numberWindow == null ? 100 : numberWindow;  // Default 100
-	}
+  /**
+   * Flush aggregated data in new Thread.
+   */
+  protected void asyncFlush(final int count) {
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        flush(count);
+      }
+    }).start();
+  }
 
-	/**
-	 * Gets metadata.
-	 *
-	 * @return the metadata
-	 */
-	protected Metadata getMetadata() {
-		return metadata != null ? metadata : Metadata.empty();
+  /**
+   * Visible for test.Because real logging action is done in different thread,
+   * junit will not get the async logging data when running unit test.
+   * So call log method directly in junit testcase.
+   */
+  protected void flush(int count) {
+    if (flushLock.compareAndSet(false, true)) {
+      try {
+        if (count > 0 && haveData() < count) {
+          return;
+        }
 
-	}
+        LogData logData = getLogData(message(count));
+        getLogger().write(logData);
+      } finally {
+        flushLock.compareAndSet(true, false);
+      }
+    }
+  }
 
-	/**
-	 * Gets logger.
-	 *
-	 * @return the logger
-	 */
-	protected FluentAggregatedLogger getLogger() {
-		return logger;
-	}
+  /**
+   * Available configuration Key
+   */
+  public static final class Key {
+    /**
+     * Time window for aggregating log.
+     * {@link AbstractLogger} will log all data at the end of the time window.
+     */
+    public static final MetadataKey<Integer> TIME_WINDOW =
+      MetadataKey.single("time_window", Integer.class);
+    /**
+     * Number window for aggregating log.
+     * {@link AbstractLogger} will log data when the number of data is up to number window.
+     */
+    public static final MetadataKey<Integer> NUMBER_WINDOW =
+      MetadataKey.single("number_window", Integer.class);
 
-	/**
-	 * Generate {@link LogData} for logger backend.
-	 *
-	 * @return the log data
-	 */
-	protected LogData getLogData(String message) {
-		long timestampNanos = Platform.getCurrentTimeNanos();
-		String loggerName = getLogger().getBackend().getLoggerName();
+    private Key() {
+    }
+  }
 
-		DefaultLogData logData = new DefaultLogData(timestampNanos, loggerName);
-		logData.setMetadata(getMetadata());
+  private final class LogFlusher implements Runnable {
+    @Override
+    public void run() {
+      flush(0); // Always flush all data
 
-		logData.setLogSite(logSite);
-		logData.setTemplateContext(new TemplateContext(DefaultPrintfMessageParser.getInstance(), message));
-
-		//use empty array for avoiding null exception
-		logData.setArgs(new Object[]{});
-
-		return logData;
-	}
-
-	/**
-	 * Flush aggregated data in new Thread.
-	 */
-	protected void asyncFlush(final int count){
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				flush(count);
-			}
-		}).start();
-	}
-
-	/**
-	 * 	Visible for test.Because real logging action is done in different thread,
-	 * 	junit will not get the async logging data when running unit test.
-	 * 	So call log method directly in junit testcase.
-	 */
-	protected void flush(int count){
-		if(flushLock.compareAndSet(false,true)) {
-			try {
-				if(count > 0 && haveData() < count){
-					return;
-				}
-
-				LogData logData = getLogData(message(count));
-				getLogger().write(logData);
-			}
-			finally {
-				flushLock.compareAndSet(true, false);
-			}
-		}
-	}
+      // Write one more log to show timer is running when there is no any data.
+      LogData logData = getLogData(getName() + " periodically flush log finished");
+      getLogger().write(logData);
+    }
+  }
 }

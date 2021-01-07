@@ -31,10 +31,10 @@ import static com.google.common.truth.Truth.assertThat;
 @RunWith(JUnit4.class)
 public class EventAggregatorTest {
 
-  private EventAggregator create(String name, int capacity, FakeLoggerBackend backend){
+  private EventAggregator create(String name, int capacity, FakeLoggerBackend backend) {
     FluentAggregatedLogger logger = new FluentAggregatedLogger(backend);
     LogSite logSite = checkNotNull(Platform.getCallerFinder().findLogSite(FluentAggregatedLogger.class, 0),
-            "logger backend must not return a null LogSite");
+      "logger backend must not return a null LogSite");
     ScheduledExecutorService pool = Executors.newScheduledThreadPool(1);
 
     return new EventAggregator(name, logger, logSite, pool, capacity);
@@ -48,23 +48,23 @@ public class EventAggregatorTest {
 
     assertThat(eventAggregator.getName()).isEqualTo(name);
 
-    eventAggregator.add("event1","hello");
-    eventAggregator.add("event2","world");
-    eventAggregator.add("event3","flogger");
+    eventAggregator.add("event1", "hello");
+    eventAggregator.add("event2", "world");
+    eventAggregator.add("event3", "flogger");
 
     Thread.sleep(3); //wait for async flush thread to finish
     eventAggregator.flush(0);
 
     String message1 = "test\n" +
-            "event1:hello | event2:world | \n" +
-            "\n" +
-            "total: 2";
+      "event1:hello | event2:world | \n" +
+      "\n" +
+      "total: 2";
     backend.assertLogged(0).hasMessage(message1);
 
     String message2 = "test\n" +
-            "event3:flogger | \n" +
-            "\n" +
-            "total: 1";
+      "event3:flogger | \n" +
+      "\n" +
+      "total: 1";
     backend.assertLogged(1).hasMessage(message2);
   }
 
@@ -74,13 +74,13 @@ public class EventAggregatorTest {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     EventAggregator eventAggregator = create(name, 2, backend);
 
-    eventAggregator.add("event1","hello");
+    eventAggregator.add("event1", "hello");
     assertThat(eventAggregator.haveData()).isEqualTo(1);
 
-    eventAggregator.add("event2","world");
+    eventAggregator.add("event2", "world");
     assertThat(eventAggregator.haveData()).isEqualTo(2);
 
-    eventAggregator.add("event3","flogger");
+    eventAggregator.add("event3", "flogger");
     assertThat(eventAggregator.haveData()).isEqualTo(1);
     //Assert.assertEquals(eventAggregator.haveData(),3);
 

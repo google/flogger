@@ -34,153 +34,155 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * EventAggregator can aggregate many same type events and log the key information within one log.
  * For example:
- *  requestId=1053:200 | requestId=1054:200 | requestId=1055:500 | requestId=1056:200 | requestId=1057:200 |
- *  requestId=1063:200 | requestId=1064:200 | requestId=1065:200 | requestId=1066:404 | requestId=1067:200 |
+ * requestId=1053:200 | requestId=1054:200 | requestId=1055:500 | requestId=1056:200 | requestId=1057:200 |
+ * requestId=1063:200 | requestId=1064:200 | requestId=1065:200 | requestId=1066:404 | requestId=1067:200 |
  * <p>
  * The best practice is to use {@link EventAggregator} to log brief information for all api request and response,
  * and use {@link FluentLogger} to log detailed information for error requests and responses.
- *
  */
 @CheckReturnValue
 public class EventAggregator extends AggregatedLogContext<FluentAggregatedLogger, EventAggregator> {
 
-	/**
-	 * Simple Event pair.
-	 */
-	static final class EventPair {
-		private final String key;
-		private final String value;
+  /**
+   * Use LinkedBlockingQueue to store events.
+   * <p>
+   * Two reasons for using LinkedBlockingQueue:
+   * 1. Thread-safe: many threads will use the same {@link EventAggregator} to log same type events.
+   * 2. Async log: logging aggregated events is a time-consuming action. It's better to use separate thread to do it.
+   */
+  protected final BlockingQueue<EventAggregator.EventPair> eventList;
 
-		/**
-		 * Instantiates a new Event pair.
-		 *
-		 * @param key   the key
-		 * @param value the value
-		 */
-		public EventPair(String key, String value){
-			this.key = key;
-			this.value = value;
-		}
+  /**
+   * Instantiates a new Event aggregator.
+   *
+   * @param name    the name
+   * @param logger  the logger (see {@link FluentAggregatedLogger}).
+   * @param logSite the log site (see {@link LogSite}).
+   * @param pool    the executor service pool used to periodically log data.
+   */
+  EventAggregator(String name, FluentAggregatedLogger logger, LogSite logSite,
+                  ScheduledExecutorService pool, int capacity) {
+    super(name, logger, logSite, pool);
+    eventList = new LinkedBlockingQueue<EventPair>(capacity);
+  }
 
-		/**
-		 * Gets key.
-		 *
-		 * @return the key
-		 */
-		public String getKey() {
-			return key;
-		}
+  @Override
+  protected EventAggregator self() {
+    return this;
+  }
 
-		/**
-		 * Gets value.
-		 *
-		 * @return the value
-		 */
-		public String getValue() {
-			return value;
-		}
-	}
+  /**
+   * Add event to {@link EventAggregator}.
+   *
+   * @param event   the event
+   * @param content the content
+   */
+  public void add(String event, String content) {
+    //try 3 times
+    int i = 0;
+    while (i++ < 3) {
+      try {
+        if (eventList.offer(new EventPair(event, content), 1, TimeUnit.MILLISECONDS)) {
+          if (shouldFlushByNumber()) {
+            asyncFlush(getNumberWindow());
+          }
 
-	/**
-	 * Use LinkedBlockingQueue to store events.
-	 * <p>
-	 * Two reasons for using LinkedBlockingQueue:
-	 * 1. Thread-safe: many threads will use the same {@link EventAggregator} to log same type events.
-	 * 2. Async log: logging aggregated events is a time-consuming action. It's better to use separate thread to do it.
-	 */
-	protected final BlockingQueue<EventAggregator.EventPair> eventList;
-	/**
-	 * Instantiates a new Event aggregator.
-	 *
-	 * @param name    the name
-	 * @param logger  the logger (see {@link FluentAggregatedLogger}).
-	 * @param logSite the log site (see {@link LogSite}).
-	 * @param pool    the executor service pool used to periodically log data.
-	 */
-	EventAggregator(String name, FluentAggregatedLogger logger, LogSite logSite,
-	                       ScheduledExecutorService pool, int capacity){
-		super(name, logger, logSite, pool);
-		eventList = new LinkedBlockingQueue<EventPair>(capacity);
-	}
+          break;
+        } else {
+          //If BlockingQueue is full, just immediately flush
+          asyncFlush(0);
+          Thread.sleep(1);
+        }
+      } catch (InterruptedException e) {
+        if (i == 2) {
+          //Do not log anything, just print stacktrace
+          e.printStackTrace();
+        }
+      }
+      ;
+    }
+    ;
+  }
 
-	@Override
-	protected EventAggregator self() {
-		return this;
-	}
+  @Override
+  public boolean shouldFlushByNumber() {
+    return eventList.size() >= getNumberWindow();
+  }
 
-	/**
-	 * Add event to {@link EventAggregator}.
-	 *
-	 * @param event   the event
-	 * @param content the content
-	 */
-	public void add(String event, String content) {
-		//try 3 times
-		int i = 0;
-		while(i++ < 3) {
-			try {
-				if(eventList.offer(new EventPair(event, content), 1, TimeUnit.MILLISECONDS)) {
-					if(shouldFlushByNumber()){
-						asyncFlush(getNumberWindow());
-					}
+  @Override
+  public int haveData() {
+    return eventList.size();
+  }
 
-					break;
-				} else {
-					//If BlockingQueue is full, just immediately flush
-					asyncFlush(0);
-					Thread.sleep(1);
-				}
-			} catch (InterruptedException e) {
-				if(i == 2) {
-					//Do not log anything, just print stacktrace
-					e.printStackTrace();
-				}
-			};
-		};
-	}
+  @Override
+  public String message(int count) {
+    Checks.checkArgument(count >= 0, "count should be >=0");
 
-	@Override
-	public boolean shouldFlushByNumber() {
-		return eventList.size() >= getNumberWindow();
-	}
+    List<EventPair> eventBuffer = new ArrayList<EventPair>();
+    if (count == 0) {
+      eventList.drainTo(eventBuffer);
+    } else {
+      eventList.drainTo(eventBuffer, count);
+    }
 
-	@Override
-	public int haveData() {
-		return eventList.size();
-	}
+    return formatMessage(eventBuffer);
+  }
 
-	@Override
-	public String message(int count){
-		Checks.checkArgument(count >= 0, "count should be >=0");
+  private String formatMessage(List<EventPair> eventBuffer) {
+    int bufferSize = eventBuffer.size();
+    StringBuilder builder = new StringBuilder();
 
-		List<EventPair> eventBuffer = new ArrayList<EventPair>();
-		if(count == 0){
-			eventList.drainTo(eventBuffer);
-		} else {
-			eventList.drainTo(eventBuffer, count);
-		}
+    builder.append(name).append("\n");
+    for (int i = 0; i < bufferSize; i++) {
+      builder.append(eventBuffer.get(i).getKey()).append(":")
+        .append(eventBuffer.get(i).getValue()).append(" | ");
+      if ((i + 1) % 10 == 0) {
+        builder.append("\n");
+      }
+    }
+    if (bufferSize % 10 != 0) {
+      builder.append("\n");
+    }
 
-		return formatMessage(eventBuffer);
-	}
+    builder.append("\ntotal: ").append(bufferSize);
 
-	private String formatMessage(List<EventPair> eventBuffer){
-		int bufferSize = eventBuffer.size();
-		StringBuilder builder = new StringBuilder();
+    return builder.toString();
+  }
 
-		builder.append(name).append("\n");
-		for( int i = 0; i < bufferSize; i++){
-			builder.append(eventBuffer.get(i).getKey()).append(":")
-					.append(eventBuffer.get(i).getValue()).append(" | ");
-			if((i+1) % 10 == 0){
-				builder.append("\n");
-			}
-		}
-		if(bufferSize % 10 != 0){
-			builder.append("\n");
-		}
+  /**
+   * Simple Event pair.
+   */
+  static final class EventPair {
+    private final String key;
+    private final String value;
 
-		builder.append("\ntotal: ").append(bufferSize);
+    /**
+     * Instantiates a new Event pair.
+     *
+     * @param key   the key
+     * @param value the value
+     */
+    public EventPair(String key, String value) {
+      this.key = key;
+      this.value = value;
+    }
 
-		return builder.toString();
-	}
+    /**
+     * Gets key.
+     *
+     * @return the key
+     */
+    public String getKey() {
+      return key;
+    }
+
+    /**
+     * Gets value.
+     *
+     * @return the value
+     */
+    public String getValue() {
+      return value;
+    }
+  }
 }

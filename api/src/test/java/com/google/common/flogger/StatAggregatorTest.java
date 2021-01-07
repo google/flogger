@@ -32,10 +32,10 @@ import static org.junit.Assert.fail;
 @RunWith(JUnit4.class)
 public class StatAggregatorTest {
 
-  private StatAggregator create(String name, int capacity, FakeLoggerBackend backend){
+  private StatAggregator create(String name, int capacity, FakeLoggerBackend backend) {
     FluentAggregatedLogger logger = new FluentAggregatedLogger(backend);
     LogSite logSite = checkNotNull(Platform.getCallerFinder().findLogSite(FluentAggregatedLogger.class, 0),
-            "logger backend must not return a null LogSite");
+      "logger backend must not return a null LogSite");
     ScheduledExecutorService pool = Executors.newScheduledThreadPool(1);
 
     return new StatAggregator(name, logger, logSite, pool, capacity);
@@ -50,13 +50,13 @@ public class StatAggregatorTest {
     try {
       statAggregator = statAggregator.withSampleRate(-1);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
     }
 
     try {
       statAggregator = statAggregator.withSampleRate(0);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
     }
 
     statAggregator = statAggregator.withSampleRate(1);
@@ -87,7 +87,7 @@ public class StatAggregatorTest {
     try {
       statAggregator = statAggregator.withSampleRate(1001);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
     }
   }
 
@@ -148,12 +148,12 @@ public class StatAggregatorTest {
 
     // Test value list is full
     statAggregator = statAggregator.withNumberWindow(4);
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
       statAggregator.add(10);
     }
     Thread.sleep(10); //wait for async flush finished.
     String message = "test\n" +
-            "min:10, max:10, total:40, count:4, avg:10.0.";
+      "min:10, max:10, total:40, count:4, avg:10.0.";
     backend.assertLogged(0).hasMessage(message);
 
     // Test flush based on number window
@@ -163,7 +163,7 @@ public class StatAggregatorTest {
     Thread.sleep(10); // Wait for async flush finished.
 
     message = "test\n" +
-            "min:10, max:10, total:30, count:3, avg:10.0.";
+      "min:10, max:10, total:30, count:3, avg:10.0.";
     backend.assertLogged(1).hasMessage(message);
   }
 }

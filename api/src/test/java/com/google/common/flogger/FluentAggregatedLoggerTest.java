@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
 /**
  * FluentAggregatedLogger is typically very simple classes whose only real responsibility is as a factory
  * for a specific API implementation. As such it needs very few tests itself.
- *
+ * <p>
  * See AggregatedLogContextTest.java for the vast majority of tests related to base logging behaviour.
  */
 @RunWith(JUnit4.class)
@@ -65,7 +65,7 @@ public class FluentAggregatedLoggerTest {
     try {
       StatAggregator statAggregator = logger.getStat(name1);
       fail("expected RuntimeException");
-    } catch (RuntimeException e){
+    } catch (RuntimeException e) {
 
     }
   }
@@ -95,7 +95,7 @@ public class FluentAggregatedLoggerTest {
     try {
       EventAggregator eventAggregator = logger.getEvent(name1);
       fail("expected RuntimeException");
-    } catch (RuntimeException e){
+    } catch (RuntimeException e) {
 
     }
   }

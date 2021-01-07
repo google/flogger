@@ -29,7 +29,7 @@ public class AggregatedLogContextTest {
   final static FluentAggregatedLogger logger2 = FluentAggregatedLogger.forEnclosingClass();
 
   @Test
-  public void testGetName(){
+  public void testGetName() {
     String name = "test";
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentAggregatedLogger logger = new FluentAggregatedLogger(backend);
@@ -48,16 +48,16 @@ public class AggregatedLogContextTest {
     try {
       eventAggregator.withTimeWindow(-1);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
     }
 
     try {
       eventAggregator.withTimeWindow(0);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
     }
 
-    eventAggregator.withTimeWindow(1).add("timewindow","1");
+    eventAggregator.withTimeWindow(1).add("timewindow", "1");
     eventAggregator.flush(0);
     backend.assertLogged(0).metadata().containsUniqueEntry(AggregatedLogContext.Key.TIME_WINDOW, 1);
 
@@ -65,29 +65,29 @@ public class AggregatedLogContextTest {
     try {
       eventAggregator.withTimeWindow(3601);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
 
     }
     try {
       eventAggregator.withTimeWindow(10000);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
       e.printStackTrace();
     }
 
     EventAggregator eventAggregator2 = logger.getEvent("test2");
-    eventAggregator2.withTimeWindow(3600).add("timewindow","3600");
+    eventAggregator2.withTimeWindow(3600).add("timewindow", "3600");
     eventAggregator2.flush(0);
     backend.assertLogged(1).metadata().containsUniqueEntry(AggregatedLogContext.Key.TIME_WINDOW, 3600);
 
     // Test repeatedly set
-    eventAggregator.withTimeWindow(2).add("timewindow","2");
+    eventAggregator.withTimeWindow(2).add("timewindow", "2");
     eventAggregator.flush(0);
     backend.assertLogged(2).metadata().containsUniqueEntry(AggregatedLogContext.Key.TIME_WINDOW, 2);
     try {
       eventAggregator = eventAggregator.start().withTimeWindow(3);
       fail("expected RuntimeException");
-    } catch (RuntimeException e){
+    } catch (RuntimeException e) {
     }
   }
 
@@ -101,16 +101,16 @@ public class AggregatedLogContextTest {
     try {
       eventAggregator.withNumberWindow(-1);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
     }
 
     try {
       eventAggregator.withNumberWindow(0);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
     }
 
-    eventAggregator.withNumberWindow(1).add("numberwindow","1");
+    eventAggregator.withNumberWindow(1).add("numberwindow", "1");
     eventAggregator.flush(0);
     backend.assertLogged(0).metadata().containsUniqueEntry(AggregatedLogContext.Key.NUMBER_WINDOW, 1);
 
@@ -118,16 +118,16 @@ public class AggregatedLogContextTest {
     try {
       eventAggregator.withNumberWindow(1000 * 1000 + 1);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
 
     }
     try {
       eventAggregator.withNumberWindow(1024 * 1024);
       fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
       e.printStackTrace();
     }
-    eventAggregator.withNumberWindow(1000 * 1000).add("timewindow","1000 * 1000");
+    eventAggregator.withNumberWindow(1000 * 1000).add("timewindow", "1000 * 1000");
     eventAggregator.flush(0);
     backend.assertLogged(1).metadata().containsUniqueEntry(AggregatedLogContext.Key.NUMBER_WINDOW, 1000 * 1000);
   }
@@ -141,7 +141,7 @@ public class AggregatedLogContextTest {
     assertThat(eventAggregator.shouldFlushByNumber()).isFalse();
 
     eventAggregator = eventAggregator.withNumberWindow(10);
-    for(int i = 0; i < 9; i++){
+    for (int i = 0; i < 9; i++) {
       eventAggregator.add("hello", "world");
     }
     assertThat(eventAggregator.shouldFlushByNumber()).isFalse();
