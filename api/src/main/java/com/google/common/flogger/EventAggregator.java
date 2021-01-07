@@ -16,6 +16,7 @@
 
 package com.google.common.flogger;
 
+import com.google.common.flogger.util.Checks;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 import java.util.ArrayList;
@@ -87,9 +88,7 @@ public class EventAggregator extends AggregatedLogContext<FluentAggregatedLogger
 	 * 1. Thread-safe: many threads will use the same {@link EventAggregator} to log same type events.
 	 * 2. Async log: logging aggregated events is a time-consuming action. It's better to use separate thread to do it.
 	 */
-	protected final BlockingQueue<EventAggregator.EventPair> eventList =
-			new LinkedBlockingQueue<EventAggregator.EventPair>(1024 * 1024);
-
+	protected final BlockingQueue<EventAggregator.EventPair> eventList;
 	/**
 	 * Instantiates a new Event aggregator.
 	 *
@@ -98,8 +97,10 @@ public class EventAggregator extends AggregatedLogContext<FluentAggregatedLogger
 	 * @param logSite the log site (see {@link LogSite}).
 	 * @param pool    the executor service pool used to periodically log data.
 	 */
-	public EventAggregator(String name, FluentAggregatedLogger logger, LogSite logSite, ScheduledExecutorService pool){
+	EventAggregator(String name, FluentAggregatedLogger logger, LogSite logSite,
+	                       ScheduledExecutorService pool, int capacity){
 		super(name, logger, logSite, pool);
+		eventList = new LinkedBlockingQueue<EventPair>(capacity);
 	}
 
 	@Override
@@ -119,16 +120,15 @@ public class EventAggregator extends AggregatedLogContext<FluentAggregatedLogger
 		while(i++ < 3) {
 			try {
 				if(eventList.offer(new EventPair(event, content), 1, TimeUnit.MILLISECONDS)) {
-					increaseCounter();
-
-					if(shouldFlush()){
-						flush();
+					if(shouldFlushByNumber()){
+						asyncFlush(getNumberWindow());
 					}
 
 					break;
 				} else {
 					//If BlockingQueue is full, just immediately flush
-					flush();
+					asyncFlush(0);
+					Thread.sleep(1);
 				}
 			} catch (InterruptedException e) {
 				if(i == 2) {
@@ -140,14 +140,25 @@ public class EventAggregator extends AggregatedLogContext<FluentAggregatedLogger
 	}
 
 	@Override
-	protected boolean haveData() {
-		return !eventList.isEmpty();
+	protected boolean shouldFlushByNumber() {
+		return eventList.size() >= getNumberWindow();
 	}
 
 	@Override
-	protected String message(){
+	protected int haveData() {
+		return eventList.size();
+	}
+
+	@Override
+	protected String message(int count){
+		Checks.checkArgument(count >= 0, "count should be >=0");
+
 		List<EventPair> eventBuffer = new ArrayList<EventPair>();
-		eventList.drainTo(eventBuffer, getWindowNumber());
+		if(count == 0){
+			eventList.drainTo(eventBuffer);
+		} else {
+			eventList.drainTo(eventBuffer, count);
+		}
 
 		return formatMessage(eventBuffer);
 	}

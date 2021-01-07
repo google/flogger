@@ -40,7 +40,7 @@ public class FluentAggregatedLoggerExample {
 		}
 
 		StatAggregator statAggregator = logger2.getStat("get-user-api-perf")
-				.withNumberWindow(10).setSampleRate(3).setUnit("ms");
+				.withNumberWindow(10).withSampleRate(3).withUnit("ms");
 		for(int i = 0; i < 100; i++) {
 			statAggregator.add(i);
 		}

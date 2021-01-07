@@ -17,11 +17,11 @@
 package com.google.common.flogger;
 
 import com.google.common.flogger.testing.FakeLoggerBackend;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 @RunWith(JUnit4.class)
@@ -35,7 +35,7 @@ public class AggregatedLogContextTest {
     FluentAggregatedLogger logger = new FluentAggregatedLogger(backend);
     EventAggregator eventAggregator = logger.getEvent(name);
 
-    Assert.assertEquals(eventAggregator.getName(), name);
+    assertThat(eventAggregator.getName()).isEqualTo(name);
   }
 
   @Test
@@ -58,7 +58,7 @@ public class AggregatedLogContextTest {
     }
 
     eventAggregator.withTimeWindow(1).add("timewindow","1");
-    eventAggregator.log();
+    eventAggregator.flush(0);
     backend.assertLogged(0).metadata().containsUniqueEntry(AggregatedLogContext.Key.TIME_WINDOW, 1);
 
     // Test upper bound
@@ -77,12 +77,12 @@ public class AggregatedLogContextTest {
 
     EventAggregator eventAggregator2 = logger.getEvent("test2");
     eventAggregator2.withTimeWindow(3600).add("timewindow","3600");
-    eventAggregator2.log();
+    eventAggregator2.flush(0);
     backend.assertLogged(1).metadata().containsUniqueEntry(AggregatedLogContext.Key.TIME_WINDOW, 3600);
 
     // Test repeatedly set
     eventAggregator.withTimeWindow(2).add("timewindow","2");
-    eventAggregator.log();
+    eventAggregator.flush(0);
     backend.assertLogged(2).metadata().containsUniqueEntry(AggregatedLogContext.Key.TIME_WINDOW, 2);
     try {
       eventAggregator = eventAggregator.start().withTimeWindow(3);
@@ -111,7 +111,7 @@ public class AggregatedLogContextTest {
     }
 
     eventAggregator.withNumberWindow(1).add("numberwindow","1");
-    eventAggregator.log();
+    eventAggregator.flush(0);
     backend.assertLogged(0).metadata().containsUniqueEntry(AggregatedLogContext.Key.NUMBER_WINDOW, 1);
 
     // Test upper bound
@@ -128,23 +128,28 @@ public class AggregatedLogContextTest {
       e.printStackTrace();
     }
     eventAggregator.withNumberWindow(1000 * 1000).add("timewindow","1000 * 1000");
-    eventAggregator.log();
+    eventAggregator.flush(0);
     backend.assertLogged(1).metadata().containsUniqueEntry(AggregatedLogContext.Key.NUMBER_WINDOW, 1000 * 1000);
   }
 
   @Test
-  public void testShouldFlush(){
+  public void testShouldFlush() throws InterruptedException {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentAggregatedLogger logger = new FluentAggregatedLogger(backend);
     EventAggregator eventAggregator = logger.getEvent("test");
 
+    assertThat(eventAggregator.shouldFlushByNumber()).isFalse();
+
     eventAggregator = eventAggregator.withNumberWindow(10);
-    Assert.assertFalse(eventAggregator.shouldFlush());
-    eventAggregator.increaseCounter(99);
-    Assert.assertFalse(eventAggregator.shouldFlush());
-    eventAggregator.increaseCounter();
-    Assert.assertTrue(eventAggregator.shouldFlush());
-    eventAggregator.increaseCounter();
-    Assert.assertFalse(eventAggregator.shouldFlush());
+    for(int i = 0; i < 9; i++){
+      eventAggregator.add("hello", "world");
+    }
+    assertThat(eventAggregator.shouldFlushByNumber()).isFalse();
+    eventAggregator.add("hello", "world");
+    assertThat(eventAggregator.shouldFlushByNumber()).isTrue();
+
+    Thread.sleep(10); // Waiting for async flush thread to finish
+    eventAggregator.add("hello", "world");
+    assertThat(eventAggregator.shouldFlushByNumber()).isFalse();
   }
 }

@@ -33,6 +33,8 @@ public interface AggregatedLoggingApi<API extends AggregatedLoggingApi> {
 	 */
 	API withTimeWindow(int seconds);
 
+	int getTimeWindow();
+
 	/**
 	 * Set aggregated logger number window.
 	 *
@@ -43,4 +45,6 @@ public interface AggregatedLoggingApi<API extends AggregatedLoggingApi> {
 	 * @return
 	 */
 	API withNumberWindow(int number);
+
+	int getNumberWindow();
 }

@@ -16,8 +16,6 @@
 
 package com.google.common.flogger;
 
-import static com.google.common.flogger.util.Checks.*;
-
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.Platform;
@@ -26,9 +24,11 @@ import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.util.Checks;
 import com.google.errorprone.annotations.CheckReturnValue;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+
+import static com.google.common.flogger.util.Checks.checkNotNull;
 
 /**
  * Base class for the aggregated logger API.
@@ -64,15 +64,13 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	private final class LogFlusher implements Runnable {
 		@Override
 		public void run() {
-			log();
+			flush(0); // Always flush all data
 
+			// Write one more log to show timer is running when there is no any data.
 			LogData logData = getLogData(getName() + " periodically flush log finished");
 			getLogger().write(logData);
 		}
 	}
-
-	//Counter for number window
-	private AtomicLong counter = new AtomicLong(0);
 
 	//Runnable for time window
 	private volatile LogFlusher flusher;
@@ -90,18 +88,32 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	protected abstract API self();
 
 	/**
-	 * Check if there are some data to log.
+	 * Check if there are enough data to log based on number window configuration.
 	 *
-	 * @return the boolean
+	 * @return true: flush now; false: not flush.
 	 */
-	protected abstract boolean haveData();
+	protected abstract boolean shouldFlushByNumber();
 
 	/**
-	 * Format aggregated data to string for logging.
+	 * Check if there are some data to log.
+	 *
+	 * @return the amount of data
+	 */
+	protected abstract int haveData();
+
+	/**
+	 *
 	 *
 	 * @return the string
 	 */
-	protected abstract String message();
+	/**
+	 * Format aggregated data to string for logging.
+	 *
+	 * @param count the amount of data, 0: all, >0: specified amount
+	 *
+	 * @return formatted string content for LogData
+	 */
+	protected abstract String message(int count);
 
 	/**
 	 * Instantiates a new AggregatedLogContext.
@@ -132,10 +144,7 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	 		return self();
 	 	}
 
-	 	Integer period = metadata.findValue(Key.TIME_WINDOW);
-	 	if(period == null){
-	 		throw new RuntimeException("Call withTimeWindow to set time window first");
-	    }
+	 	int period = getTimeWindow();
 		flusher = new LogFlusher();
 		pool.scheduleAtFixedRate(flusher, 2, period, TimeUnit.SECONDS);
 
@@ -148,7 +157,8 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	 		throw new RuntimeException("Please do not change time window after logger start.");
 	    }
 
-		Checks.checkArgument(seconds > 0 && seconds <= 3600, "Time window range should be (0,60]");
+		Checks.checkArgument(seconds > 0 && seconds <= 3600,
+				"Time window range should be (0,3600]");
 
 		metadata.addValue(Key.TIME_WINDOW, seconds);
 
@@ -157,15 +167,31 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 
 	@Override
 	public API withNumberWindow(int number) {
-		Checks.checkArgument(number > 0 && number <= 1000 * 1000, "Number window range should be (0, 1000000])");
+		Checks.checkArgument(number > 0 && number <= 1000 * 1000,
+				"Number window range should be (0, 1000000])");
 
 		metadata.addValue(Key.NUMBER_WINDOW, number);
 		return self();
 	}
 
-	protected int getWindowNumber(){
-		Integer numberWindows = metadata.findValue(Key.NUMBER_WINDOW);
-		return numberWindows == null ? 100 : numberWindows;
+	/**
+	 * Get time window configuration. Default value is 60(seconds).
+	 *
+	 */
+	@Override
+	public int getTimeWindow() {
+		Integer timeWindow = metadata.findValue(Key.TIME_WINDOW);
+		return timeWindow == null ? 60 : timeWindow; // Default 60 seconds
+	}
+
+	/**
+	 * Get number window configuration. Default value is 100.
+	 *
+	 */
+	@Override
+	public int getNumberWindow() {
+		Integer numberWindow = metadata.findValue(Key.NUMBER_WINDOW);
+		return numberWindow == null ? 100 : numberWindow;  // Default 100
 	}
 
 	/**
@@ -185,42 +211,6 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	 */
 	protected FluentAggregatedLogger getLogger() {
 		return logger;
-	}
-
-	/**
-	 * Increase counter.
-	 */
-	protected void increaseCounter(){
-		increaseCounter(1);
-	}
-
-	/**
-	 * Increase counter.
-	 *
-	 * @param delta the delta
-	 */
-	protected void increaseCounter(int delta){
-		counter.addAndGet(delta);
-	}
-
-	/**
-	 * Check if it's time to flush data. Only check for number window.
-	 * No need to check for time window because executor service pool will periodically flush data.
-	 *
-	 * Notice: visible for test directly calling.
-	 *
-	 * @return the boolean
-	 */
-	protected boolean shouldFlush() {
-		//check number window
-		long currentCounter = counter.get();
-
-		//No need to check if currentCounter < 0
-		if(currentCounter == 0 || currentCounter % getWindowNumber() != 0){
-			return false;
-		}
-
-		return true;
 	}
 
 	/**
@@ -247,11 +237,11 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	/**
 	 * Flush aggregated data in new Thread.
 	 */
-	protected void flush(){
+	protected void asyncFlush(final int count){
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				log();
+				flush(count);
 			}
 		}).start();
 	}
@@ -261,13 +251,15 @@ public abstract class AggregatedLogContext<LOGGER extends AbstractLogger,
 	 * 	junit will not get the async logging data when running unit test.
 	 * 	So call log method directly in junit testcase.
 	 */
-	void log(){
+	protected void flush(int count){
 		if(flushLock.compareAndSet(false,true)) {
 			try {
-				while (haveData()) {
-					LogData logData = getLogData(message());
-					getLogger().write(logData);
-				};
+				if(count > 0 && haveData() < count){
+					return;
+				}
+
+				LogData logData = getLogData(message(count));
+				getLogger().write(logData);
 			}
 			finally {
 				flushLock.compareAndSet(true, false);

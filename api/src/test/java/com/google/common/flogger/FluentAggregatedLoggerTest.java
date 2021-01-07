@@ -17,7 +17,6 @@
 package com.google.common.flogger;
 
 import com.google.common.flogger.testing.FakeLoggerBackend;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -51,17 +50,16 @@ public class FluentAggregatedLoggerTest {
     // Check name
     String name1 = "event1";
     EventAggregator eventAggregator = logger.getEvent(name1);
-    Assert.assertEquals(eventAggregator.getName(), name1);
-
+    assertThat(eventAggregator.getName()).isEqualTo(name1);
     // Test repeatedly get
     EventAggregator same = logger.getEvent(name1);
-    Assert.assertEquals(eventAggregator, same);
+    assertThat(eventAggregator).isSameInstanceAs(same);
 
     //Test different name
     String name2 = "event2";
     EventAggregator eventAggregator2 = logger.getEvent(name2);
-    Assert.assertEquals(eventAggregator2.getName(), name2);
-    Assert.assertNotEquals(eventAggregator, eventAggregator2);
+    assertThat(eventAggregator2.getName()).isEqualTo(name2);
+    assertThat(eventAggregator).isNotSameInstanceAs(eventAggregator2);
 
     //Test different type aggregator with the same name
     try {
@@ -81,17 +79,17 @@ public class FluentAggregatedLoggerTest {
     // Check name
     String name1 = "stat1";
     StatAggregator statAggregator1 = logger.getStat(name1);
-    Assert.assertEquals(statAggregator1.getName(), name1);
+    assertThat(statAggregator1.getName()).isEqualTo(name1);
 
     // Test repeatedly get
     StatAggregator same = logger.getStat(name1);
-    Assert.assertEquals(statAggregator1, same);
+    assertThat(statAggregator1).isEqualTo(same);
 
     //Test different name
     String name2 = "stat2";
     StatAggregator statAggregator2 = logger.getStat(name2);
-    Assert.assertEquals(statAggregator2.getName(), name2);
-    Assert.assertNotEquals(statAggregator1, statAggregator2);
+    assertThat(statAggregator2.getName()).isEqualTo(name2);
+    assertThat(statAggregator1).isNotSameInstanceAs(statAggregator2);
 
     //Test different type aggregator with the same name
     try {

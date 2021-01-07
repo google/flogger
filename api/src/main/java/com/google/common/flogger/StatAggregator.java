@@ -66,11 +66,12 @@ public class StatAggregator extends AggregatedLogContext<FluentAggregatedLogger,
 	 * 1. Thread-safe: many threads will use the same {@link StatAggregator} to log same type values.
 	 * 2. Async log: logging aggregated value is a time-consuming action. It's better to use separate thread to do it.
 	 */
-	protected final BlockingQueue<Long> valueList =
-			new LinkedBlockingQueue<Long>(1024 * 1024);
+	protected final BlockingQueue<Long> valueList;
 
-	protected StatAggregator(String name, FluentAggregatedLogger logger, LogSite logSite, ScheduledExecutorService pool) {
+	protected StatAggregator(String name, FluentAggregatedLogger logger, LogSite logSite,
+	                         ScheduledExecutorService pool, int capacity) {
 		super(name, logger, logSite, pool);
+		valueList = new LinkedBlockingQueue<Long>(capacity);
 	}
 
 	@Override
@@ -84,13 +85,18 @@ public class StatAggregator extends AggregatedLogContext<FluentAggregatedLogger,
 	 * @param sampleRate
 	 * @return
 	 */
-	public StatAggregator setSampleRate(int sampleRate){
-		Checks.checkArgument(sampleRate > 0, "Sample rate should be larger than 0");
+	public StatAggregator withSampleRate(int sampleRate){
+		Checks.checkArgument(sampleRate > 0 && sampleRate <= 1000,
+				"Sample rate range should be (0,1000]");
 
 		this.sampleRate = sampleRate;
-		metadata.addValue(Key.SAMPLE_RATE, sampleRate);
+		metadata.addValue(Key.SAMPLE_RATE, sampleRate); //Just for log context
 
 		return self();
+	}
+
+	public int getSampleRate(){
+		return sampleRate;
 	}
 
 	/**
@@ -99,10 +105,15 @@ public class StatAggregator extends AggregatedLogContext<FluentAggregatedLogger,
 	 * @param unit
 	 * @return
 	 */
-	public StatAggregator setUnit(String unit){
+	public StatAggregator withUnit(String unit){
 		metadata.addValue(Key.UNIT_STRING, unit);
 
 		return self();
+	}
+
+	public String getUnit(){
+		String unit = metadata.findValue(Key.UNIT_STRING);
+		return unit;
 	}
 
 	/**
@@ -120,16 +131,15 @@ public class StatAggregator extends AggregatedLogContext<FluentAggregatedLogger,
 		while(i++ < 3) {
 			try {
 				if(valueList.offer(value, 1, TimeUnit.MILLISECONDS)) {
-					increaseCounter();
-
-					if(shouldFlush()){
-						flush();
+					if(shouldFlushByNumber()){
+						asyncFlush(getNumberWindow());
 					}
 
 					break;
 				} else {
 					//If BlockingQueue is full, just immediately flush
-					flush();
+					asyncFlush(0);
+					Thread.sleep(1);
 				}
 			} catch (InterruptedException e) {
 				if(i == 2) {
@@ -141,20 +151,36 @@ public class StatAggregator extends AggregatedLogContext<FluentAggregatedLogger,
 	}
 
 	@Override
-	protected boolean haveData() {
-		return !valueList.isEmpty();
+	protected boolean shouldFlushByNumber() {
+		return valueList.size() >= getNumberWindow();
 	}
 
 	@Override
-	protected String message() {
+	protected int haveData() {
+		return valueList.size();
+	}
+
+	@Override
+	protected String message(int count) {
+		Checks.checkArgument(count >= 0, "count should be larger than 0");
+
 		List<Long> valueBuffer = new ArrayList<Long>();
-		valueList.drainTo(valueBuffer, metadata.findValue(AggregatedLogContext.Key.NUMBER_WINDOW));
+		if(count == 0){
+			valueList.drainTo(valueBuffer);
+		} else {
+			valueList.drainTo(valueBuffer, count);
+		}
 
 		return formatMessage(valueBuffer);
 	}
 
-	private boolean sample(){
-		return sampleRate == 1 || (sampleCounter.getAndDecrement() % sampleRate == 0);
+	/**
+	 * Sample data
+	 *
+	 * @return true: log; false: skip
+	 */
+	protected boolean sample(){
+		return sampleRate == 1 || (sampleCounter.getAndIncrement() % sampleRate == 0);
 	}
 
 	private String formatMessage(List<Long> valueBuffer){

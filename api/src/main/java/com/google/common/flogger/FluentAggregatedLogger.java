@@ -64,7 +64,7 @@ public final class FluentAggregatedLogger extends AbstractLogger {
 			//Get logsite here for async write data in new Thread
 			LogSite logSite = checkNotNull(Platform.getCallerFinder().findLogSite(FluentAggregatedLogger.class, 0),
 					"logger backend must not return a null LogSite");
-			aggregator = new EventAggregator(name, this, logSite, pool);
+			aggregator = new EventAggregator(name, this, logSite, pool, 1024 * 1024);
 			aggregatorMap.putIfAbsent(name, aggregator);
 
 			AggregatedLogContext old = aggregatorMap.putIfAbsent(name, aggregator);
@@ -93,7 +93,7 @@ public final class FluentAggregatedLogger extends AbstractLogger {
 			//Get logsite here for async write data in new Thread
 			LogSite logSite = checkNotNull(Platform.getCallerFinder().findLogSite(FluentAggregatedLogger.class, 0),
 					"logger backend must not return a null LogSite");
-			aggregator = new StatAggregator(name, this, logSite, pool);
+			aggregator = new StatAggregator(name, this, logSite, pool, 1024 * 1024);
 			AggregatedLogContext old = aggregatorMap.putIfAbsent(name, aggregator);
 
 			if( old != null ) {
