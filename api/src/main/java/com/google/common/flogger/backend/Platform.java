@@ -18,7 +18,6 @@ package com.google.common.flogger.backend;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import com.google.common.flogger.AbstractLogger;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.Tags;
@@ -139,7 +138,8 @@ public abstract class Platform {
      * @throws IllegalStateException if there was no caller of the specified logged passed on the
      *     stack (which may occur if the logger class was invoked directly by JNI).
      */
-    public abstract String findLoggingClass(Class<? extends AbstractLogger<?>> loggerClass);
+    //public abstract String findLoggingClass(Class<? extends AbstractLogger<?>> loggerClass);
+    public abstract String findLoggingClass(Class loggerClass);
 
     /**
      * Returns a LogSite found from the current stack trace for the caller of the log() method on

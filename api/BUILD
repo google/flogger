@@ -137,6 +137,17 @@ java_binary(
     deps = ["@google_bazel_common//third_party/java/asm"],
 )
 
+java_binary(
+    name = "fluent_aggregated_logger_example",
+    srcs = ["src/main/java/com/google/common/flogger/example/FluentAggregatedLoggerExample.java"],
+    main_class = "com.google.common.flogger.example.FluentAggregatedLoggerExample",
+    deps = [
+        ":api",
+        ":system_backend",
+        "@google_bazel_common//third_party/java/log4j",
+    ],
+)
+
 genrule(
     name = "gen_platform_provider",
     outs = ["platform_provider.jar"],

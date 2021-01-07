@@ -22,7 +22,7 @@ import java.util.logging.Level;
  * Interface for all logger backends.
  * <p>
  * <h2>Implementation Notes:</h2>
- * Often each {@link com.google.common.flogger.AbstractLogger} instance will be instantiated with a
+ * Often each {@link com.google.common.flogger.AbstractMessageLogger} instance will be instantiated with a
  * new logger backend (to permit per-class logging behavior). Because of this it is important that
  * LoggerBackends have as little per-instance state as possible.
  */

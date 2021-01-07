@@ -16,7 +16,6 @@
 
 package com.google.common.flogger.backend.system;
 
-import com.google.common.flogger.AbstractLogger;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.Platform.LogCallerFinder;
 import com.google.common.flogger.util.CallerFinder;
@@ -36,7 +35,7 @@ public final class StackBasedCallerFinder extends LogCallerFinder {
   }
 
   @Override
-  public String findLoggingClass(Class<? extends AbstractLogger<?>> loggerClass) {
+  public String findLoggingClass(Class loggerClass) {
     // We can skip at most only 1 method from the analysis, the inferLoggingClass() method itself.
     StackTraceElement caller = CallerFinder.findCallerOf(loggerClass, new Throwable(), 1);
     if (caller != null) {

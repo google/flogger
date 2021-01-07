@@ -31,7 +31,7 @@ import java.util.logging.Level;
  */
 @CheckReturnValue
 public abstract class GoogleLogContext<
-        LOGGER extends AbstractLogger<API>, API extends GoogleLoggingApi<API>>
+        LOGGER extends AbstractMessageLogger<API>, API extends GoogleLoggingApi<API>>
     extends LogContext<LOGGER, API> implements GoogleLoggingApi<API> {
 
   /**
