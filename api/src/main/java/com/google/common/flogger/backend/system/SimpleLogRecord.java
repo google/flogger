@@ -50,14 +50,24 @@ public final class SimpleLogRecord extends AbstractLogRecord {
 
   private SimpleLogRecord(LogData data, Metadata scope) {
     super(data, scope);
-    // TODO(dbeaumont): Maybe we do want to do formatting on demand.
-    // This would avoid formatting when the caller will just get the structured data via the
-    // LogData API, or when the record is filtered. However neither of these are happening at the
-    // moment and when structured data is required, a different log record should be used.
-    //
-    // Calling getMessage() formats and caches the formatted message in the AbstractLogRecord.
-    getMessage();
     setThrown(getMetadataProcessor().getSingleValue(LogContext.Key.LOG_CAUSE));
+
+    // Calling getMessage() formats and caches the formatted message in the AbstractLogRecord.
+    //
+    // IMPORTANT: Conceptually there's no need to format the log message here, since backends can
+    // choose to format messages in different ways or log structurally, so it's not obviously a
+    // win to format things here first. Formatting would otherwise be done by AbstractLogRecord
+    // when getMessage() is called, and the results cached; so the only effect of being "lazy"
+    // should be that formatting (and thus calls to the toString() methods of arguments) happens
+    // later in the same log statement.
+    //
+    // However ... due to bad use of locking in core JDK log handler classes, any lazy formatting
+    // of log arguments (i.e. in the Handler's "publish()" method) can be done with locks held,
+    // and thus risks deadlock. We can mitigate the risk by formatting the message string early
+    // (i.e. here). This is wasteful in cases where this message is never needed (e.g. structured
+    // logging) but necessary when using many of the common JDK handlers (e.g. StreamHandler,
+    // FileHandler etc.) and it's impossible to know which handlers are being used.
+    getMessage();
   }
 
   private SimpleLogRecord(RuntimeException error, LogData data, Metadata scope) {
