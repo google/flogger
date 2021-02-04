@@ -67,6 +67,10 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * This is not guaranteed however and the semantic behaviour of context propagation is not defined
  * by this class.
  *
+ * <p>In particular, if you haven't explicitly opened a context in which to run your code, there is
+ * no guarantee that a default "global" context exists. In this case any attempts to add metadata
+ * (e.g. via {@link #addTags}) will fail, returning {@code false}.
+ *
  * <p>Context support and automatic propagation is heavily reliant on Java platform capabilities,
  * and precise behaviour is likely to differ between runtime environments or frameworks. Context
  * propagation may not behave the same everywhere, and in some situations logging contexts may not
