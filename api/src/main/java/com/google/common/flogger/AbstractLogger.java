@@ -144,9 +144,9 @@ public abstract class AbstractLogger<API extends LoggingApi<API>> {
       } catch (LoggingException allowed) {
         // Bypass the catch-all if the exception is deliberately created during error handling.
         throw allowed;
-      } catch (RuntimeException wtf) {
-        System.err.println("logging error: " + wtf.getMessage());
-        wtf.printStackTrace(System.err);
+      } catch (RuntimeException runtimeException) {
+        System.err.println("logging error: " + runtimeException.getMessage());
+        runtimeException.printStackTrace(System.err);
       }
     }
   }

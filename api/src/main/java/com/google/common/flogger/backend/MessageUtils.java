@@ -174,9 +174,9 @@ public final class MessageUtils {
     String errorMessage;
     try {
       errorMessage = e.toString();
-    } catch (RuntimeException wtf) {
+    } catch (RuntimeException runtimeException) {
       // Ok, now you're just being silly...
-      errorMessage = wtf.getClass().getSimpleName();
+      errorMessage = runtimeException.getClass().getSimpleName();
     }
     return "{"
         + value.getClass().getName()
