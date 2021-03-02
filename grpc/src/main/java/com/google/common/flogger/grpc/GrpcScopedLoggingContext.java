@@ -46,7 +46,7 @@ final class GrpcScopedLoggingContext extends ScopedLoggingContext {
   public ScopedLoggingContext.Builder newScope() {
     return new ScopedLoggingContext.Builder() {
       @Override
-      public LoggingScope install() {
+      public LoggingContextCloseable install() {
         GrpcContextData newContextData =
             GrpcContextData.create(GrpcContextDataProvider.currentContext());
         newContextData.addTags(getTags());
@@ -57,7 +57,7 @@ final class GrpcScopedLoggingContext extends ScopedLoggingContext {
     };
   }
 
-  private static LoggingScope installContextData(GrpcContextData newContextData) {
+  private static LoggingContextCloseable installContextData(GrpcContextData newContextData) {
     // Capture these variables outside the lambda.
     Context context =
         Context.current().withValue(GrpcContextDataProvider.getContextKey(), newContextData);

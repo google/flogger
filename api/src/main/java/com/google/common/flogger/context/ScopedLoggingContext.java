@@ -82,7 +82,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 public abstract class ScopedLoggingContext {
   /** A logging context which must be closed in the reverse order to which it was created. */
   // If Flogger is bumped to JDK 1.7, this should be switched to AutoCloseable.
-  public interface LoggingScope extends Closeable {
+  public interface LoggingContextCloseable extends Closeable {
     // Overridden to remove the throws clause allowing simple try-with-resources use.
     @Override
     public void close();
@@ -154,7 +154,7 @@ public abstract class ScopedLoggingContext {
         @SuppressWarnings("MustBeClosedChecker")
         public void run() {
           // JDK 1.6 does not have "try-with-resources"
-          LoggingScope context = install();
+          LoggingContextCloseable context = install();
           boolean hasError = true;
           try {
             r.run();
@@ -180,7 +180,7 @@ public abstract class ScopedLoggingContext {
         @Override
         @SuppressWarnings("MustBeClosedChecker")
         public R call() throws Exception {
-          LoggingScope context = install();
+          LoggingContextCloseable context = install();
           boolean hasError = true;
           try {
             R result = c.call();
@@ -198,20 +198,34 @@ public abstract class ScopedLoggingContext {
       wrap(r).run();
     }
 
-    /** Calls a callable directly within a new context installed from this builder. */
+    /** Calls a {@link Callable} directly within a new context installed from this builder. */
     public final <R> R call(Callable<R> c) throws Exception {
       return wrap(c).call();
     }
 
     /**
+     * Calls a {@link Callable} directly within a new context installed from this builder, wrapping
+     * any checked exceptions with a {@link RuntimeException}.
+     */
+    public final <R> R callUnchecked(Callable<R> c) {
+      try {
+        return call(c);
+      } catch (RuntimeException e) {
+        throw e;
+      } catch (Exception e) {
+        throw new RuntimeException("checked exception caught during context call", e);
+      }
+    }
+
+    /**
      * Installs a new context based on the state of the builder. The caller is <em>required</em> to
-     * invoke {@link LoggingScope#close() close()} on the returned instances in the reverse order to
-     * which they were obtained. For JDK 1.7 and above, this is best achieved by using a
-     * try-with-resources construction in the calling code.
+     * invoke {@link LoggingContextCloseable#close() close()} on the returned instances in the
+     * reverse order to which they were obtained. For JDK 1.7 and above, this is best achieved by
+     * using a try-with-resources construction in the calling code.
      *
      * <pre>{@code
-     * ScopedLoggingContext ctx = ScopedLoggingContext.getInstance();
-     * try (LoggingScope scope = ctx.newScope().withTags(Tags.of("my_tag", someValue).install()) {
+     * try (LoggingContextCloseable ctx = ScopedLoggingContext.getInstance()
+     *     .newScope().withTags(Tags.of("my_tag", someValue).install()) {
      *   // Any logging by code called from within this context will contain the additional metadata.
      *   logger.atInfo().log("Log message should contain tag value...");
      * }
@@ -225,14 +239,14 @@ public abstract class ScopedLoggingContext {
      * <p>An implementation of scoped contexts must preserve any existing metadata when a context is
      * opened, and restore the previous state when it terminates.
      *
-     * <p>Note that the returned {@link LoggingScope} is not required to enforce the correct closure
-     * of nested contexts, and while it is permitted to throw a {@link
+     * <p>Note that the returned {@link LoggingContextCloseable} is not required to enforce the
+     * correct closure of nested contexts, and while it is permitted to throw a {@link
      * InvalidLoggingScopeStateException} in the face of mismatched or invalid usage, it is not
      * required.
      */
     @MustBeClosed
     @CheckReturnValue
-    public abstract LoggingScope install();
+    public abstract LoggingContextCloseable install();
 
     /**
      * Returns the configured tags, or null. This method may do work and results should be cached by
@@ -291,13 +305,13 @@ public abstract class ScopedLoggingContext {
 
   /**
    * Installs a new context to which additional logging metadata can be attached. The caller is
-   * <em>required</em> to invoke {@link LoggingScope#close() close()} on the returned instances in
-   * the reverse order to which they were obtained. For JDK 1.7 and above, this is best achieved by
-   * using a try-with-resources construction in the calling code.
+   * <em>required</em> to invoke {@link LoggingContextCloseable#close() close()} on the returned
+   * instances in the reverse order to which they were obtained. For JDK 1.7 and above, this is best
+   * achieved by using a try-with-resources construction in the calling code.
    *
    * <pre>{@code
    * ScopedLoggingContext ctx = ScopedLoggingContext.getInstance();
-   * try (LoggingScope context = ctx.withNewScope()) {
+   * try (LoggingContextCloseable context = ctx.withNewScope()) {
    *   // Now add metadata to the installed context (returns false if not supported).
    *   ctx.addTags(Tags.of("my_tag", someValue));
    *
@@ -317,7 +331,7 @@ public abstract class ScopedLoggingContext {
    * <pre>{@code
    * ScopedLoggingContext ctx = ScopedLoggingContext.getInstance();
    * logger.atInfo().log("Some log statement with existing tags and behaviour...");
-   * try (LoggingScope context = ctx.withNewScope()) {
+   * try (LoggingContextCloseable context = ctx.withNewScope()) {
    *   logger.atInfo().log("This log statement is the same as the first...");
    *   ctx.addTags(Tags.of("my_tag", someValue));
    *   logger.atInfo().log("This log statement has the new tag present...");
@@ -325,8 +339,8 @@ public abstract class ScopedLoggingContext {
    * logger.atInfo().log("This log statement is the same as the first...");
    * }</pre>
    *
-   * <p>Note that the returned {@link LoggingScope} is not required to enforce the correct closure
-   * of nested contexts, and while it is permitted to throw a {@link
+   * <p>Note that the returned {@link LoggingContextCloseable} is not required to enforce the
+   * correct closure of nested contexts, and while it is permitted to throw a {@link
    * InvalidLoggingScopeStateException} in the face of mismatched or invalid usage, it is not
    * required.
    *
@@ -339,7 +353,7 @@ public abstract class ScopedLoggingContext {
   @Deprecated
   @MustBeClosed
   @CheckReturnValue
-  public final LoggingScope withNewScope() {
+  public final LoggingContextCloseable withNewScope() {
     return newScope().install();
   }
 
@@ -445,8 +459,10 @@ public abstract class ScopedLoggingContext {
     return false;
   }
 
-  private static void closeAndMaybePropagateError(LoggingScope context, boolean callerHasError) {
-    // Because LoggingScope is not just a "Closeable" there's no risk of it throwing any checked
+  private static void closeAndMaybePropagateError(
+      LoggingContextCloseable context, boolean callerHasError) {
+    // Because LoggingContextCloseable is not just a "Closeable" there's no risk of it throwing any
+    // checked
     // exceptions. Inparticular, when this is switched to use AutoCloseable, there's no risk of
     // having to deal with InterruptedException. That's why having an extended interface is always
     // better than using [Auto]Closeable directly.
@@ -456,9 +472,9 @@ public abstract class ScopedLoggingContext {
       // This method is always called from a finally block which may be about to rethrow a user
       // exception, so ignore any errors during close() if that's the case.
       if (!callerHasError) {
-        throw (e instanceof InvalidLoggingScopeStateException)
-            ? ((InvalidLoggingScopeStateException) e)
-            : new InvalidLoggingScopeStateException("invalid logging context state", e);
+        throw (e instanceof InvalidLoggingContextStateException)
+            ? ((InvalidLoggingContextStateException) e)
+            : new InvalidLoggingContextStateException("invalid logging context state", e);
       }
     }
   }
@@ -468,12 +484,12 @@ public abstract class ScopedLoggingContext {
    * at which this exception is thrown may not itself be the point where the mishandling occurred,
    * but simply where it was first detected.
    */
-  public static final class InvalidLoggingScopeStateException extends IllegalStateException {
-    public InvalidLoggingScopeStateException(String message, Throwable cause) {
+  public static final class InvalidLoggingContextStateException extends IllegalStateException {
+    public InvalidLoggingContextStateException(String message, Throwable cause) {
       super(message, cause);
     }
 
-    public InvalidLoggingScopeStateException(String message) {
+    public InvalidLoggingContextStateException(String message) {
       super(message);
     }
   }

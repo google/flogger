@@ -19,10 +19,10 @@ package com.google.common.flogger.backend;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
 import com.google.common.flogger.context.ContextDataProvider;
-import com.google.common.flogger.context.ScopedLoggingContext;
-import com.google.common.flogger.context.ScopedLoggingContext.LoggingScope;
-import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.context.LogLevelMap;
+import com.google.common.flogger.context.ScopedLoggingContext;
+import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
+import com.google.common.flogger.context.Tags;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -43,7 +43,7 @@ public final class NoOpContextDataProvider extends ContextDataProvider {
   }
 
   private static final class NoOpScopedLoggingContext extends ScopedLoggingContext
-      implements LoggingScope {
+      implements LoggingContextCloseable {
     // Since the ContextDataProvider class is loaded during Platform initialization we must be very
     // careful to avoid any attempt to obtain a logger instance until we can be sure logging config
     // is complete.
@@ -69,7 +69,7 @@ public final class NoOpContextDataProvider extends ContextDataProvider {
     public ScopedLoggingContext.Builder newScope() {
       return new ScopedLoggingContext.Builder() {
         @Override
-        public LoggingScope install() {
+        public LoggingContextCloseable install() {
           logWarningOnceOnly();
           return NoOpScopedLoggingContext.this;
         }

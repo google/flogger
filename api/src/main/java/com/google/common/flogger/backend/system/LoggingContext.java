@@ -16,11 +16,11 @@
 
 package com.google.common.flogger.backend.system;
 
-import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopedLoggingContext;
-import com.google.common.flogger.context.ScopedLoggingContext.LoggingScope;
+import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
+import com.google.common.flogger.context.Tags;
 
 /**
  * @deprecated Replaced by ContextDataProvider.
@@ -37,12 +37,12 @@ public abstract class LoggingContext extends ContextDataProvider {
   }
 
   private static final class NoOpScopedLoggingContext extends ScopedLoggingContext
-      implements LoggingScope {
+      implements LoggingContextCloseable {
     @Override
     public ScopedLoggingContext.Builder newScope() {
       return new ScopedLoggingContext.Builder() {
         @Override
-        public LoggingScope install() {
+        public LoggingContextCloseable install() {
           return NoOpScopedLoggingContext.this;
         }
       };

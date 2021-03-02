@@ -19,8 +19,8 @@ package com.google.common.flogger.context;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
-import com.google.common.flogger.context.ScopedLoggingContext.LoggingScope;
-import com.google.common.flogger.context.ScopedLoggingContext.InvalidLoggingScopeStateException;
+import com.google.common.flogger.context.ScopedLoggingContext.InvalidLoggingContextStateException;
+import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -37,7 +37,7 @@ public class ScopedLoggingContextTest {
         public ScopedLoggingContext.Builder newScope() {
           return new ScopedLoggingContext.Builder() {
             @Override
-            public LoggingScope install() {
+            public LoggingContextCloseable install() {
               return () -> {
                 throw new IllegalArgumentException("BAD CONTEXT");
               };
@@ -58,8 +58,8 @@ public class ScopedLoggingContextTest {
 
   @Test
   public void testErrorHandlingWithoutUserError() {
-    InvalidLoggingScopeStateException e =
-        assertThrows(InvalidLoggingScopeStateException.class, () -> ERROR_CONTEXT.run(() -> {}));
+    InvalidLoggingContextStateException e =
+        assertThrows(InvalidLoggingContextStateException.class, () -> ERROR_CONTEXT.run(() -> {}));
     assertThat(e).hasCauseThat().isInstanceOf(IllegalArgumentException.class);
     assertThat(e).hasCauseThat().hasMessageThat().isEqualTo("BAD CONTEXT");
   }
