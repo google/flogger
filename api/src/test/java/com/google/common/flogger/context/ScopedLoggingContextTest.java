@@ -25,7 +25,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-// TODO: Implement an abstract test suite to allow new implementations to be tested easily.
+// Most of the real functionality is tested for each implementation via
+// testing.AbstractScopedLoggingContextTest.
 @RunWith(JUnit4.class)
 public class ScopedLoggingContextTest {
 
@@ -59,7 +60,9 @@ public class ScopedLoggingContextTest {
   @Test
   public void testErrorHandlingWithoutUserError() {
     InvalidLoggingContextStateException e =
-        assertThrows(InvalidLoggingContextStateException.class, () -> ERROR_CONTEXT.run(() -> {}));
+        assertThrows(
+            InvalidLoggingContextStateException.class,
+            () -> ERROR_CONTEXT.newScope().run(() -> {}));
     assertThat(e).hasCauseThat().isInstanceOf(IllegalArgumentException.class);
     assertThat(e).hasCauseThat().hasMessageThat().isEqualTo("BAD CONTEXT");
   }
@@ -70,10 +73,12 @@ public class ScopedLoggingContextTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                ERROR_CONTEXT.run(
-                    () -> {
-                      throw new IllegalArgumentException("User error");
-                    }));
+                ERROR_CONTEXT
+                    .newScope()
+                    .run(
+                        () -> {
+                          throw new IllegalArgumentException("User error");
+                        }));
     assertThat(e).hasMessageThat().isEqualTo("User error");
   }
 
