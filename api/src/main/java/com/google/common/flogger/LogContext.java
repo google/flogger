@@ -29,6 +29,7 @@ import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.parser.MessageParser;
 import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -83,6 +84,33 @@ public abstract class LogContext<
      */
     public static final MetadataKey<RateLimitPeriod> LOG_AT_MOST_EVERY =
         MetadataKey.single("ratelimit_period", RateLimitPeriod.class);
+
+    /**
+     * The key associated with a sequence of log site "grouping keys". These serve to specialize
+     * the log site key to group the behaviour of stateful operations like rate limiting. This is
+     * used by the {@code per()} methods and is only public so backends can reference the key to
+     * control formatting.
+     */
+    public static final MetadataKey<Object> LOG_SITE_GROUPING_KEY =
+      new MetadataKey<Object>("group_by", Object.class, true) {
+        @Override
+        public void emitRepeated(Iterator<Object> keys, KeyValueHandler out) {
+          if (keys.hasNext()) {
+            Object first = keys.next();
+            if (!keys.hasNext()) {
+              out.handle(getLabel(), first);
+            } else {
+              // Or we could emit the .
+              StringBuilder buf = new StringBuilder();
+              buf.append('[').append(first);
+              do {
+                buf.append(',').append(keys.next());
+              } while (keys.hasNext());
+              out.handle(getLabel(), buf.append(']').toString());
+            }
+          }
+        }
+      };
 
     /**
      * The key associated with a {@code Boolean} value used to specify that the log statement must
@@ -495,7 +523,7 @@ public abstract class LogContext<
         // Don't "return true" early from this code since we also need to handle stack size.
         Integer rateLimitCount = metadata.findValue(Key.LOG_EVERY_N);
         RateLimitPeriod rateLimitPeriod = metadata.findValue(Key.LOG_AT_MOST_EVERY);
-        LogSiteStats stats = LogSiteStats.getStatsForKey(logSiteKey);
+        LogSiteStats stats = LogSiteStats.getStatsForKey(logSiteKey, metadata);
         if (rateLimitCount != null && !stats.incrementAndCheckInvocationCount(rateLimitCount)) {
           return false;
         }
@@ -567,6 +595,30 @@ public abstract class LogContext<
       addMetadata(Key.TAGS, tags);
     }
     return true;
+  }
+
+  // WARNING: If we ever start to use combined log-site and scoped context metadata here via
+  // MetadataProcessor, there's an issue. It's possible that the same scope can appear in both
+  // the context and the log-site, and multiplicity should not matter; BUT IT DOES! This means
+  // that a log statement executed both in and outside of the context would currently see
+  // different keys, when they should be the same. To fix this, specialization must be changed
+  // to ignore repeated scopes. For now we only see log site metadata so this is not an issue.
+  // TODO: Ignore repeated scopes (e.g. use a Bloom Filter mask on each scope).
+  // TODO: Make a proper iterator on Metadata or use MetadataProcessor.
+  static LogSiteKey specializeLogSiteKeyFromMetadata(LogSiteKey logSiteKey, Metadata metadata) {
+    checkNotNull(logSiteKey, "logSiteKey"); // For package null checker only.
+    for (int n = 0, size = metadata.size(); n < size; n++) {
+      if (Key.LOG_SITE_GROUPING_KEY.equals(metadata.getKey(n))) {
+        Object groupByQualifier = metadata.getValue(n);
+        // Logging scopes need special treatment to handle tidying up when closed.
+        if (groupByQualifier instanceof LoggingScope) {
+          logSiteKey = ((LoggingScope) groupByQualifier).specialize(logSiteKey);
+        } else {
+          logSiteKey = SpecializedLogSiteKey.of(logSiteKey, groupByQualifier);
+        }
+      }
+    }
+    return logSiteKey;
   }
 
   /**

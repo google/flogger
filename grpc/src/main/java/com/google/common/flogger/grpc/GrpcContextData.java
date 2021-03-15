@@ -16,8 +16,11 @@
 
 package com.google.common.flogger.grpc;
 
+import com.google.common.flogger.LoggingScope;
 import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopeMetadata;
+import com.google.common.flogger.context.ScopeType;
+import com.google.common.flogger.context.ScopedLoggingContext.ScopeList;
 import com.google.common.flogger.context.Tags;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -25,9 +28,6 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /** A mutable thread-safe holder for context scoped logging information. */
 final class GrpcContextData {
-  static GrpcContextData create(@NullableDecl GrpcContextData parent) {
-    return new GrpcContextData(parent);
-  }
 
   static Tags getTagsFor(@NullableDecl GrpcContextData context) {
     if (context != null) {
@@ -60,6 +60,11 @@ final class GrpcContextData {
     return false;
   }
 
+  @NullableDecl
+  static LoggingScope lookupScopeFor(@NullableDecl GrpcContextData contextData, ScopeType type) {
+    return contextData != null ? ScopeList.lookup(contextData.scopes, type) : null;
+  }
+
   private abstract static class ScopedReference<T> {
     private final AtomicReference<T> value;
 
@@ -86,11 +91,13 @@ final class GrpcContextData {
     abstract T merge(T current, T delta);
   }
 
+  @NullableDecl private final ScopeList scopes;
   private final ScopedReference<Tags> tagRef;
   private final ScopedReference<ScopeMetadata> metadataRef;
   private final ScopedReference<LogLevelMap> logLevelMapRef;
 
-  private GrpcContextData(@NullableDecl GrpcContextData parent) {
+  GrpcContextData(@NullableDecl GrpcContextData parent, @NullableDecl ScopeType scopeType) {
+    this.scopes = ScopeList.addScope(parent != null ? parent.scopes : null, scopeType);
     this.tagRef =
         new ScopedReference<Tags>(parent != null ? parent.tagRef.get() : null) {
           @Override

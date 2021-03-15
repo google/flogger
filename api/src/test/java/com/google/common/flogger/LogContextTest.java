@@ -27,9 +27,11 @@ import static org.junit.Assert.fail;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
 import com.google.common.flogger.LogContext.Key;
 import com.google.common.flogger.testing.FakeLogSite;
 import com.google.common.flogger.testing.FakeLoggerBackend;
+import com.google.common.flogger.testing.FakeMetadata;
 import com.google.common.flogger.testing.TestLogger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -628,8 +630,8 @@ public class LogContextTest {
     // Tests it's the log site instance that controls rate limiting, even over different calls.
     // We don't expect this to ever happen in real code though.
     for (int i = 0; i <= 6; i++) {
-      logHelper(logger, logSite(), 2, "Foo: " + i);  // Log every 2nd (0, 2, 4, 6)
-      logHelper(logger, logSite(), 3, "Bar: " + i);  // Log every 3rd (0, 3, 6)
+      logHelper(logger, logSite(), 2, "Foo: " + i); // Log every 2nd (0, 2, 4, 6)
+      logHelper(logger, logSite(), 3, "Bar: " + i); // Log every 3rd (0, 3, 6)
     }
     // Expect: Foo -> 0, 2, 4, 6 and Bar -> 0, 3, 6 (but not in that order)
     assertThat(backend.getLoggedCount()).isEqualTo(7);
@@ -662,5 +664,79 @@ public class LogContextTest {
 
     backend.assertLogged(1).logSite().isNotNull();
     backend.assertLogged(1).logSite().isNotEqualTo(LogSite.INVALID);
+  }
+
+  @Test
+  public void testLogSiteSpecializationSameMetadata() {
+    FakeMetadata fooMetadata = new FakeMetadata().add(Key.LOG_SITE_GROUPING_KEY, "foo");
+
+    LogSite logSite = FakeLogSite.create("com.google.foo.Foo", "doFoo", 42, "<unused>");
+    LogSiteKey fooKey = LogContext.specializeLogSiteKeyFromMetadata(logSite, fooMetadata);
+
+    assertThat(fooKey).isEqualTo(LogContext.specializeLogSiteKeyFromMetadata(logSite, fooMetadata));
+  }
+
+  @Test
+  public void testLogSiteSpecializationKeyCountMatters() {
+    FakeMetadata fooMetadata = new FakeMetadata().add(Key.LOG_SITE_GROUPING_KEY, "foo");
+    FakeMetadata repeatedMetadata =
+        new FakeMetadata()
+            .add(Key.LOG_SITE_GROUPING_KEY, "foo")
+            .add(Key.LOG_SITE_GROUPING_KEY, "foo");
+
+    LogSite logSite = FakeLogSite.create("com.google.foo.Foo", "doFoo", 42, "<unused>");
+    LogSiteKey fooKey = LogContext.specializeLogSiteKeyFromMetadata(logSite, fooMetadata);
+    LogSiteKey repeatedKey = LogContext.specializeLogSiteKeyFromMetadata(logSite, repeatedMetadata);
+
+    assertThat(fooKey).isNotEqualTo(repeatedKey);
+  }
+
+  @Test
+  public void testLogSiteSpecializationDifferentKeys() {
+    FakeMetadata fooMetadata = new FakeMetadata().add(Key.LOG_SITE_GROUPING_KEY, "foo");
+    FakeMetadata barMetadata = new FakeMetadata().add(Key.LOG_SITE_GROUPING_KEY, "bar");
+
+    LogSite logSite = FakeLogSite.create("com.google.foo.Foo", "doFoo", 42, "<unused>");
+    LogSiteKey fooKey = LogContext.specializeLogSiteKeyFromMetadata(logSite, fooMetadata);
+    LogSiteKey barKey = LogContext.specializeLogSiteKeyFromMetadata(logSite, barMetadata);
+
+    assertThat(fooKey).isNotEqualTo(barKey);
+  }
+
+  // This is unfortunate but hard to work around unless SpecializedLogSiteKey can be made invariant
+  // to the order of specialization (but this class must be very efficient, so that would be hard).
+  // This should not be an issue in expected use, since specialization keys should always be applied
+  // in the same order at any given log statement.
+  @Test
+  public void testLogSiteSpecializationOrderMatters() {
+    FakeMetadata fooBarMetadata =
+        new FakeMetadata()
+            .add(Key.LOG_SITE_GROUPING_KEY, "foo")
+            .add(Key.LOG_SITE_GROUPING_KEY, "bar");
+    FakeMetadata barFooMetadata =
+        new FakeMetadata()
+            .add(Key.LOG_SITE_GROUPING_KEY, "bar")
+            .add(Key.LOG_SITE_GROUPING_KEY, "foo");
+
+    LogSite logSite = FakeLogSite.create("com.google.foo.Foo", "doFoo", 42, "<unused>");
+    LogSiteKey fooBarKey = LogContext.specializeLogSiteKeyFromMetadata(logSite, fooBarMetadata);
+    LogSiteKey barFooKey = LogContext.specializeLogSiteKeyFromMetadata(logSite, barFooMetadata);
+
+    assertThat(fooBarKey).isNotEqualTo(barFooKey);
+  }
+
+  @Test
+  public void testLogSiteSpecializationKey() {
+    Key.LOG_SITE_GROUPING_KEY.emitRepeated(Iterators.<Object>forArray("foo"), (k, v) -> {
+      assertThat(k).isEqualTo("group_by");
+      assertThat(v).isEqualTo("foo");
+    });
+
+    // We don't care too much about the case with multiple keys since it's so rare, but it should
+    // be vaguely sensible.
+    Key.LOG_SITE_GROUPING_KEY.emitRepeated(Iterators.<Object>forArray("foo", "bar"), (k, v) -> {
+      assertThat(k).isEqualTo("group_by");
+      assertThat(v).isEqualTo("[foo,bar]");
+    });
   }
 }

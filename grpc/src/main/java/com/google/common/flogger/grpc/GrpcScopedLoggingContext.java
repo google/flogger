@@ -21,10 +21,12 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopeMetadata;
+import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import com.google.errorprone.annotations.CheckReturnValue;
 import io.grpc.Context;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * A gRPC context based implementation of Flogger's scoped logging context API. This is a lazily
@@ -44,11 +46,15 @@ final class GrpcScopedLoggingContext extends ScopedLoggingContext {
   @Override
   @CheckReturnValue
   public ScopedLoggingContext.Builder newScope() {
+    return newBuilder(null);
+  }
+
+  private ScopedLoggingContext.Builder newBuilder(@NullableDecl ScopeType scopeType) {
     return new ScopedLoggingContext.Builder() {
       @Override
       public LoggingContextCloseable install() {
         GrpcContextData newContextData =
-            GrpcContextData.create(GrpcContextDataProvider.currentContext());
+            new GrpcContextData(GrpcContextDataProvider.currentContext(), scopeType);
         newContextData.addTags(getTags());
         newContextData.addMetadata(getMetadata());
         newContextData.applyLogLevelMap(getLogLevelMap());
@@ -59,11 +65,11 @@ final class GrpcScopedLoggingContext extends ScopedLoggingContext {
 
   private static LoggingContextCloseable installContextData(GrpcContextData newContextData) {
     // Capture these variables outside the lambda.
-    Context context =
+    Context newGrpcContext =
         Context.current().withValue(GrpcContextDataProvider.getContextKey(), newContextData);
     @SuppressWarnings("MustBeClosedChecker")
-    Context prev = context.attach();
-    return () -> context.detach(prev);
+    Context prev = newGrpcContext.attach();
+    return () -> newGrpcContext.detach(prev);
   }
 
   @Override

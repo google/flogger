@@ -21,30 +21,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.common.flogger.LogSiteStats.RateLimitPeriod;
-import com.google.common.flogger.testing.FakeLogSite;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class LogSiteStatsTest {
-
-  @Test
-  public void testGetStatsForKey() {
-    LogSiteStats.StatsMap map = new LogSiteStats.StatsMap();
-
-    LogSite logSite1 = FakeLogSite.create("class1", "method1", 1, "path1");
-    LogSite logSite2 = FakeLogSite.create("class2", "method2", 2, "path2");
-
-    LogSiteStats stats1 = map.getStatsForKey(logSite1);
-    LogSiteStats stats2 = map.getStatsForKey(logSite2);
-
-    assertThat(stats1).isNotNull();
-    assertThat(stats2).isNotNull();
-    assertThat(stats2).isNotSameInstanceAs(stats1);
-    assertThat(map.getStatsForKey(logSite1)).isEqualTo(stats1);
-    assertThat(map.getStatsForKey(logSite2)).isEqualTo(stats2);
-  }
 
   @Test
   public void testIncrementAndCheckInvocationCount() {

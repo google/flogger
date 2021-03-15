@@ -21,7 +21,6 @@ import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
 import com.google.common.flogger.context.Tags;
-
 /**
  * @deprecated Replaced by ContextDataProvider.
  */

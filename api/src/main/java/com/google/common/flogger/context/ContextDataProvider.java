@@ -16,9 +16,11 @@
 
 package com.google.common.flogger.context;
 
+import com.google.common.flogger.LoggingScope;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.Platform;
 import java.util.logging.Level;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * An API for injecting scoped metadata for log statements (either globally or on a per-request
@@ -106,5 +108,17 @@ public abstract class ContextDataProvider {
    */
   public Metadata getMetadata() {
     return Metadata.empty();
+  }
+
+  /**
+   * Returns the scope instance of the specified type for this context, or {@code null} if no such
+   * scope was bound to this context. This method searches parent contexts as well.
+   *
+   * <p>Implementations which do not support scope types should return {@code null}, which can be
+   * achieved by using the default method.
+   */
+  @NullableDecl
+  public LoggingScope getScope(ScopeType type) {
+    return null;
   }
 }

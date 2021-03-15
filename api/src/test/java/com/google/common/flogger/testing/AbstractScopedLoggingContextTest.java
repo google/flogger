@@ -25,6 +25,7 @@ import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
+import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import com.google.common.truth.BooleanSubject;
@@ -42,6 +43,9 @@ public abstract class AbstractScopedLoggingContextTest {
   private static final MetadataKey<String> FOO_KEY = MetadataKey.single("FOO", String.class);
   private static final MetadataKey<String> BAR_KEY = MetadataKey.repeated("BAR", String.class);
 
+  private static final ScopeType SUB_TASK = ScopeType.create("sub task");
+  private static final ScopeType BATCH_JOB = ScopeType.create("batch job");
+
   protected abstract ContextDataProvider getImplementationUnderTest();
 
   private ContextDataProvider dataProvider;
@@ -56,7 +60,7 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   // Don't use @After here since the subclass may not use this, just put it at the end of all tests.
-  private final void checkDone() {
+  private void checkDone() {
     // If this fails, then the code to set it in the test didn't happen.
     assertThat(testWasDone).isTrue();
   }
@@ -128,7 +132,7 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScopes_withMergedTags() {
+  public void testNewScope_withMergedTags() {
     assertThat(getTagMap()).isEmpty();
     context
         .newScope()
@@ -156,7 +160,7 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScopes_withConcatenatedMetadata() {
+  public void testNewScope_withConcatenatedMetadata() {
     assertThat(getMetadata()).hasSize(0);
     context
         .newScope()
@@ -195,7 +199,7 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScopes_withMergedLevelMap() {
+  public void testNewScope_withMergedLevelMap() {
     assertLogging("other.package", Level.FINE).isFalse();
     assertLogging("foo.bar", Level.FINE).isFalse();
     assertLogging("foo.bar.Baz", Level.FINE).isFalse();

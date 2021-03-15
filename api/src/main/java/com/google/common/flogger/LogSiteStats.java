@@ -19,8 +19,7 @@ package com.google.common.flogger;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.backend.LogData;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import com.google.common.flogger.backend.Metadata;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -97,31 +96,15 @@ final class LogSiteStats {
     }
   }
 
-  // Visible for testing.
-  static final class StatsMap {
-    // Use a concurrent map (rather than synchronization) because many threads could be contending
-    // for log sites simultaneously.
-    private final ConcurrentMap<Object, LogSiteStats> statsMap =
-        new ConcurrentHashMap<Object, LogSiteStats>();
-
-    /** Returns statistics for a given log site. */
-    LogSiteStats getStatsForKey(Object logSiteKey) {
-      LogSiteStats stats = statsMap.get(logSiteKey);
-      if (stats == null) {
-        stats = new LogSiteStats();
-        LogSiteStats oldStats = statsMap.putIfAbsent(logSiteKey, stats);
-        if (oldStats != null) {
-          stats = oldStats;
-        }
-      }
-      return stats;
+  private static final LogSiteMap<LogSiteStats> map = new LogSiteMap<LogSiteStats>() {
+    @Override
+    protected LogSiteStats initialValue() {
+      return new LogSiteStats();
     }
-  }
+  };
 
-  private static final StatsMap map = new StatsMap();
-
-  public static LogSiteStats getStatsForKey(Object logSiteKey) {
-    return map.getStatsForKey(logSiteKey);
+  static LogSiteStats getStatsForKey(LogSiteKey logSiteKey, Metadata metadata) {
+    return map.get(logSiteKey, metadata);
   }
 
   private final AtomicLong invocationCount = new AtomicLong();

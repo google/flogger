@@ -52,6 +52,7 @@ filegroup(
 gen_java_tests(
     name = "google_logger_tests",
     srcs = glob(["src/test/java/**/*.java"]),
+    jvm_flags = ["-Dflogger.logging_context=com.google.common.flogger.grpc.GrpcContextDataProvider#getInstance"],
     deps = [
         # Use this for tests which call otherwise prohibited APIs (bypasses errorprone checks).
         ":flogger",
@@ -61,5 +62,6 @@ gen_java_tests(
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/truth",
         "//api",
+        "//grpc:grpc_context",
     ],
 )

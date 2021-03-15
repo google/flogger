@@ -18,11 +18,9 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.LazyArgs.lazy;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Supplier;
-import com.google.common.flogger.MetadataKey.KeyValueHandler;
 import com.google.common.truth.StringSubject;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,13 +89,13 @@ public class GoogleLoggerTest {
   @Test
   public void testSimpleLogging() {
     logger.atInfo().log("Hello World");
-    assertingHandler.assertOnlyLog().contains("Hello World");
+    assertingHandler.assertLastLog().contains("Hello World");
   }
 
   @Test
   public void testArrayLogging() {
     logger.atInfo().log("Hello %s World", new Object[] {"foo", "bar"});
-    assertingHandler.assertOnlyLog().contains("Hello [foo, bar] World");
+    assertingHandler.assertLastLog().contains("Hello [foo, bar] World");
   }
 
   // The LazyArgs mechanism is also tested in the core "api" package, but those tests cannot use
@@ -121,26 +119,26 @@ public class GoogleLoggerTest {
     for (int n = 0; n < 5; n++) {
       logger.atInfo().every(10).log("Hello %s %s", lazy(expensive::get), "World");
     }
-    assertingHandler.assertOnlyLog().contains("Hello Expensive World");
+    assertingHandler.assertLastLog().contains("Hello Expensive World");
   }
 
   @Test
   public void testWithMethod() {
     // Adding a key/value pair.
     logger.atInfo().with(ID, "bar").log("With metadata");
-    assertingHandler.assertOnlyLog().containsMatch("With metadata.*\\[CONTEXT.*id=\"bar\".*\\]");
+    assertingHandler.assertLastLog().containsMatch("With metadata.*\\[CONTEXT.*id=\"bar\".*\\]");
 
     // Null values are a no-op
     logger.atInfo().with(ID, null).log("With metadata");
-    assertingHandler.assertOnlyLog().doesNotContain("id");
+    assertingHandler.assertLastLog().doesNotContain("id");
+  }
 
-    // But null keys throw.
+  @Test
+  public void testWithMethod_badArgs() {
+    // Null keys throw.
     assertThrows(NullPointerException.class, () -> logger.atInfo().with(null, "").log("Nope!"));
     assertThrows(NullPointerException.class, () -> logger.atInfo().with(null, null).log("Nope!"));
-
-    // And the no-op implementation also throws (rather than not logging anything).
-    logger.atFinest().log("Should be disabled for test");
-    assertingHandler.assertNoLogs();
+    // Even when using the disabled "no op" context.
     assertThrows(NullPointerException.class, () -> logger.atFinest().with(null, "").log("Nope!"));
     assertThrows(NullPointerException.class, () -> logger.atFinest().with(null, null).log("Nope!"));
   }
@@ -149,14 +147,14 @@ public class GoogleLoggerTest {
   public void testWithMethod_repeated() {
     // Not-repeatable keys have "last one wins" semantics.
     logger.atInfo().with(ID, "bar").with(ID, "baz").log("Last one wins");
-    assertingHandler.assertOnlyLog().doesNotContain("bar");
+    assertingHandler.assertLastLog().doesNotContain("bar");
 
     logger.atInfo().with(ID, "bar").with(ID, "baz").log("Last one wins");
-    assertingHandler.assertOnlyLog().contains("id=\"baz\"");
+    assertingHandler.assertLastLog().contains("id=\"baz\"");
 
     // Repeated keys preserve the order the with() methods are called in the log statement.
     logger.atInfo().with(FLAG, 1).with(FLAG, 2).log("Allow both");
-    assertingHandler.assertOnlyLog().contains("flags=1 flags=2");
+    assertingHandler.assertLastLog().contains("flags=1 flags=2");
   }
 
   @Test
@@ -165,7 +163,7 @@ public class GoogleLoggerTest {
         .atInfo()
         .with(POINT, new Point(17, 29))
         .log("¯\\_(ツ)_//¯");
-    assertingHandler.assertOnlyLog().contains("point.x=17 point.y=29");
+    assertingHandler.assertLastLog().contains("point.x=17 point.y=29");
   }
 
   @Test
@@ -178,7 +176,7 @@ public class GoogleLoggerTest {
         .with(POINT, new Point(17, 29))
         .with(FLAG, 23)
         .log("¯\\_(ツ)_//¯");
-    assertingHandler.assertOnlyLog().contains("flags=42 flags=23 point.x=17 point.y=29");
+    assertingHandler.assertLastLog().contains("flags=42 flags=23 point.x=17 point.y=29");
   }
 
   // Ensure that forEnclosingClass() creates a logger with the expected name, either by
@@ -219,18 +217,21 @@ public class GoogleLoggerTest {
       }
     }
 
-    StringSubject assertOnlyLog() {
-      assertThat(logRecords).hasSize(1);
-      LogRecord logRecord = logRecords.get(0);
-      flush();
+    public void assertLogCount(int n) {
+      assertThat(logRecords).hasSize(n);
+    }
+
+    StringSubject assertLastLog() {
+      return assertLog(logRecords.size() - 1);
+    }
+
+    StringSubject assertLog(int n) {
+      assertThat(logRecords.size()).isGreaterThan(n);
+      LogRecord logRecord = logRecords.get(n);
       return assertThat(logRecordToString(logRecord));
     }
 
-    public void assertNoLogs() {
-      assertWithMessage("unexpected log recorded").that(logRecords).isEmpty();
-    }
-
-    private String logRecordToString(LogRecord logRecord) {
+    private static String logRecordToString(LogRecord logRecord) {
       StringBuilder sb = new StringBuilder();
       String message = new SimpleFormatter().formatMessage(logRecord);
       sb.append(logRecord.getLevel()).append(": ").append(message).append("\n");

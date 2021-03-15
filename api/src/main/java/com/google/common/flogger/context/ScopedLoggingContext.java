@@ -20,6 +20,7 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 import static com.google.common.flogger.util.Checks.checkState;
 
 import com.google.common.flogger.MetadataKey;
+import com.google.common.flogger.LoggingScope;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.Closeable;
@@ -88,9 +89,45 @@ public abstract class ScopedLoggingContext {
     public void close();
   }
 
+  /** Lightweight internal helper class for context implementations to manage a list of scopes. */
+  public static final class ScopeList {
+    /**
+     * Adds a new scope to the list for the given type. If the given type is null, or a scope for
+     * the type already exists in the list, the original (potentially {@code null}) list reference
+     * is returned.
+     */
+    @NullableDecl public static ScopeList addScope(
+        @NullableDecl ScopeList list, @NullableDecl ScopeType type) {
+      return (type != null && lookup(list, type) == null)
+          ? new ScopeList(type, type.newScope(), list)
+          : list;
+    }
+
+    /** Finds a scope instance for the given type in a possibly null scope list. */
+    @NullableDecl public static LoggingScope lookup(@NullableDecl ScopeList list, ScopeType type) {
+      while (list != null) {
+        if (type.equals(list.key)) {
+          return list.scope;
+        }
+        list = list.next;
+      }
+      return null;
+    }
+
+    private final ScopeType key;
+    private final LoggingScope scope;
+    @NullableDecl private final ScopeList next;
+
+    public ScopeList(ScopeType key, LoggingScope scope, @NullableDecl ScopeList next) {
+      this.key = checkNotNull(key, "scope type");
+      this.scope = checkNotNull(scope, "scope");
+      this.next = next;
+    }
+  }
+
   /**
-   * A fluent builder API for creating and installing new contexts. This API should be used whenever
-   * the metadata to be added to a context is known at the time the context is created.
+   * A fluent builder API for creating and installing new context scopes. This API should be used
+   * whenever the metadata to be added to a scope is known at the time the scope is created.
    *
    * <p>This class is intended to be used only as part of a fluent statement, and retaining a
    * reference to a builder instance for any length of time is not recommended.

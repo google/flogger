@@ -19,7 +19,9 @@ package com.google.common.flogger;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.backend.LoggerBackend;
+import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.testing.FakeLoggerBackend;
+import com.google.common.flogger.testing.FakeMetadata;
 import com.google.common.testing.AbstractPackageSanityTests;
 
 /**
@@ -42,6 +44,7 @@ public class PackageSanityTest extends AbstractPackageSanityTests {
     setDistinctValues(StackTraceElement.class, stack[0], stack[1]);
     setDefault(LoggerBackend.class, new FakeLoggerBackend("com.example.NullTester"));
     setDefault(MetadataKey.class, new MetadataKey<>("dummy", String.class, false));
+    setDefault(Metadata.class, new FakeMetadata());
     ignoreClasses(Predicates.in(IGNORE_CLASSES));
   }
 }

@@ -25,11 +25,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-// Most of the real functionality is tested for each implementation via
-// testing.AbstractScopedLoggingContextTest.
+// Implementation is tested via subclasses of AbstractScopedLoggingContextTest.
 @RunWith(JUnit4.class)
 public class ScopedLoggingContextTest {
-
   // A context which fails when the scope is closed. Used to verify that user errors are
   // prioritized in cases where errors cause scopes to be exited.
   private static final ScopedLoggingContext ERROR_CONTEXT =
