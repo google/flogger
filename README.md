@@ -1,5 +1,5 @@
 # Flogger: A Fluent Logging API for Java
-[![Maven Central](https://img.shields.io/maven-central/v/com.google.flogger/flogger.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.google.flogger%22%20AND%20a:%22flogger%22&core=gav) [![Javadocs](https://javadoc.io/badge/com.google.flogger/flogger.svg)](https://javadoc.io/doc/com.google.flogger/flogger) [![Travis](https://travis-ci.org/google/flogger.svg?branch=master)](https://travis-ci.org/google/flogger)
+[![Maven Central](https://img.shields.io/maven-central/v/com.google.flogger/flogger.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.google.flogger%22%20AND%20a:%22flogger%22&core=gav) [![Javadocs](https://javadoc.io/badge/com.google.flogger/flogger.svg)](https://javadoc.io/doc/com.google.flogger/flogger) [![CI](https://github.com/google/flogger/workflows/CI/badge.svg?branch=master)](https://github.com/google/flogger/actions)
 
 ## What is it?
 
