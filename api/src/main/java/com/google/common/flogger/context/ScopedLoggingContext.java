@@ -19,8 +19,8 @@ package com.google.common.flogger.context;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 import static com.google.common.flogger.util.Checks.checkState;
 
-import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.LoggingScope;
+import com.google.common.flogger.MetadataKey;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.Closeable;
@@ -331,14 +331,36 @@ public abstract class ScopedLoggingContext {
    *
    * <pre>{@code
    * ScopedLoggingContext ctx = ScopedLoggingContext.getInstance();
-   * Foo result = ctx.newScope().withTags(Tags.of("my_tag", someValue)).call(MyClass::doFoo);
+   * Foo result = ctx.newContext().withTags(Tags.of("my_tag", someValue)).call(MyClass::doFoo);
    * }</pre>
    *
    * <p>Implementations of this API must return a subclass of {@link Builder} which can install all
    * necessary metadata into a new context from the builder's current state.
+   *
+   * <p>Note for users: if you don't need an instance of {@code ScopedLoggingContext} for some
+   * reason such as testability (injecting it, for example), consider using the static methods in
+   * {@link ScopedLoggingContexts} instead to avoid the need to call {@link #getInstance}:
+   *
+   * <pre>{@code
+   * Foo result = ScopedLoggingContexts.newContext()
+   *     .withTags(Tags.of("my_tag", someValue))
+   *     .call(MyClass::doFoo);
+   * }</pre>
    */
   @CheckReturnValue
-  public abstract Builder newScope();
+  public abstract Builder newContext();
+
+  /**
+   * Deprecated equivalent to {@link #newContext()}.
+   *
+   * @deprecated implementers and callers should use {@link #newContext()} instead. This method will
+   *     be removed in the next Flogger release.
+   */
+  @Deprecated
+  @CheckReturnValue
+  public Builder newScope() {
+    return newContext();
+  }
 
   /**
    * Adds tags to the current set of log tags for the current context. Tags are merged together and

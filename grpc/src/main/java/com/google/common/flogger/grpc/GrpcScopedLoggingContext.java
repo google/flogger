@@ -45,7 +45,7 @@ final class GrpcScopedLoggingContext extends ScopedLoggingContext {
 
   @Override
   @CheckReturnValue
-  public ScopedLoggingContext.Builder newScope() {
+  public ScopedLoggingContext.Builder newContext() {
     return newBuilder(null);
   }
 

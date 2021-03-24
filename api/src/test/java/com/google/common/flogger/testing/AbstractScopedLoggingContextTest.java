@@ -83,10 +83,10 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScope_withTags() {
+  public void testNewContext_withTags() {
     assertThat(getTagMap()).isEmpty();
     context
-        .newScope()
+        .newContext()
         .withTags(Tags.of("foo", "bar"))
         .run(
             () -> {
@@ -99,10 +99,10 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScope_withMetadata() {
+  public void testNewContext_withMetadata() {
     assertThat(getMetadata()).hasSize(0);
     context
-        .newScope()
+        .newContext()
         .withMetadata(FOO_KEY, "foo")
         .run(
             () -> {
@@ -115,11 +115,11 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScope_withLogLevelMap() {
+  public void testNewContext_withLogLevelMap() {
     assertThat(dataProvider.shouldForceLogging("foo.bar.Bar", Level.FINE, false)).isFalse();
     LogLevelMap levelMap = LogLevelMap.create(ImmutableMap.of("foo.bar", Level.FINE), Level.FINE);
     context
-        .newScope()
+        .newContext()
         .withLogLevelMap(levelMap)
         .run(
             () -> {
@@ -132,17 +132,17 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScope_withMergedTags() {
+  public void testNewContext_withMergedTags() {
     assertThat(getTagMap()).isEmpty();
     context
-        .newScope()
+        .newContext()
         .withTags(Tags.of("foo", "bar"))
         .run(
             () -> {
               assertThat(getTagMap()).hasSize(1);
               assertThat(getTagMap().get("foo")).containsExactly("bar");
               context
-                  .newScope()
+                  .newContext()
                   .withTags(Tags.of("foo", "baz"))
                   .run(
                       () -> {
@@ -160,10 +160,10 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScope_withConcatenatedMetadata() {
+  public void testNewContext_withConcatenatedMetadata() {
     assertThat(getMetadata()).hasSize(0);
     context
-        .newScope()
+        .newContext()
         .withMetadata(FOO_KEY, "first")
         .withMetadata(BAR_KEY, "one")
         .run(
@@ -173,7 +173,7 @@ public abstract class AbstractScopedLoggingContextTest {
               assertThat(getMetadata().findValue(FOO_KEY)).isEqualTo("first");
               assertThat(getMetadata()).containsEntries(BAR_KEY, "one");
               context
-                  .newScope()
+                  .newContext()
                   .withMetadata(FOO_KEY, "second")
                   .withMetadata(BAR_KEY, "two")
                   .run(
@@ -199,14 +199,14 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
-  public void testNewScope_withMergedLevelMap() {
+  public void testNewContext_withMergedLevelMap() {
     assertLogging("other.package", Level.FINE).isFalse();
     assertLogging("foo.bar", Level.FINE).isFalse();
     assertLogging("foo.bar.Baz", Level.FINE).isFalse();
     // Everything in "foo.bar" gets at least FINE logging.
     LogLevelMap fooBarFine = LogLevelMap.create(ImmutableMap.of("foo.bar", Level.FINE), Level.INFO);
     context
-        .newScope()
+        .newContext()
         .withLogLevelMap(fooBarFine)
         .run(
             () -> {
@@ -218,7 +218,7 @@ public abstract class AbstractScopedLoggingContextTest {
               LogLevelMap bazFinest =
                   LogLevelMap.create(ImmutableMap.of("foo.bar.Baz", Level.FINEST), Level.INFO);
               context
-                  .newScope()
+                  .newContext()
                   .withLogLevelMap(bazFinest)
                   .run(
                       () -> {

@@ -66,7 +66,7 @@ public final class NoOpContextDataProvider extends ContextDataProvider {
     }
 
     @Override
-    public ScopedLoggingContext.Builder newScope() {
+    public ScopedLoggingContext.Builder newContext() {
       return new ScopedLoggingContext.Builder() {
         @Override
         public LoggingContextCloseable install() {

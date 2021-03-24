@@ -33,7 +33,7 @@ public class ScopedLoggingContextTest {
   private static final ScopedLoggingContext ERROR_CONTEXT =
       new ScopedLoggingContext() {
         @Override
-        public ScopedLoggingContext.Builder newScope() {
+        public ScopedLoggingContext.Builder newContext() {
           return new ScopedLoggingContext.Builder() {
             @Override
             public LoggingContextCloseable install() {
@@ -60,7 +60,7 @@ public class ScopedLoggingContextTest {
     InvalidLoggingContextStateException e =
         assertThrows(
             InvalidLoggingContextStateException.class,
-            () -> ERROR_CONTEXT.newScope().run(() -> {}));
+            () -> ERROR_CONTEXT.newContext().run(() -> {}));
     assertThat(e).hasCauseThat().isInstanceOf(IllegalArgumentException.class);
     assertThat(e).hasCauseThat().hasMessageThat().isEqualTo("BAD CONTEXT");
   }
@@ -72,7 +72,7 @@ public class ScopedLoggingContextTest {
             IllegalArgumentException.class,
             () ->
                 ERROR_CONTEXT
-                    .newScope()
+                    .newContext()
                     .run(
                         () -> {
                           throw new IllegalArgumentException("User error");
