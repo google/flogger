@@ -358,7 +358,8 @@ public abstract class ScopedLoggingContext {
    */
   @Deprecated
   @CheckReturnValue
-  public Builder newScope() {
+  public
+  Builder newScope() {
     return newContext();
   }
 
