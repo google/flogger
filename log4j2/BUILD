@@ -50,6 +50,7 @@ gen_java_tests(
     srcs = glob(["src/test/java/**/*.java"]),
     deps = [
         ":log4j2_backend",
+        "//grpc:grpc_context",
         "//api",
         "//api:testing",
         "@google_bazel_common//third_party/java/guava",
