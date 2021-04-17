@@ -28,11 +28,22 @@ import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
+import com.google.common.flogger.context.ScopedLoggingContext;
+import com.google.common.flogger.context.Tags;
+import com.google.common.flogger.grpc.GrpcContextDataProvider;
 import com.google.common.flogger.parser.ParseException;
 import com.google.common.flogger.testing.FakeLogData;
 import com.google.common.flogger.testing.FakeLogSite;
+
+import java.io.Closeable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -52,6 +63,7 @@ public final class Log4j2Test {
 
   private static final MetadataKey<Integer> COUNT_KEY = MetadataKey.single("count", Integer.class);
   private static final MetadataKey<String> ID_KEY = MetadataKey.single("id", String.class);
+  private static final MetadataKey<String> REPEATABLE_KEY = MetadataKey.repeated("rep", String.class);
 
   // -------- Test setup shenanigans --------
 
@@ -112,10 +124,27 @@ public final class Log4j2Test {
   }
 
   void assertLogEntry(int index, Level level, String message) {
-    LogEvent event = events.get(index);
+    assertLogEntry(index, level, message, Collections.<String, Object>emptyMap());
+  }
+
+  void assertLogEntry(int index, Level level, String message, Map<String, Object> contextData) {
+    assertLogEntry(index, level, message, contextData, Collections.emptySet());
+  }
+
+  void assertLogEntry(int index, Level level, String message, Map<String, Object> contextData, Set<Object> contextStack) {
+    final LogEvent event = events.get(index);
     assertThat(event.getLevel()).isEqualTo(level);
     assertThat(event.getMessage().getFormattedMessage()).isEqualTo(message);
     assertThat(event.getThrown()).isNull();
+
+    for (Map.Entry<String, Object> entry : contextData.entrySet()) {
+      assertThat(event.getContextData().containsKey(entry.getKey())).isTrue();
+      assertThat(event.getContextData().getValue(entry.getKey()).equals(entry.getValue())).isTrue();;
+    }
+
+    for (Object item : contextStack) {
+      assertThat(event.getContextStack().contains(item)).isTrue();;
+    }
   }
 
   void assertLogSite(int index, String className, String methodName, int line, String file) {
@@ -131,6 +160,31 @@ public final class Log4j2Test {
     assertThat(events.get(index).getThrown()).isSameInstanceAs(thrown);
   }
 
+  /** Helper for implementing consumers */
+  interface Consumer {
+    void accept();
+  }
+
+  /** JDK 1.6 version of try-with-resources */
+  private void tryWithResource(Closeable closeable, Consumer consumer) throws Throwable {
+    Exception exception = null;
+    try {
+        consumer.accept();
+    } catch (Exception e) {
+        exception = e;
+        throw e;
+    } finally {
+        if (exception != null) {
+            try {
+                closeable.close();
+            } catch (Throwable t) {
+                throw t;
+            }
+        } else {
+            closeable.close();
+        }
+    }
+  }
   // -------- Unit tests start here (largely copied from the log4j tests) --------
 
   @Test
@@ -155,10 +209,48 @@ public final class Log4j2Test {
     backend.log(
         FakeLogData.withPrintfStyle("Foo='%s'", "bar")
             .addMetadata(COUNT_KEY, 23)
-            .addMetadata(ID_KEY, "test ID"));
+            .addMetadata(ID_KEY, "test_ID")
+            .addMetadata(REPEATABLE_KEY, "foo")
+            .addMetadata(REPEATABLE_KEY, "bar")
+            .addMetadata(REPEATABLE_KEY, "baz"));
 
-    assertLogCount(1);
-    assertLogEntry(0, INFO, "Foo='bar'");
+    Map<String, Object> contextMap = new HashMap<String, Object>();
+    contextMap.put("count", 23);
+    contextMap.put("id", "test_ID");
+    contextMap.put("rep", Arrays.asList("foo", "bar", "baz"));
+
+    assertLogEntry(0, INFO, "Foo='bar'", contextMap);
+  }
+
+  /** close() should be called in case of an error, but ErrorProne reports an issue. */
+  @SuppressWarnings("MustBeClosedChecker")
+  @Test
+  public void testScopedLoggingContext() throws Throwable {
+    ScopedLoggingContext.LoggingContextCloseable ctx = GrpcContextDataProvider.getInstance()
+          .getContextApiSingleton()
+          .newContext()
+          .withMetadata(COUNT_KEY, 23)
+          .withMetadata(REPEATABLE_KEY, "foo")
+          .withMetadata(REPEATABLE_KEY, "bar")
+          .withMetadata(REPEATABLE_KEY, "baz")
+          .withTags(Tags.builder().addTag("foo").addTag("baz", "bar").addTag("baz", "bar2").build())
+          .install();
+
+    tryWithResource(ctx, new Consumer() {
+      @Override
+      public void accept() {
+        backend.log(FakeLogData.withPrintfStyle("Foo='%s'", "bar"));
+      }
+    });
+
+    Map<String, Object> contextMap = new HashMap<String, Object>();
+    contextMap.put("count", 23);
+    contextMap.put("rep", Arrays.asList("foo", "bar", "baz"));
+
+    Set<Object> contextStack = new HashSet<Object>();
+    contextStack.add("foo=[]");
+    contextStack.add("baz=[bar, bar2]");
+    assertLogEntry(0, INFO, "Foo='bar'", contextMap, contextStack);
   }
 
   @Test
