@@ -158,7 +158,7 @@ public final class Log4j2Test {
             .addMetadata(ID_KEY, "test ID"));
 
     assertLogCount(1);
-    assertLogEntry(0, INFO, "Foo='bar' [CONTEXT count=23 id=\"test ID\" ]");
+    assertLogEntry(0, INFO, "Foo='bar'");
   }
 
   @Test

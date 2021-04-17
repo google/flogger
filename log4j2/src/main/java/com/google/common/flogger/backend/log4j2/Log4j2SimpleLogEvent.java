@@ -21,7 +21,6 @@ import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.grpc.GrpcContextDataProvider;
-import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +35,7 @@ import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.util.StringMap;
 
 /** Class that represents a log entry that can be written to log4j2. */
-final class Log4j2SimpleLogEvent implements SimpleLogHandler {
+final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHandler {
   /** Creates a {@link Log4j2SimpleLogEvent} for a normal log statement from the given data. */
   static Log4j2SimpleLogEvent create(Logger logger, LogData data) {
     return new Log4j2SimpleLogEvent(logger, data);
