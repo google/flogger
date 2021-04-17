@@ -18,9 +18,11 @@ java_library(
     javacopts = ["-source 1.6 -target 1.6"],
     tags = ["maven_coordinates=com.google.flogger:flogger-log4j2-backend:${project.version}"],
     deps = [
+        "//grpc:grpc_context",
         "//api",
         "//api:system_backend",
         "@google_bazel_common//third_party/java/log4j2",
+        "@google_bazel_common//third_party/java/guava",
     ],
 )
 
@@ -35,7 +37,9 @@ javadoc_library(
     name = "javadoc",
     srcs = LOG4J2_BACKEND_SRCS,
     root_packages = ["com.google.common.flogger.backend.log4j2"],
-    deps = [":log4j2_backend"],
+    deps = [
+        ":log4j2_backend",
+    ],
 )
 
 # ---- Unit Tests ----

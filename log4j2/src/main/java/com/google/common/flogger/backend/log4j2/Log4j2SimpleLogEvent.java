@@ -18,16 +18,22 @@ package com.google.common.flogger.backend.log4j2;
 
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LogData;
+import com.google.common.flogger.backend.MetadataProcessor;
+import com.google.common.flogger.context.ContextDataProvider;
+import com.google.common.flogger.grpc.GrpcContextDataProvider;
 import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
-import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.impl.ContextDataFactory;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
+import org.apache.logging.log4j.util.StringMap;
 
 /** Class that represents a log entry that can be written to log4j2. */
 final class Log4j2SimpleLogEvent implements SimpleLogHandler {
@@ -80,21 +86,32 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
   }
 
   LogEvent asLoggingEvent() {
-    // The Mapped Diagnostic Context (MDC) allows to include additional metadata into logs which
-    // are written from the current thread.
+    // We do not support 'MDC.getContext()' and 'NDC.getStack()' and we do not make any attempt 
+    // to merge Log4j2 context data with Flogger's context data. Instead, users should use the 
+    // ScopedLoggingContext (Grpc).
+    //
+    // Flogger's ScopedLoggingContext allows to include additional metadata and tags into logs 
+    // which are written from current thread.
     //
     // Example:
-    //  MDC.put("user.id", userId);
-    //  // do business logic that triggers logs
-    //  MDC.clear();
+    // try (ScopedLoggingContext.LoggingContextCloseable ctx = GrpcContextDataProvider
+    //          .getInstance()
+    //          .getContextApiSingleton()
+    //          .newContext()
+    //          .withMetadata(COUNT_KEY, 23)
+    //          .withTags(Tags.builder()
+    //              .addTag("foo")
+    //              .addTag("baz", "bar")
+    //              .addTag("baz", "bar2")
+    //              .build())
+    //          .install()) {
     //
-    // By using '%X{key}' in the ConversionPattern of an appender this data can be included in the
-    // logs.
+    //      // do business logic that triggers logs
+    // }
     //
-    // We could include this data here by doing 'MDC.getContext()', but we don't want to encourage
-    // people using the log4j specific MDC. Instead this should be supported by a LoggingContext and
-    // usage of Flogger tags.
-    Map<String, String> mdcProperties = Collections.emptyMap();
+    // By using '%X{key}' in the ConversionPattern of an appender the metadata can be included in the
+    // logs. By using '%x' in the ConversionPattern of an appender the tags can be included in the logs.
+    ContextDataProvider contextDataProvider = GrpcContextDataProvider.getInstance();
 
     // The fully qualified class name of the logger instance is normally used to compute the log
     // location (file, class, method, line number) from the stacktrace. Since we already have the
@@ -112,7 +129,8 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
         .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
         .setIncludeLocation(true)
         .setSource(getLocationInfo())
-        .setContextMap(mdcProperties)
+        .setContextData(createContextMap(contextDataProvider))
+        .setContextStack(createContextStack(contextDataProvider))
         .build();
   }
 
@@ -123,6 +141,26 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
         logSite.getMethodName(),
         logSite.getFileName(),
         logSite.getLineNumber());
+  }
+
+  private StringMap createContextMap(ContextDataProvider contextDataProvider) {
+    StringMap contextData = ContextDataFactory.createContextData(logData.getMetadata().size());
+    MetadataProcessor
+            .forScopeAndLogSite(contextDataProvider.getMetadata(), logData.getMetadata())
+            .process(Log4j2MetadataHandler.getDefaultMetadataHandler(), new Log4j2KeyValueHandler(contextData));
+
+    contextData.freeze();
+    return contextData;
+  }
+
+  private ThreadContext.ContextStack createContextStack(ContextDataProvider contextDataProvider) {
+    ThreadContext.ContextStack contextStack = ThreadContext.cloneStack();
+
+    for (Map.Entry<String, Set<Object>> entry : contextDataProvider.getTags().asMap().entrySet()) {
+        contextStack.add(entry.toString());
+    }
+
+    return contextStack;
   }
 
   @Override
