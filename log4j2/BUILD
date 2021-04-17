@@ -18,11 +18,12 @@ java_library(
     javacopts = ["-source 1.6 -target 1.6"],
     tags = ["maven_coordinates=com.google.flogger:flogger-log4j2-backend:${project.version}"],
     deps = [
-        "//grpc:grpc_context",
         "//api",
         "//api:system_backend",
-        "@google_bazel_common//third_party/java/log4j2",
+        "//grpc:grpc_context",
         "@google_bazel_common//third_party/java/guava",
+        "@google_bazel_common//third_party/java/log4j2",
+        "@org_checkerframework_checker_compat_qual",
     ],
 )
 
