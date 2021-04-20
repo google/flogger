@@ -28,9 +28,10 @@ import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
+import com.google.common.flogger.backend.log4j2.Log4j2ContextDataProvider;
+import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
-import com.google.common.flogger.grpc.GrpcContextDataProvider;
 import com.google.common.flogger.parser.ParseException;
 import com.google.common.flogger.testing.FakeLogData;
 import com.google.common.flogger.testing.FakeLogSite;
@@ -226,7 +227,7 @@ public final class Log4j2Test {
   @SuppressWarnings("MustBeClosedChecker")
   @Test
   public void testScopedLoggingContext() throws Throwable {
-    ScopedLoggingContext.LoggingContextCloseable ctx = GrpcContextDataProvider.getInstance()
+    ScopedLoggingContext.LoggingContextCloseable ctx = Log4j2ContextDataProvider.getInstance()
           .getContextApiSingleton()
           .newContext()
           .withMetadata(COUNT_KEY, 23)

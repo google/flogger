@@ -18,9 +18,9 @@ package com.google.common.flogger.backend.log4j2;
 
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LogData;
+import com.google.common.flogger.backend.log4j2.Log4j2ContextDataProvider;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.context.ContextDataProvider;
-import com.google.common.flogger.grpc.GrpcContextDataProvider;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -110,7 +110,7 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
     //
     // By using '%X{key}' in the ConversionPattern of an appender the metadata can be included in the
     // logs. By using '%x' in the ConversionPattern of an appender the tags can be included in the logs.
-    ContextDataProvider contextDataProvider = GrpcContextDataProvider.getInstance();
+    ContextDataProvider contextDataProvider = Log4j2ContextDataProvider.getInstance();
 
     // The fully qualified class name of the logger instance is normally used to compute the log
     // location (file, class, method, line number) from the stacktrace. Since we already have the

@@ -20,7 +20,8 @@ java_library(
     deps = [
         "//api",
         "//api:system_backend",
-        "//grpc:grpc_context",
+        "@com_google_errorprone_error_prone_annotations",
+        "@google_bazel_common//third_party/java/grpc:context",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/log4j2",
         "@org_checkerframework_checker_compat_qual",
@@ -50,9 +51,9 @@ gen_java_tests(
     srcs = glob(["src/test/java/**/*.java"]),
     deps = [
         ":log4j2_backend",
-        "//grpc:grpc_context",
         "//api",
         "//api:testing",
+        "@google_bazel_common//third_party/java/grpc:context",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/log4j2",
