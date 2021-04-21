@@ -28,7 +28,6 @@ import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
-import com.google.common.flogger.backend.log4j2.Log4j2ContextDataProvider;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
@@ -97,6 +96,10 @@ public final class Log4j2Test {
 
   @Before
   public void setUpLoggerBackend() {
+    System.getProperties().put(
+            "flogger.logging_context",
+            "com.google.common.flogger.grpc.GrpcContextDataProvider#getInstance");
+
     // A unique name should produce a different logger for each test allowing tests to be run in
     // parallel.
     String loggerName = String.format("%s_%02d", Log4j2Test.class.getName(), uid.incrementAndGet());
@@ -227,7 +230,7 @@ public final class Log4j2Test {
   @SuppressWarnings("MustBeClosedChecker")
   @Test
   public void testScopedLoggingContext() throws Throwable {
-    ScopedLoggingContext.LoggingContextCloseable ctx = Log4j2ContextDataProvider.getInstance()
+    ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
           .getContextApiSingleton()
           .newContext()
           .withMetadata(COUNT_KEY, 23)
