@@ -15,7 +15,7 @@ LOG4J2_BACKEND_SRCS = glob(["src/main/java/**/*.java"])
 java_library(
     name = "log4j2_backend",
     srcs = LOG4J2_BACKEND_SRCS,
-    javacopts = ["-source 1.6 -target 1.6"],
+    javacopts = ["-source 1.8 -target 1.8"],
     tags = ["maven_coordinates=com.google.flogger:flogger-log4j2-backend:${project.version}"],
     deps = [
         "//api",
