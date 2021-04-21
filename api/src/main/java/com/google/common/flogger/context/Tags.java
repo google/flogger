@@ -731,7 +731,7 @@ public final class Tags {
             throw new NoSuchElementException();
           }
 
-          @Override
+          @Override // in case we are on an earlier Java version with no default method for this
           public void remove() {
             throw new UnsupportedOperationException();
           }
