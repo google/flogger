@@ -256,6 +256,11 @@ public abstract class MetadataProcessor {
             public MetadataKey<?> next() {
               return getKey(keyMap[i++] & 0x1F);
             }
+
+            @Override
+            public void remove() {
+              throw new UnsupportedOperationException();
+            }
           };
         }
       };
@@ -309,6 +314,11 @@ public abstract class MetadataProcessor {
           nextIndex = -1;
         }
         return next;
+      }
+
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
       }
     }
 
