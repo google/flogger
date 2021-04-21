@@ -58,13 +58,7 @@ final class Log4j2MessageFormatter extends MessageBuilder<StringBuilder>
     private static final Locale FORMAT_LOCALE = Locale.ROOT;
     // Default metadata keys to add to formatted strings. (No lambdas here for compatibility.)
     // When the Flogger core library supports JDK 8, this can be converted to a lambda or Predicate.
-    private static final Log4j2MessageFormatter.MetadataPredicate FORMAT_ALL_METADATA =
-            new MetadataPredicate() {
-                @Override
-                public boolean shouldFormat(MetadataKey<?> key) {
-                    return true;
-                }
-            };
+    private static final Log4j2MessageFormatter.MetadataPredicate FORMAT_ALL_METADATA = key -> true;
     // Input argument array reference (not copied).
     private final Object[] args;
     // Buffer into which the message is formatted.

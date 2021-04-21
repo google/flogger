@@ -16,13 +16,13 @@
 
 package com.google.common.flogger.backend.log4j2;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.LogSite;
+import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
+import com.google.common.flogger.backend.MetadataHandler;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.context.ContextDataProvider;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -33,23 +33,25 @@ import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.util.StringMap;
 
-/** Class that represents a log entry that can be written to log4j2. */
-final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHandler {
-  /** Creates a {@link Log4j2SimpleLogEvent} for a normal log statement from the given data. */
-  static Log4j2SimpleLogEvent create(Logger logger, LogData data) {
-    return new Log4j2SimpleLogEvent(logger, data);
-  }
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-  /** Creates a {@link Log4j2SimpleLogEvent} in the case of an error during logging. */
-  static Log4j2SimpleLogEvent error(Logger logger, RuntimeException error, LogData data) {
-    return new Log4j2SimpleLogEvent(logger, data, error);
-  }
+/**
+ * Class that represents a log entry that can be written to log4j2.
+ */
+final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHandler {
+  private static final MetadataHandler<MetadataKey.KeyValueHandler> HANDLER = MetadataHandler
+          .builder((MetadataHandler.ValueHandler<Object, MetadataKey.KeyValueHandler>) MetadataKey::emit)
+          // Passing a list is important to delegate the formatting to the layout class.
+          // At this point we do not know the target format, e.g. PatternLayout vs JsonLayout
+          .setDefaultRepeatedHandler((key, values, kvh) -> kvh.handle(key.getLabel(), ImmutableList.copyOf(values)))
+          .build();
 
   // Note: Currently the logger is only used to set the logger name in the log event and that looks
   // like it might always be identical to the fluent logger name, so this field might be redundant.
   private final Logger logger;
   private final LogData logData;
-
   // The following fields are set when handleFormattedLogMessage() is called.
   // Level and message will be set to valid values, but the cause is nullable.
   //
@@ -71,9 +73,23 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
     Log4j2LogDataFormatter.formatBadLogData(error, badLogData, this);
   }
 
+  /**
+   * Creates a {@link Log4j2SimpleLogEvent} for a normal log statement from the given data.
+   */
+  static Log4j2SimpleLogEvent create(Logger logger, LogData data) {
+    return new Log4j2SimpleLogEvent(logger, data);
+  }
+
+  /**
+   * Creates a {@link Log4j2SimpleLogEvent} in the case of an error during logging.
+   */
+  static Log4j2SimpleLogEvent error(Logger logger, RuntimeException error, LogData data) {
+    return new Log4j2SimpleLogEvent(logger, data, error);
+  }
+
   @Override
   public void handleFormattedLogMessage(
-      java.util.logging.Level level, String message, Throwable thrown) {
+          java.util.logging.Level level, String message, Throwable thrown) {
     this.level = Log4j2LoggerBackend.toLog4jLevel(level);
     this.message = message;
     this.thrown = thrown;
@@ -84,24 +100,18 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
   }
 
   LogEvent asLoggingEvent() {
-    // We do not support 'MDC.getContext()' and 'NDC.getStack()' and we do not make any attempt 
-    // to merge Log4j2 context data with Flogger's context data. Instead, users should use the 
-    // ScopedLoggingContext (Grpc).
+    // We do not support 'MDC.getContext()' and 'NDC.getStack()' and we do not make any attempt to merge Log4j2
+    // context data with Flogger's context data. Instead, users should use the ScopedLoggingContext (Grpc).
     //
-    // Flogger's ScopedLoggingContext allows to include additional metadata and tags into logs 
-    // which are written from current thread.
+    // Flogger's ScopedLoggingContext allows to include additional metadata and tags into logs which are
+    // written from current thread.
     //
     // Example:
-    // try (ScopedLoggingContext.LoggingContextCloseable ctx = GrpcContextDataProvider
-    //          .getInstance()
+    // try (ScopedLoggingContext.LoggingContextCloseable ctx = GrpcContextDataProvider.getInstance()
     //          .getContextApiSingleton()
     //          .newContext()
     //          .withMetadata(COUNT_KEY, 23)
-    //          .withTags(Tags.builder()
-    //              .addTag("foo")
-    //              .addTag("baz", "bar")
-    //              .addTag("baz", "bar2")
-    //              .build())
+    //          .withTags(Tags.builder().addTag("foo").addTag("baz", "bar").addTag("baz", "bar2").build())
     //          .install()) {
     //
     //      // do business logic that triggers logs
@@ -117,36 +127,26 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
     // class name of the logger instance we ensure that the log location computation is disabled.
     // this is important since the log location computation is very expensive.
     return Log4jLogEvent.newBuilder()
-        .setLoggerName(logger.toString())
-        .setLoggerFqcn(null)
-        .setLevel(level)
-        .setMessage(new SimpleMessage(message))
-        .setThreadName(Thread.currentThread().getName())
-        // Don't use Duration here as (a) it allocates and (b) we can't allow error on overflow.
-        .setTimeMillis(TimeUnit.NANOSECONDS.toMillis(logData.getTimestampNanos()))
-        .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
-        .setIncludeLocation(true)
-        .setSource(getLocationInfo())
-        .setContextData(createContextMap(contextDataProvider))
-        .setContextStack(createContextStack(contextDataProvider))
-        .build();
-  }
-
-  private StackTraceElement getLocationInfo() {
-    LogSite logSite = logData.getLogSite();
-    return new StackTraceElement(
-        logSite.getClassName(),
-        logSite.getMethodName(),
-        logSite.getFileName(),
-        logSite.getLineNumber());
+            .setLoggerName(logger.toString())
+            .setLoggerFqcn(null)
+            .setLevel(level)
+            .setMessage(new SimpleMessage(message))
+            .setThreadName(Thread.currentThread().getName())
+            // Don't use Duration here as (a) it allocates and (b) we can't allow error on overflow.
+            .setTimeMillis(TimeUnit.NANOSECONDS.toMillis(logData.getTimestampNanos()))
+            .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
+            .setIncludeLocation(true)
+            .setSource(getLocationInfo())
+            .setContextData(createContextMap(contextDataProvider))
+            .setContextStack(createContextStack(contextDataProvider))
+            .build();
   }
 
   private StringMap createContextMap(ContextDataProvider contextDataProvider) {
     StringMap contextData = ContextDataFactory.createContextData(logData.getMetadata().size());
     MetadataProcessor
             .forScopeAndLogSite(contextDataProvider.getMetadata(), logData.getMetadata())
-            .process(Log4j2MetadataHandler.getDefaultMetadataHandler(), new Log4j2KeyValueHandler(contextData));
-
+            .process(HANDLER, contextData::putValue);
     contextData.freeze();
     return contextData;
   }
@@ -155,10 +155,19 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
     ThreadContext.ContextStack contextStack = ThreadContext.cloneStack();
 
     for (Map.Entry<String, Set<Object>> entry : contextDataProvider.getTags().asMap().entrySet()) {
-        contextStack.add(entry.toString());
+      contextStack.add(entry.toString());
     }
 
     return contextStack;
+  }
+
+  private StackTraceElement getLocationInfo() {
+    LogSite logSite = logData.getLogSite();
+    return new StackTraceElement(
+            logSite.getClassName(),
+            logSite.getMethodName(),
+            logSite.getFileName(),
+            logSite.getLineNumber());
   }
 
   @Override

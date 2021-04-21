@@ -16,16 +16,20 @@
 
 package com.google.common.flogger.backend.log4j2;
 
-import static java.util.logging.Level.WARNING;
-
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
+
 import java.util.logging.Level;
 
-/** Helper to format log data */
+import static java.util.logging.Level.WARNING;
+
+/**
+ * Helper to format LogData
+ */
 final class Log4j2LogDataFormatter {
-  private Log4j2LogDataFormatter() {}
+  private Log4j2LogDataFormatter() {
+  }
 
   /**
    * Formats the log message and any metadata for the given {@link LogData}, calling the supplied
@@ -41,9 +45,9 @@ final class Log4j2LogDataFormatter {
    * as the cause. The level of this record is the maximum of WARNING or the original level.
    */
   static void formatBadLogData(
-      RuntimeException error, LogData badLogData, Log4j2MessageFormatter.SimpleLogHandler receiver) {
+          RuntimeException error, LogData badLogData, Log4j2MessageFormatter.SimpleLogHandler receiver) {
     StringBuilder errorMsg =
-        new StringBuilder("LOGGING ERROR: ").append(error.getMessage()).append('\n');
+            new StringBuilder("LOGGING ERROR: ").append(error.getMessage()).append('\n');
     int length = errorMsg.length();
     try {
       appendLogData(badLogData, errorMsg);
@@ -55,12 +59,14 @@ final class Log4j2LogDataFormatter {
 
     // Re-target this log message as a warning (or above) since it indicates a real bug.
     Level level =
-        badLogData.getLevel().intValue() < WARNING.intValue() ? WARNING : badLogData.getLevel();
+            badLogData.getLevel().intValue() < WARNING.intValue() ? WARNING : badLogData.getLevel();
 
     receiver.handleFormattedLogMessage(level, errorMsg.toString(), error);
   }
 
-  /** Appends the given {@link LogData} to the given {@link StringBuilder}. */
+  /**
+   * Appends the given {@link LogData} to the given {@link StringBuilder}.
+   */
   static void appendLogData(LogData data, StringBuilder out) {
     out.append("  original message: ");
     if (data.getTemplateContext() == null) {
