@@ -252,8 +252,9 @@ public final class Log4j2Test {
     contextMap.put("rep", Arrays.asList("foo", "bar", "baz"));
 
     Set<Object> contextStack = new HashSet<Object>();
-    contextStack.add("foo=[]");
-    contextStack.add("baz=[bar, bar2]");
+    contextStack.add("foo");
+    contextStack.add("baz=bar");
+    contextStack.add("baz=bar2");
     assertLogEntry(0, INFO, "Foo='bar'", contextMap, contextStack);
   }
 

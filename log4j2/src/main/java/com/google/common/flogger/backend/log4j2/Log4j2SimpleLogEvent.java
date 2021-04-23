@@ -151,11 +151,32 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
     return contextData;
   }
 
+  /**
+   * Tags are key-value mappings which cannot be modified or replaced. If you
+   * add the tag mapping "foo" -> true and later add the mapping "foo" -> false,
+   * you get the value "foo" mapped to both true and false.
+   * This is *very* deliberate since the key space for tags is global and the risk of
+   * two bits of code accidentally using the same tag name is real (e.g. you get
+   * "id=abcd" but you added "id=xyz" so you think this isn't your log entry,
+   * but someone else added "id=abcd" in a context you weren't aware of).
+   *
+   * To keep the semantic intact while not bothering with Log4j2's layout mechanism, we use
+   * the ContextStack to store the tags as strings.
+   *
+   * Given two three tag mappings "baz" -> , "foo" -> true and "foo" -> false
+   * the context stack will contain: [baz, foo=false, foo=true]
+   */
   private ThreadContext.ContextStack createContextStack(ContextDataProvider contextDataProvider) {
     ThreadContext.ContextStack contextStack = ThreadContext.cloneStack();
 
     for (Map.Entry<String, Set<Object>> entry : contextDataProvider.getTags().asMap().entrySet()) {
-      contextStack.add(entry.toString());
+      if (entry.getValue().isEmpty()) {
+        contextStack.add(entry.getKey());
+      } else {
+        for (Object obj : entry.getValue()) {
+          contextStack.add(entry.getKey() + "=" + obj.toString());
+        }
+      }
     }
 
     return contextStack;
