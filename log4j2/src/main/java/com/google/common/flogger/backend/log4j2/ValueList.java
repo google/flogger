@@ -37,8 +37,7 @@ final class ValueList implements Iterable<Object> {
             return value;
         } else {
             // This should only rarely happen, so a few small allocations seems acceptable.
-            ValueList existingList = existingValue instanceof ValueList
-                    ? (ValueList) existingValue
+            ValueList existingList = existingValue instanceof ValueList ? (ValueList) existingValue
                     : new ValueList(existingValue, null);
             return new ValueList(value, existingList);
         }
@@ -59,9 +58,26 @@ final class ValueList implements Iterable<Object> {
         }
     }
 
+    /**
+     * Tags are key-value mappings which cannot be modified or replaced. If you add
+     * the tag mapping "foo" -> true and later add the mapping "foo" -> false, you
+     * get the value "foo" mapped to both true and false. This is *very* deliberate
+     * since the key space for tags is global and the risk of two bits of code
+     * accidentally using the same tag name is real (e.g. you get "id=abcd" but you
+     * added "id=xyz" so you think this isn't your log entry, but someone else added
+     * "id=abcd" in a context you weren't aware of).
+     *
+     * Given three tag mappings: "baz" -> , "foo" -> true and "foo" -> false the
+     * Value list is going to flatten the tags in order to store them as tags=[baz,
+     * foo=false, foo=true].
+     * 
+     * Reusing the label 'tags' is intentional as this allows us to store the
+     * flatten tags in Log4j2's ContextMap.
+     */
     static void emit(String label, Object value, MetadataKey.KeyValueHandler kvh) {
         if (value instanceof Tags) {
-            // Flatten tags to treat them as keys or key/value pairs, e.g. tags=[foo, baz=bar2, baz=bar]
+            // Flatten tags to treat them as keys or key/value pairs, e.g. tags=[foo,
+            // baz=bar2, baz=bar]
             ((Tags) value).asMap().forEach((k, v) -> {
                 if (v.isEmpty()) {
                     kvh.handle(label, k);
@@ -78,12 +94,15 @@ final class ValueList implements Iterable<Object> {
 
     /**
      * Returns a string representation of the contents of the specified value list.
-     * If the list contains other lists as elements, they are converted to
-     * strings.
+     * If the list contains other lists as elements, they are converted to strings.
      *
-     * <p>If value list is empty, this method returns {@code "null"}.
-     * <p>If value list contains a single element {@code a}, this method returns {@code "a"}.
-     * <p>Otherwise the content of teh list is returned surrounded by brackets "[", "].
+     * <p>
+     * If value list is empty, this method returns {@code "null"}.
+     * <p>
+     * If value list contains a single element {@code a}, this method returns
+     * {@code "a"}.
+     * <p>
+     * Otherwise the content of teh list is returned surrounded by brackets "[", "].
      */
     @Override
     public String toString() {
@@ -100,7 +119,8 @@ final class ValueList implements Iterable<Object> {
         Iterator<Object> it = iterator();
         while (it.hasNext()) {
             out.append(it.next());
-            if (it.hasNext()) out.append(", ");
+            if (it.hasNext())
+                out.append(", ");
         }
         out.append(']');
         return out.toString();
