@@ -14,10 +14,12 @@ import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +31,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.apache.logging.log4j.Level.INFO;
 import static org.apache.logging.log4j.Level.TRACE;
 
+@RunWith(JUnit4.class)
 public class Log4j2ScopedLoggingTest {
 
     private static final AtomicInteger uid = new AtomicInteger();
@@ -45,7 +48,7 @@ public class Log4j2ScopedLoggingTest {
     private LoggerBackend backend;
     private List<LogEvent> events;
 
-    @BeforeAll
+    @BeforeClass
     public static void init() {
         Configurator.setRootLevel(Level.TRACE);
         System.getProperties().put("flogger.backend_factory", "com.google.common.flogger.backend.log4j2.Log4j2BackendFactory#getInstance");
@@ -53,7 +56,7 @@ public class Log4j2ScopedLoggingTest {
         googleLogger = GoogleLogger.forEnclosingClass();
     }
 
-    @BeforeEach
+    @Before
     public void setUpLoggerBackend() {
         // A unique name should produce a different logger for each test allowing tests to be run in
         // parallel.
@@ -67,7 +70,7 @@ public class Log4j2ScopedLoggingTest {
         events = appender.events;
     }
 
-    @AfterEach
+    @After
     public void tearDown() {
         logger.removeAppender(appender);
         appender.stop();
@@ -79,7 +82,6 @@ public class Log4j2ScopedLoggingTest {
         assertThat(event.getMessage().getFormattedMessage()).isEqualTo(message);
         assertThat(event.getThrown()).isNull();
 
-        System.out.println(event.getContextData());
         for (Map.Entry<String, Object> entry : contextData.entrySet()) {
             assertThat(event.getContextData().containsKey(entry.getKey())).isTrue();
             assertThat(event.getContextData().getValue(entry.getKey()).toString().equals(entry.getValue().toString())).isTrue();

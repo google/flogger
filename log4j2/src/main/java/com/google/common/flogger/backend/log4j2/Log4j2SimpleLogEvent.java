@@ -151,7 +151,8 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
   private StringMap createContextMap() {
     StringMap contextData = ContextDataFactory.createContextData(logData.getMetadata().size());
     MetadataProcessor.forScopeAndLogSite(ContextDataProvider.getInstance().getMetadata(), logData.getMetadata())
-        .process(HANDLER, contextData::putValue);
+            .process(HANDLER, ((key, value) ->
+                    contextData.putValue(key, ValueList.maybeWrap(value, contextData.getValue(key)))));
     contextData.freeze();
     return contextData;
   }
