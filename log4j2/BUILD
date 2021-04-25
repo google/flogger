@@ -39,9 +39,7 @@ javadoc_library(
     name = "javadoc",
     srcs = LOG4J2_BACKEND_SRCS,
     root_packages = ["com.google.common.flogger.backend.log4j2"],
-    deps = [
-        ":log4j2_backend",
-    ],
+    deps = [":log4j2_backend"],
 )
 
 # ---- Unit Tests ----
@@ -53,6 +51,8 @@ gen_java_tests(
         ":log4j2_backend",
         "//api",
         "//api:testing",
+        "//google:flogger",
+        "//grpc:grpc_context",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/log4j2",
