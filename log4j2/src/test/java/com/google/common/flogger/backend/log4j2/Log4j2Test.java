@@ -24,26 +24,20 @@ import static org.apache.logging.log4j.Level.TRACE;
 import static org.apache.logging.log4j.Level.WARN;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.LoggerBackend;
-import com.google.common.flogger.context.ContextDataProvider;
-import com.google.common.flogger.context.ScopedLoggingContext;
-import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.parser.ParseException;
 import com.google.common.flogger.testing.FakeLogData;
 import com.google.common.flogger.testing.FakeLogSite;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -128,14 +122,10 @@ public final class Log4j2Test {
   }
 
   void assertLogEntry(int index, Level level, String message) {
-    assertLogEntry(index, level, message, Collections.<String, Object>emptyMap());
+    assertLogEntry(index, level, message, ImmutableMap.of());
   }
 
   void assertLogEntry(int index, Level level, String message, Map<String, Object> contextData) {
-    assertLogEntry(index, level, message, contextData, Collections.emptySet());
-  }
-
-  void assertLogEntry(int index, Level level, String message, Map<String, Object> contextData, Set<Object> contextStack) {
     final LogEvent event = events.get(index);
     assertThat(event.getLevel()).isEqualTo(level);
     assertThat(event.getMessage().getFormattedMessage()).isEqualTo(message);
@@ -144,10 +134,6 @@ public final class Log4j2Test {
     for (Map.Entry<String, Object> entry : contextData.entrySet()) {
       assertThat(event.getContextData().containsKey(entry.getKey())).isTrue();
       assertThat(event.getContextData().getValue(entry.getKey()).equals(entry.getValue())).isTrue();;
-    }
-
-    for (Object item : contextStack) {
-      assertThat(event.getContextStack().contains(item)).isTrue();;
     }
   }
 
@@ -164,31 +150,6 @@ public final class Log4j2Test {
     assertThat(events.get(index).getThrown()).isSameInstanceAs(thrown);
   }
 
-  /** Helper for implementing consumers */
-  interface Consumer {
-    void accept();
-  }
-
-  /** JDK 1.6 version of try-with-resources */
-  private void tryWithResource(Closeable closeable, Consumer consumer) throws Throwable {
-    Exception exception = null;
-    try {
-        consumer.accept();
-    } catch (Exception e) {
-        exception = e;
-        throw e;
-    } finally {
-        if (exception != null) {
-            try {
-                closeable.close();
-            } catch (Throwable t) {
-                throw t;
-            }
-        } else {
-            closeable.close();
-        }
-    }
-  }
   // -------- Unit tests start here (largely copied from the log4j tests) --------
 
   @Test
@@ -224,38 +185,6 @@ public final class Log4j2Test {
     contextMap.put("rep", Arrays.asList("foo", "bar", "baz"));
 
     assertLogEntry(0, INFO, "Foo='bar'", contextMap);
-  }
-
-  /** close() should be called in case of an error, but ErrorProne reports an issue. */
-  @SuppressWarnings("MustBeClosedChecker")
-  @Test
-  public void testScopedLoggingContext() throws Throwable {
-    ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
-          .getContextApiSingleton()
-          .newContext()
-          .withMetadata(COUNT_KEY, 23)
-          .withMetadata(REPEATABLE_KEY, "foo")
-          .withMetadata(REPEATABLE_KEY, "bar")
-          .withMetadata(REPEATABLE_KEY, "baz")
-          .withTags(Tags.builder().addTag("foo").addTag("baz", "bar").addTag("baz", "bar2").build())
-          .install();
-
-    tryWithResource(ctx, new Consumer() {
-      @Override
-      public void accept() {
-        backend.log(FakeLogData.withPrintfStyle("Foo='%s'", "bar"));
-      }
-    });
-
-    Map<String, Object> contextMap = new HashMap<String, Object>();
-    contextMap.put("count", 23);
-    contextMap.put("rep", Arrays.asList("foo", "bar", "baz"));
-
-    Set<Object> contextStack = new HashSet<Object>();
-    contextStack.add("foo");
-    contextStack.add("baz=bar");
-    contextStack.add("baz=bar2");
-    assertLogEntry(0, INFO, "Foo='bar'", contextMap, contextStack);
   }
 
   @Test
