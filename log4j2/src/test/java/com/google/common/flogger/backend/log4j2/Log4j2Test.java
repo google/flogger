@@ -113,6 +113,7 @@ public final class Log4j2Test {
 
   void assertLogEntry(int index, Level level, String message) {
     LogEvent event = events.get(index);
+    assertThat(event.getLoggerName()).isEqualTo(logger.getName());
     assertThat(event.getLevel()).isEqualTo(level);
     assertThat(event.getMessage().getFormattedMessage()).isEqualTo(message);
     assertThat(event.getThrown()).isNull();
