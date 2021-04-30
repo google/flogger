@@ -134,7 +134,7 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
     // class name of the logger instance we ensure that the log location computation is disabled.
     // this is important since the log location computation is very expensive.
     return Log4jLogEvent.newBuilder()
-            .setLoggerName(logger.toString())
+            .setLoggerName(logger.getName())
             .setLoggerFqcn(null)
             .setLevel(level)
             .setMessage(new SimpleMessage(message))

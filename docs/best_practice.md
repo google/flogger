@@ -117,11 +117,17 @@ allocation to occur when they are disabled. No varargs arrays are created (up to
 Hot-spot compilation of this code should result in the cost of the disabled log
 statement being immeasurably small.
 
-Note that when you want to enable fine-grained logging in production, you should
-do it selectively for only the classes or packages you are concerned with.
-Otherwise, the enormous number of messages actually being logged could run you
-out of memory (and it's not the developers' fault for adding all those log
-statements!).
+Note that it is not always wise to simply enable "fine" logging everywhere
+during debugging, and doing so on a production system can cause issues due to
+the sheer volume of additional logs (enabling "finest" logging may flood the
+logs on many production systems).
+
+When you want to enable fine-grained logging in production, you should do it
+selectively for only the classes or packages you are concerned with, or on a
+per-task/per-request basis using
+[`ScopedLoggingContext`](scoped_logging_context.md) with a `LogLevelMap`. Using
+`ScopedLoggingContext` also permits the bypassing of rate-limited log statements
+within a task/request to ensure you see all available debug logs.
 
 ## Use string literals for your log messages and avoid string concatenation {#literals}
 

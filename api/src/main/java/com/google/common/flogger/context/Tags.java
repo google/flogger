@@ -715,7 +715,6 @@ public final class Tags {
           }
 
           @Override
-          @SuppressWarnings("unchecked")
           public T next() {
             // Copy to local variable to guard against concurrent calls to next() causing the index
             // to become corrupted, and going off the end of the valid range for this iterator.
@@ -723,12 +722,18 @@ public final class Tags {
             // situations where a value for a different element could be returned by mistake.
             int index = n;
             if (index < size()) {
+              @SuppressWarnings("unchecked")
               T value = (T) array[getStart() + index];
               // Written value is never > size(), even with concurrent iteration.
               n = index + 1;
               return value;
             }
             throw new NoSuchElementException();
+          }
+
+          @Override // in case we are on an earlier Java version with no default method for this
+          public void remove() {
+            throw new UnsupportedOperationException();
           }
         };
       }
