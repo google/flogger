@@ -56,12 +56,12 @@ gen_java_tests(
     deps = [
         # Use this for tests which call otherwise prohibited APIs (bypasses errorprone checks).
         ":flogger",
+        "//api",
+        "//api:testing",
+        "//grpc:grpc_context",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/guava:testlib",
-        "//api:testing",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/truth",
-        "//api",
-        "//grpc:grpc_context",
     ],
 )
