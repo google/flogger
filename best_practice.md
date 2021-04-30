@@ -1,0 +1,429 @@
+# Flogger Best Practices
+
+{:toc}
+
+## When possible, log objects, not strings {#structured}
+
+It's good to remember that a logging backend might not necessarily be outputting
+only plain text files. For a statement such as
+
+```java
+logger.atInfo().log("Received message is: %s", proto)
+```
+
+the backend has the opportunity to do more interesting things with the data in
+its original, structured form.
+
+On the other hand, with either of these calls:
+
+```java
+logger.atInfo().log("Received message is: %s", proto.toString())
+logger.atInfo().log("Received message is: " + proto);
+```
+
+that opportunity is lost.
+
+Of course, you may know that you're not using any advanced structured logging
+features at the moment, but if it's not causing any problems, we still recommend
+this as a good rule of thumb for logging hygiene.
+
+## Avoid doing work at log sites {#avoid-work}
+
+Flogger is designed to make disabled logging statements virtually free, so that
+more of them can be left intact in the code without harm. This is a great
+advantage, but unfortunately it can be defeated easily:
+
+```java
+logger.atFine().log("stats=%s", createSummaryOf(stats));
+```
+
+`createSummaryOf` will now be called every time, regardless of configured log
+levels or rate limiting.
+
+Here's how to fix this problem, **in order of preference**.
+
+### 1. Use `lazy` (Java 8+):
+
+Import this method from the [`LazyArgs`] class.
+
+```java
+// Almost no work done at the log site and structure is preserved.
+logger.atFine().log("stats=%s", lazy(() -> createSummaryOf(stats)));
+```
+
+With this simple change, almost no work is done at the log site (just instance
+creation for the lambda expression). Flogger will only evaluate this lambda
+if it intends to actually log the message.
+
+### 2. Use the `toString()` method of the logged value:
+
+If `stats.toString()` happens to produce the text you want, you can make use of
+it like this:
+
+```java
+// No work done at the log site, but structure is lost.
+logger.atFine().log("stats=%s", stats);
+```
+
+You might even *create* a wrapper so as to have the `toString` behavior you want:
+
+```java
+// Almost no work done at the log site, but structure is lost.
+logger.atFine().log("stats=%s", new MyNewStatsFormatter(stats));
+```
+
+Note that either approach removes structure from the logged value and is only
+suitable in cases where the value being logged is "string like". For structured
+values (e.g. protocol buffer messages), prefer `lazy()`.
+
+### 3. Guard the log statement using `isEnabled()`:
+
+Avoid this last-resort option if at all possible.
+
+```java
+// No work done for disabled log statements, but code is less maintainable.
+// The "guarding" log level must be kept in sync with the "logging" level.
+if (logger.atFine().isEnabled()) {
+  Foo foo = doComplexThing();
+  Bar bar = doOtherComplexThing();
+  Statistics stats = calculateStatsFrom(foo, bar);
+  logger.atFine().log("stats=%s", createSummaryOf(stats));
+}
+```
+
+Note also that this approach only guards log statements by level and does not
+help with rate-limited log statements.
+
+[`LazyArgs`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LazyArgs.java
+
+## Don't be afraid to add fine-grained logging to your code {#fine-grained}
+
+Consider:
+
+```java
+for (Thing t : things) {
+  int status = process(t);
+  logger.atFinest().log("processed %s, status=%x", t, status);
+}
+```
+
+The log statement may be essential in debugging an important issue, but will it
+slow down the (possibly time critical) loop?
+
+With Flogger, log statements such as the one above will never cause an object
+allocation to occur when they are disabled. No varargs arrays are created (up to
+10 parameters) and no auto-boxing is necessary (up to 2 parameters).
+
+Hot-spot compilation of this code should result in the cost of the disabled log
+statement being immeasurably small.
+
+Note that it is not always wise to simply enable "fine" logging everywhere
+during debugging, and doing so on a production system can cause issues due to
+the sheer volume of additional logs (enabling "finest" logging may flood the
+logs on many production systems).
+
+When you want to enable fine-grained logging in production, you should do it
+selectively for only the classes or packages you are concerned with, or on a
+per-task/per-request basis using
+[`ScopedLoggingContext`](scoped_logging_context.md) with a `LogLevelMap`. Using
+`ScopedLoggingContext` also permits the bypassing of rate-limited log statements
+within a task/request to ensure you see all available debug logs.
+
+## Use string literals for your log messages and avoid string concatenation {#literals}
+
+Even if you are unconcerned with "avoiding work" or with structured logging,
+there are still other reasons to avoid using string concatenation to create your
+log message.
+
+*   It separates safe string literals from possible user data, which might need
+    filtering (e.g., if it contains Personally Identifiable Information).
+*   Flogger can cache the result of parsing a message template if the log
+    message was a string literal.
+
+## Don't pass loggers between classes {#one-per-class}
+
+Only log via a single static logger instance that's created inside the same
+source file as the log statement. There is generally **no reason to pass a
+logger from one class to another**.
+
+### Why do people think that loggers should be passed between classes?
+
+I think the primary reason is that people misunderstand where the class name in
+log output comes from. It is not based on the name of the logger; it's the
+location of the log statement, regardless of the name of the logger used.
+
+The logger instance does affect the configuration of the logger, but if all
+loggers use the same configuration (which is very common) then different logger
+instances will behave identically and there no reason to pass them around.
+
+### Static helper classes
+
+One common anti-pattern is passing loggers into static helper methods in utility
+classes (e.g. where common metadata is added to all log statements). Having a
+static helper for logging is okay in some circumstances, but it comes with
+downsides, and in general you should never need to pass the logger itself in
+(just use a static logger in the utility class).
+
+For example consider:
+
+```java
+LogHelper.logInfo(logger, message, args);
+```
+
+where `logInfo` might be:
+
+```java
+public static void logInfo(GoogleLogger logger, String msg, Object... args) {
+  logger.atInfo().with(SOME_METADATA_KEY, getValue()).log(msg, args);
+}
+```
+
+There are several distinct downsides to this approach:
+
+*   Log site injection will not work as expected (all logs are now identified as
+    coming from the one line of code in the helper class).
+*   You now have an additional, possibly confusing, public API that all future
+    maintainers of the codebase need to be aware of.
+*   You reduce you ability to reuse and refactor common code which does logging
+    (since a common library would not use this helper class).
+
+Overall while these utilities can have value, it can also be a burden on future
+maintainers to use helper classes like this. See also [LogSite](#log-site) for
+more information on how to implement better static helper methods.
+
+## Don't create a `Throwable` just to log it {#stack-trace}
+
+There is no need to do this:
+
+```java
+logger.atInfo().withCause(new Exception()).log("Message");
+```
+
+You should do this instead:
+
+```java
+logger.atInfo().withStackTrace(<SIZE>).log("Message");
+```
+
+where `<SIZE>` is one of the [`StackSize`] enum constants, `SMALL`, `MEDIUM`,
+`LARGE` or `FULL`.
+
+A stack trace generated by `withStackTrace()` will show up as a
+`LogSiteStackTrace` exception in the default `java.util.logging` backend. Other
+backends may choose to handle this differently though.
+
+[`StackSize`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/StackSize.java
+
+## Loggers should always be `private static final` {#modifiers}
+
+Why `final`? The logger for a class should never need to change. If you need to
+change logging configuration at runtime, you should do that according to the
+chosen logging backend in your system. Replacing the logger itself is disruptive
+for no particular upside.
+
+Why `static`? Most obviously, some loggers *must* be static, because they will
+be used from static initializers. And since logger usage should be consistent
+throughout a codebase, this implies all loggers should be static. Logging
+behavior should be the same throughout a class's lifetime, and making a logger
+static ensures that it will be a singleton. Additionally there is a slight
+performance advantage, of course: no need to make a new logger for each object.
+
+Why `private`? Public loggers are bad for encapsulation (why should another
+class get to use your logger?), and for refactoring. The three most common
+reasons developers want to make a logger more visible, and the reasons not to do
+so, are:
+
+1.  For convenience, so that subclasses don't need to define their own logger.
+    This is not a good enough reason: declare a dedicated logger in each
+    subclass.
+2.  For testing, either to change logging behavior in tests, or to test what
+    logs are emitted. In both cases, this is discouraged, and better alternatives exist.
+3.  Passing a logger to another class, or another method, so that it can log "on
+    your behalf". In general [this does not work](#one-per-class).
+
+### Loggers in interfaces
+
+Java 8 introduced interface default and static methods, and you may find
+yourself wanting to use a logger in one of these cases. Because interfaces do
+not support private fields, the alternative recommendation is to create an inner
+class to hold the logger privately:
+
+```java
+public interface FooInterface {
+  default void doSomething() {
+    FooInterfacePrivate.logger.atWarning().log("doSomething not overridden");
+  }
+
+  /** Do not use. Exists only to hide implementation details of this interface. */
+  final class FooInterfacePrivate {
+    private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
+
+    private FooInterfacePrivate() {}
+  }
+}
+```
+
+## Make the logger the first static field in a class {#first-field}
+
+The following code fails with a `NullPointerException`:
+
+```java
+private static final Data data = initStaticData();
+private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
+
+private static Data initStaticData() {
+  logger.atInfo().log("Initializing static data");
+  ...
+}
+```
+
+When `initStaticData()` is called, the static `logger` field is still `null`. A
+habit of initializing your logger *first* will prevent this problem.
+
+### Avoid circular dependencies during initialization using a lazy-holder {#lazy-logging}
+
+If using a static field to hold a logger doesn't work because of circular
+dependencies during static initialization (i.e. your class must be initialized
+before the fluent logger can be initialized), you can lazily instantiate your
+logger using the "lazy static holder" pattern (see "Effective Java", 2nd ed.
+"Item 71: Use lazy initialization judiciously").
+
+For example:
+
+```java
+public class MyClassInitializedBeforeFlogger {
+  // Cannot initialize logger early; see https://google.github.io/flogger/best_practice#lazy-logging
+  private static final class LazyLogger {
+    private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
+  }
+
+  void methodCalledDuringNormalVmOperation() {
+    // Logger initialization is deferred until the first time logging occurs.
+    LazyLogger.logger.atInfo().log("Normal log message");
+  }
+}
+```
+
+However you should only use the following approach if there's a definite problem
+with using a normal static field to reference a logger, and you should comment
+it carefully.
+
+Note that you still can't invoke the logger during your class's static
+initialization, or at any point before the fluent logger library is initialized.
+
+## Don't log and throw {#log-and-throw}
+
+When throwing an exception, let the surrounding code choose whether to log it.
+When you log it yourself first, it often ends up being logged multiple times,
+creating the misleading impression that multiple issues need investigating.
+
+## Don't split log statements {#no-split}
+
+Flogger's "fluent" API is designed for log statements to exist as a single
+statement. The `Api` instance returned by a logger is not safe to use on its
+own.
+
+```java
+GoogleLogger.Api api = logger.atInfo();
+...
+api.log("message");
+```
+
+Splitting a log statement causes several issues such as:
+
+* Incorrect timestamps in log statements
+* Incorrect or even broken log site injection
+* Errors due to accidental reuse (the `Api` is a one-use instance)
+* Errors due to concurrent logging in different threads
+
+Flogger's API is designed to never need you to split the `Api` out like this,
+so if you think you really need to do it, please contact g/flogger-discuss.
+
+One misconception is that you need to do this to make conditional calls on
+fluent methods, such as:
+
+```java
+GoogleLogger.Api api = logger.atInfo();
+if (wantRateLimiting) {
+  api.atMostEvery(5, SECONDS);
+}
+api.log("message");
+```
+
+This is never needed, since any fluent methods expected to be conditional accept
+"no-op" parameters. The below examples have no effect in log statements:
+
+*   `atMostEvery(0, unit)`
+*   `every(1)`
+*   `withCause(null)`
+*   `withStackTrace(StackSize.NONE)`
+
+Thus the above example can be written as:
+
+```java
+logger.atInfo()
+    .atMostEvery(wantRateLimiting ? 5 : 0, SECONDS)
+    .log("message");
+```
+
+Or you can add a helper method to return the log period if used in many places.
+
+## Use LogSite to implement non-trivial logging helper methods {#log-site}
+
+While it is generally unnecessary and bad practice to implement lots of logging
+helper methods, one legitimate use-case (which has lead to people wanting to
+split the logging API out) is the desire to implement project specific logging
+behaviour. The naïve way to write such a method might be:
+
+```java
+/** Call this whenever a FooException is caught and handled. */
+public static void logFooFailure(FooException error, String message) {
+  logger.at(getLogLevelFor(error))
+      .atMostEvery(FAILURE_RATE_LIMIT_SECONDS, SECONDS)
+      .withCause(error.shouldAlert() ? error : null)
+      .log("Foo failure[%s]: %s", error.getStatus(), message);
+}
+```
+
+The trouble with this approach is that now, all logs appear to come from the
+same location, and the rate limiting happens across all calls.
+
+Developers sometimes attempt to work around this problem by splitting the log
+statement and returning the logging `Api` from the helper so the `log()` method
+can be invoked on the caller's side. This works only by accident, since log
+site determination is currently done in the `log()` method, but that's not
+guaranteed and it could easily enough be implemented in the logger.
+
+Relying on specific implementation details like this makes code very fragile
+(which is why splitting log statements is such a bad idea).
+
+The way to handle this issue properly is to have the calling code obtain a
+[`LogSite`] and inject that into the log statement.
+
+```java
+public static void logFooFailure(FooException error, String message) {
+  logger.at(getLogLevelFor(error))
+      .withInjectedLogSite(LogSites.callerOf(MyClass.class))
+      .atMostEvery(FAILURE_RATE_LIMIT_SECONDS, SECONDS)
+      .withCause(error.shouldAlert() ? error : null)
+      .log("Foo failure[%s]: %s", error.getStatus(), message);
+```
+
+You can also obtain a [`LogSite`] for the current line of code using
+`LogSites.logSite()` if you cannot use `LogSites.callerOf(...)` for any reason,
+but it's a more error-prone approach since it effectively separates the log
+statement into two parts.
+
+Now the rate limiting would be per-caller of the helper method and the logs
+would show that location instead of the eventual logging call. It's as if the
+helper method were part of the fluent logger's API.
+
+One significant caveat here is that the determination of the log site might be
+"expensive" (requiring stack trace analysis) so it's not a great idea to use it
+for logging that's typically going to be disabled by default (e.g. `FINE` or
+below). This often isn't an issue however since the typical use case for this
+approach is to handle complex logging, which usually means logging failure and
+errors, which are almost always enabled and already doing significant work.
+
+[`LogSite`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LogSite.java
+[`logSite()`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LogSites.java
