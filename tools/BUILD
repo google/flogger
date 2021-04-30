@@ -14,8 +14,6 @@
 
 load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 
-package(default_visibility = ["//:internal"])
-
 exports_files(["pom-template.xml"])
 
 javadoc_library(

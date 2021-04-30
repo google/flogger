@@ -11,8 +11,6 @@ load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 load("@rules_java//java:defs.bzl", "java_library")
 load("//tools:maven.bzl", "pom_file")
 
-package(default_visibility = ["//:internal"])
-
 GOOGLE_LOGGER_SRCS = glob(["src/main/java/com/google/common/flogger/*.java"])
 
 java_library(
@@ -45,6 +43,7 @@ javadoc_library(
 filegroup(
     name = "javadoc_sources",
     srcs = GOOGLE_LOGGER_SRCS,
+    visibility = ["//visibility:public"],
 )
 
 # ---- Tests ----
