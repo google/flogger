@@ -11,8 +11,6 @@ load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 load("@rules_java//java:defs.bzl", "java_library")
 load("//tools:maven.bzl", "pom_file")
 
-package(default_visibility = ["//:internal"])
-
 GOOGLE_LOGGER_SRCS = glob(["src/main/java/com/google/common/flogger/*.java"])
 
 java_library(
@@ -45,6 +43,7 @@ javadoc_library(
 filegroup(
     name = "javadoc_sources",
     srcs = GOOGLE_LOGGER_SRCS,
+    visibility = ["//visibility:public"],
 )
 
 # ---- Tests ----
@@ -56,12 +55,12 @@ gen_java_tests(
     deps = [
         # Use this for tests which call otherwise prohibited APIs (bypasses errorprone checks).
         ":flogger",
+        "//api",
+        "//api:testing",
+        "//grpc:grpc_context",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/guava:testlib",
-        "//api:testing",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/truth",
-        "//api",
-        "//grpc:grpc_context",
     ],
 )

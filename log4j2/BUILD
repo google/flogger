@@ -8,8 +8,6 @@ load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 load("@rules_java//java:defs.bzl", "java_library")
 load("//tools:maven.bzl", "pom_file")
 
-package(default_visibility = ["//:internal"])
-
 LOG4J2_BACKEND_SRCS = glob(["src/main/java/**/*.java"])
 
 java_library(

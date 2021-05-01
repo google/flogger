@@ -8,14 +8,13 @@ load("//tools:maven.bzl", "pom_file")
 load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 
-package(default_visibility = ["//:internal"])
-
 GRPC_CONTEXT_SRCS = glob(["src/main/java/**/*.java"])
 
 java_library(
     name = "grpc_context",
     srcs = GRPC_CONTEXT_SRCS,
     tags = ["maven_coordinates=com.google.flogger:flogger-grpc-context:${project.version}"],
+    visibility = ["//visibility:public"],
     deps = [
         "//api",
         "@google_bazel_common//third_party/java/checker_framework_annotations",

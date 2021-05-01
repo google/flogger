@@ -10,12 +10,9 @@ load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library")
 load("//tools:maven.bzl", "pom_file")
 
-package(default_visibility = ["//:internal"])
-
 SYSTEM_BACKEND_SRCS = glob(["src/main/java/com/google/common/flogger/backend/system/**/*.java"])
 
 # The core 'frontend' Flogger library.
-#
 java_library(
     name = "api",
     # The select for iOS is to add sources for the special PlatformProvider since
@@ -28,6 +25,7 @@ java_library(
     }),
     javacopts = ["-source 1.6 -target 1.6"],
     tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
+    visibility = ["//visibility:public"],
     deps = [
         ":platform_provider",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
@@ -155,15 +153,13 @@ java_import(
 filegroup(
     name = "proguard_cfg",
     srcs = ["proguard.cfg"],
-    visibility = [
-        "//visibility:public",
-    ],
 )
 
 filegroup(
     name = "javadoc_sources",
     testonly = 1,
     srcs = glob(["src/main/java/**"]) + TESTING_SRCS,
+    visibility = ["//visibility:public"],
 )
 
 # ---- Unit Tests ----
