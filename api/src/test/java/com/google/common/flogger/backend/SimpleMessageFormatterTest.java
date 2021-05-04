@@ -19,15 +19,10 @@ package com.google.common.flogger.backend;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.flogger.LogContext;
-import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
-import com.google.common.flogger.backend.SimpleMessageFormatter.Option;
-import com.google.common.flogger.backend.SimpleMessageFormatter.SimpleLogHandler;
 import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.testing.FakeLogData;
 import com.google.common.flogger.testing.FakeMetadata;
-import java.util.logging.Level;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -106,17 +101,27 @@ public class SimpleMessageFormatterTest {
         .isEqualTo("PREFIX: message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
   }
 
-  @SuppressWarnings("deprecation") // Old APIs.
+  // As above but also ignore the STRING_KEY metadata.
   @Test
-  public void testFormatWithOption() {
-    FakeLogData logData = FakeLogData.of("Hello World");
-    assertThat(logWithOption(logData, Option.DEFAULT)).isEqualTo("Hello World");
-    assertThat(logWithOption(logData, Option.WITH_LOG_SITE))
-        .isEqualTo("com.google.FakeClass.fakeMethod:123 Hello World");
+  public void testLogMessageFormatter_ignoreExtra() {
+    LogMessageFormatter formatter = SimpleMessageFormatter.getSimpleFormatterIgnoring(STRING_KEY);
+    FakeLogData logData = FakeLogData.of("message");
 
-    logData.setLogSite(LogSite.INVALID);
-    assertThat(logWithOption(logData, Option.DEFAULT)).isEqualTo("Hello World");
-    assertThat(logWithOption(logData, Option.WITH_LOG_SITE)).isEqualTo("Hello World");
+    FakeMetadata scope = new FakeMetadata();
+    scope.add(STRING_KEY, "Hello");
+    Tags tags = Tags.builder().addTag("last", "bar").addTag("first", "foo").build();
+    logData.addMetadata(LogContext.Key.TAGS, tags);
+
+    // Ignored in "simple" message formatting, should not appear in the output even though it's not
+    // explicitly ignored above.
+    Throwable cause = new IllegalArgumentException("Badness");
+    logData.addMetadata(LogContext.Key.LOG_CAUSE, cause);
+
+    MetadataProcessor metadata = MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata());
+    assertThat(formatter.format(logData, metadata))
+        .isEqualTo("message [CONTEXT first=\"foo\" last=\"bar\" ]");
+    assertThat(formatter.append(logData, metadata, new StringBuilder("PREFIX: ")).toString())
+        .isEqualTo("PREFIX: message [CONTEXT first=\"foo\" last=\"bar\" ]");
   }
 
   private static String format(LogData logData, Metadata scope) {
@@ -129,28 +134,5 @@ public class SimpleMessageFormatterTest {
     return SimpleMessageFormatter.getDefaultFormatter()
         .append(logData, metadata, new StringBuilder())
         .toString();
-  }
-
-  @SuppressWarnings("deprecation") // Old APIs.
-  private static String logWithOption(LogData logData, Option option) {
-    SimpleLogHandler handler = getSimpleLogHandler();
-    SimpleMessageFormatter.format(logData, handler, option);
-    return handler.toString();
-  }
-
-  private static SimpleLogHandler getSimpleLogHandler() {
-    return new SimpleLogHandler() {
-      private String captured = null;
-
-      @Override
-      public void handleFormattedLogMessage(Level lvl, String msg, @NullableDecl Throwable e) {
-        captured = msg;
-      }
-
-      @Override
-      public String toString() {
-        return captured;
-      }
-    };
   }
 }
