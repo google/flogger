@@ -17,6 +17,7 @@
 package com.google.common.flogger;
 
 import com.google.common.flogger.backend.Platform;
+import com.google.common.flogger.util.StackBasedLogSite;
 
 /**
  * Helper class to generate log sites for the current line of code. This class is deliberately
@@ -118,6 +119,17 @@ public final class LogSites {
   public static LogSite logSite() {
     // Don't call "callerOf()" to avoid making another stack entry.
     return Platform.getCallerFinder().findLogSite(LogSites.class, 0);
+  }
+
+  /**
+   * Returns a new {@code LogSite} which reflects the information in the given {@code
+   * StackTraceElement}.
+   *
+   * <p>This method is useful when log site information is only available via an external API which
+   * returns {@link StackTraceElement}.
+   */
+  public static LogSite logSiteFrom(StackTraceElement e) {
+    return new StackBasedLogSite(e);
   }
 
   private LogSites() {}
