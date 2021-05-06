@@ -134,7 +134,7 @@ public abstract class ScopedLoggingContext {
    */
   public abstract static class Builder {
     private Tags tags = null;
-    private ScopeMetadata.Builder metadata = null;
+    private ContextMetadata.Builder metadata = null;
     private LogLevelMap logLevelMap = null;
 
     protected Builder() {}
@@ -158,7 +158,7 @@ public abstract class ScopedLoggingContext {
     @CheckReturnValue
     public final <T> Builder withMetadata(MetadataKey<T> key, T value) {
       if (metadata == null) {
-        metadata = ScopeMetadata.builder();
+        metadata = ContextMetadata.builder();
       }
       metadata.add(key, value);
       return this;
@@ -299,7 +299,7 @@ public abstract class ScopedLoggingContext {
      * be cached by context implementations.
      */
     @NullableDecl
-    protected final ScopeMetadata getMetadata() {
+    protected final ContextMetadata getMetadata() {
       return metadata != null ? metadata.build() : null;
     }
 

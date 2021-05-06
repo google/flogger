@@ -17,8 +17,8 @@
 package com.google.common.flogger.grpc;
 
 import com.google.common.flogger.LoggingScope;
+import com.google.common.flogger.context.ContextMetadata;
 import com.google.common.flogger.context.LogLevelMap;
-import com.google.common.flogger.context.ScopeMetadata;
 import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext.ScopeList;
 import com.google.common.flogger.context.Tags;
@@ -39,14 +39,14 @@ final class GrpcContextData {
     return Tags.empty();
   }
 
-  static ScopeMetadata getMetadataFor(@NullableDecl GrpcContextData context) {
+  static ContextMetadata getMetadataFor(@NullableDecl GrpcContextData context) {
     if (context != null) {
-      ScopeMetadata metadata = context.metadataRef.get();
+      ContextMetadata metadata = context.metadataRef.get();
       if (metadata != null) {
         return metadata;
       }
     }
-    return ScopeMetadata.none();
+    return ContextMetadata.none();
   }
 
   static boolean shouldForceLoggingFor(
@@ -93,7 +93,7 @@ final class GrpcContextData {
 
   @NullableDecl private final ScopeList scopes;
   private final ScopedReference<Tags> tagRef;
-  private final ScopedReference<ScopeMetadata> metadataRef;
+  private final ScopedReference<ContextMetadata> metadataRef;
   private final ScopedReference<LogLevelMap> logLevelMapRef;
 
   GrpcContextData(@NullableDecl GrpcContextData parent, @NullableDecl ScopeType scopeType) {
@@ -106,9 +106,9 @@ final class GrpcContextData {
           }
         };
     this.metadataRef =
-        new ScopedReference<ScopeMetadata>(parent != null ? parent.metadataRef.get() : null) {
+        new ScopedReference<ContextMetadata>(parent != null ? parent.metadataRef.get() : null) {
           @Override
-          ScopeMetadata merge(ScopeMetadata current, ScopeMetadata delta) {
+          ContextMetadata merge(ContextMetadata current, ContextMetadata delta) {
             return current.concatenate(delta);
           }
         };
@@ -125,7 +125,7 @@ final class GrpcContextData {
     tagRef.mergeFrom(tags);
   }
 
-  void addMetadata(@NullableDecl ScopeMetadata metadata) {
+  void addMetadata(@NullableDecl ContextMetadata metadata) {
     metadataRef.mergeFrom(metadata);
   }
 
