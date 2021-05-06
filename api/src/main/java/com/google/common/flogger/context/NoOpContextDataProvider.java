@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-package com.google.common.flogger.backend;
+package com.google.common.flogger.context;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
-import com.google.common.flogger.context.ContextDataProvider;
-import com.google.common.flogger.context.LogLevelMap;
-import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
-import com.google.common.flogger.context.Tags;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Fallback context data provider used when no other implementation is available to the platform.
- * This method returns default/empty values for all the methods, effectively ignoring all scope
- * related operations.
+ * Fallback context data provider used when no other implementations are available for a platform.
  */
-public final class NoOpContextDataProvider extends ContextDataProvider {
+final class NoOpContextDataProvider extends ContextDataProvider {
   private static final ContextDataProvider NO_OP_INSTANCE = new NoOpContextDataProvider();
 
   /**
@@ -38,7 +32,7 @@ public final class NoOpContextDataProvider extends ContextDataProvider {
    * used in code which attempts to set context information or modify scopes. This is intended for
    * use by platform implementations in cases where no context is configured.
    */
-  public static final ContextDataProvider getInstance() {
+  static final ContextDataProvider getNoOpInstance() {
     return NO_OP_INSTANCE;
   }
 

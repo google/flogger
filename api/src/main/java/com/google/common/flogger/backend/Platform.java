@@ -190,7 +190,7 @@ public abstract class Platform {
   // Provide default implementation here for new API, but Platform implementations are expected to
   // override this (one day it should be possible to make this abstract).
   protected ContextDataProvider getContextDataProviderImpl() {
-    return NoOpContextDataProvider.getInstance();
+    return ContextDataProvider.getNoOpProvider();
   }
 
   /**
