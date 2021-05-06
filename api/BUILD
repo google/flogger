@@ -15,14 +15,10 @@ SYSTEM_BACKEND_SRCS = glob(["src/main/java/com/google/common/flogger/backend/sys
 # The core 'frontend' Flogger library.
 java_library(
     name = "api",
-    # The select for iOS is to add sources for the special PlatformProvider since
-    # ObjectiveC transpilation requires all sources to be present.
     srcs = glob(
         ["src/main/java/**/*.java"],
         exclude = SYSTEM_BACKEND_SRCS,
-    ) + select({
-        "//conditions:default": [],
-    }),
+    ),
     javacopts = ["-source 1.6 -target 1.6"],
     tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
     visibility = ["//visibility:public"],
