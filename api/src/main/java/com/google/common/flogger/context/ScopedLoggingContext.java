@@ -351,6 +351,22 @@ public abstract class ScopedLoggingContext {
   public abstract Builder newContext();
 
   /**
+   * Creates a new context builder to which additional logging metadata can be attached before being
+   * installed or used to wrap some existing code.
+   *
+   * <p>This method is the same as {@link #newContext()} except it additionally binds a new {@link
+   * ScopeType} instance to the newly created context. This allows log statements to control
+   * stateful logging operations (e.g. rate limiting) using the {@link
+   * com.google.common.flogger.LoggingApi#per(ScopeType) per(ScopeType)} method.
+   *
+   * <p>Note for users: if you don't need an instance of {@code ScopedLoggingContext} for some
+   * reason such as testability (injecting it, for example), consider using the static methods in
+   * {@link ScopedLoggingContexts} instead to avoid the need to call {@link #getInstance}.
+   */
+  @CheckReturnValue
+  public abstract Builder newContext(ScopeType scopeType);
+
+  /**
    * Deprecated equivalent to {@link #newContext()}.
    *
    * @deprecated implementers and callers should use {@link #newContext()} instead. This method will

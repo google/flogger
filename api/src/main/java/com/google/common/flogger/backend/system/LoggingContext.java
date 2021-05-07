@@ -18,6 +18,7 @@ package com.google.common.flogger.backend.system;
 
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
+import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
 import com.google.common.flogger.context.Tags;
@@ -45,6 +46,12 @@ public abstract class LoggingContext extends ContextDataProvider {
           return NoOpScopedLoggingContext.this;
         }
       };
+    }
+
+    @Override
+    public Builder newContext(ScopeType scopeType) {
+      // Scopes unsupported in the old LoggingContext based implementations.
+      return newContext();
     }
 
     @Override

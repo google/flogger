@@ -17,6 +17,8 @@
 package com.google.common.flogger;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.flogger.LogContextTest.LogType.BAR;
+import static com.google.common.flogger.LogContextTest.LogType.FOO;
 import static com.google.common.flogger.LogSites.logSite;
 import static com.google.common.truth.Correspondence.transforming;
 import static com.google.common.truth.Truth.assertThat;
@@ -54,6 +56,9 @@ public class LogContextTest {
 
   private static final MetadataKey<String> REPEATED_KEY = MetadataKey.repeated("str", String.class);
   private static final MetadataKey<Boolean> FLAG_KEY = MetadataKey.repeated("flag", Boolean.class);
+
+  private static final LogSiteStats.RateLimitPeriod ONCE_PER_SECOND =
+      LogSiteStats.newRateLimitPeriod(1, SECONDS);
 
   @Test
   public void testIsEnabled() {
@@ -193,6 +198,73 @@ public class LogContextTest {
     backend.assertLogged(2).hasArguments(8);
   }
 
+  // Non-private to allow static import to keep test code concise.
+  enum LogType {
+    FOO,
+    BAR
+  };
+
+  @Test
+  public void testPer_enum() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    // Logs for both types should appear (even though the 2nd log is within the rate limit period).
+    // NOTE: It is important this is tested on a single log statement.
+    long nowNanos = MILLISECONDS.toNanos(System.currentTimeMillis());
+    for (LogType type : Arrays.asList(FOO, FOO, FOO, BAR, FOO, BAR, FOO)) {
+      logger.at(INFO, nowNanos).atMostEvery(1, SECONDS).per(type).log("Type: %s", type);
+      nowNanos += MILLISECONDS.toNanos(100);
+    }
+
+    assertThat(backend.getLoggedCount()).isEqualTo(2);
+
+    // Rate limit period and the aggregation key from "per"
+    backend.assertLogged(0).hasArguments(FOO);
+    backend.assertLogged(0).metadata().hasSize(2);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_SITE_GROUPING_KEY, FOO);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
+
+    backend.assertLogged(1).hasArguments(BAR);
+    backend.assertLogged(1).metadata().hasSize(2);
+    backend.assertLogged(1).metadata().containsUniqueEntry(Key.LOG_SITE_GROUPING_KEY, BAR);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
+  }
+
+  @Test
+  public void testPer_scopeProvider() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    // We can't test a specific implementation of ScopedLoggingContext here (there might not be one
+    // available), so we fake it. The ScopedLoggingContext behaviour is well tested elsewhere. Only
+    // tests should ever create "immediate providers" like this as it doesn't make sense otherwise.
+    LoggingScope fooScope = LoggingScope.create("foo");
+    LoggingScope barScope = LoggingScope.create("bar");
+    LoggingScopeProvider foo = () -> fooScope;
+    LoggingScopeProvider bar = () -> barScope;
+
+    // Logs for both scopes should appear (even though the 2nd log is within the rate limit period).
+    // NOTE: It is important this is tested on a single log statement.
+    long nowNanos = MILLISECONDS.toNanos(System.currentTimeMillis());
+    for (LoggingScopeProvider sp : Arrays.asList(foo, foo, foo, bar, foo, bar, foo)) {
+      logger.at(INFO, nowNanos).atMostEvery(1, SECONDS).per(sp).log("message");
+      nowNanos += MILLISECONDS.toNanos(100);
+    }
+
+    assertThat(backend.getLoggedCount()).isEqualTo(2);
+
+    // Rate limit period and the aggregation key from "per"
+    backend.assertLogged(0).metadata().hasSize(2);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_SITE_GROUPING_KEY, fooScope);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
+
+    backend.assertLogged(1).metadata().hasSize(2);
+    backend.assertLogged(1).metadata().containsUniqueEntry(Key.LOG_SITE_GROUPING_KEY, barScope);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
+  }
+
+
   @Test
   public void testWasForced_level() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
@@ -265,10 +337,7 @@ public class LogContextTest {
     assertThat(backend.getLoggedCount()).isEqualTo(2);
     backend.assertLogged(0).hasMessage("LOGGED 1");
     backend.assertLogged(0).metadata().hasSize(1);
-    backend
-        .assertLogged(0)
-        .metadata()
-        .containsUniqueEntry(Key.LOG_AT_MOST_EVERY, LogSiteStats.newRateLimitPeriod(1, SECONDS));
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
 
     backend.assertLogged(1).hasMessage("LOGGED 2");
     backend.assertLogged(1).metadata().hasSize(1);

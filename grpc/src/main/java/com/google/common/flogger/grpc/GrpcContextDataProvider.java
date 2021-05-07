@@ -16,8 +16,10 @@
 
 package com.google.common.flogger.grpc;
 
+import com.google.common.flogger.LoggingScope;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.ContextMetadata;
+import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import io.grpc.Context;
@@ -80,6 +82,12 @@ public final class GrpcContextDataProvider extends ContextDataProvider {
   @Override
   public ContextMetadata getMetadata() {
     return GrpcContextData.getMetadataFor(currentContext());
+  }
+
+  @NullableDecl
+  @Override
+  public LoggingScope getScope(ScopeType type) {
+    return GrpcContextData.lookupScopeFor(currentContext(), type);
   }
 
   @Override

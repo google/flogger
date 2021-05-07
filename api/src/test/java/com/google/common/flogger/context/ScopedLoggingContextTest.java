@@ -45,6 +45,11 @@ public class ScopedLoggingContextTest {
         }
 
         @Override
+        public Builder newContext(ScopeType scopeType) {
+          return newContext();
+        }
+
+        @Override
         public boolean applyLogLevelMap(LogLevelMap m) {
           return false;
         }

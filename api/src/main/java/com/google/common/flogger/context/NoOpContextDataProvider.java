@@ -71,6 +71,12 @@ final class NoOpContextDataProvider extends ContextDataProvider {
     }
 
     @Override
+    public ScopedLoggingContext.Builder newContext(ScopeType scopeType) {
+      // Ignore scope bindings when there's no way to propagate them.
+      return newContext();
+    }
+
+    @Override
     public boolean addTags(Tags tags) {
       logWarningOnceOnly();
       return false;
