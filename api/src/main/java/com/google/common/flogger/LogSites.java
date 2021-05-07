@@ -17,7 +17,6 @@
 package com.google.common.flogger;
 
 import com.google.common.flogger.backend.Platform;
-import com.google.common.flogger.util.StackBasedLogSite;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**

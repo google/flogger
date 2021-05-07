@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.common.flogger.util;
+package com.google.common.flogger;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
-import com.google.common.flogger.LogSite;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;

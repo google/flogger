@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.common.flogger.util;
+package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
+import static java.lang.Math.max;
 
-import com.google.common.flogger.LogSite;
 import com.google.errorprone.annotations.CheckReturnValue;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
@@ -39,9 +39,8 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * com.google.common.flogger.LogSites#logSiteFrom(StackTraceElement)
  * LogSites.logSiteFrom(myStackTaceElement)}.
  */
-// TODO: Once nothing external uses this class, move it to "flogger" package and make non-public.
 @CheckReturnValue
-public final class StackBasedLogSite extends LogSite {
+final class StackBasedLogSite extends LogSite {
   // StackTraceElement is unmodifiable once created.
   private final StackTraceElement stackElement;
 
@@ -62,7 +61,7 @@ public final class StackBasedLogSite extends LogSite {
   @Override
   public int getLineNumber() {
     // Prohibit negative numbers (which can appear in stack trace elements) from being returned.
-    return Math.max(stackElement.getLineNumber(), LogSite.UNKNOWN_LINE);
+    return max(stackElement.getLineNumber(), LogSite.UNKNOWN_LINE);
   }
 
   @Override
