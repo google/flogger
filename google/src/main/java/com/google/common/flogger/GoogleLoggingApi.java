@@ -36,6 +36,5 @@ public interface GoogleLoggingApi<API extends GoogleLoggingApi<API>> extends Log
    * An implementation of {@link GoogleLoggingApi} which does nothing and discards all parameters.
    */
   public static class NoOp<API extends GoogleLoggingApi<API>> extends LoggingApi.NoOp<API>
-      implements GoogleLoggingApi<API> {
-  }
+      implements GoogleLoggingApi<API> {}
 }

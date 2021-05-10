@@ -97,11 +97,13 @@ public abstract class LogSite implements LogSiteKey {
   /**
    * Returns the name of the class file containing the log statement (or null if not known). The
    * source file name is optional and strictly for debugging.
-   * <p>
-   * Normally this value (if present) is extracted from the SourceFile attribute of the class file
-   * (see the <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.10">
-   * JVM class file format specification</a> for more details).
+   *
+   * <p>Normally this value (if present) is extracted from the SourceFile attribute of the class
+   * file (see the <a
+   * href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.10">JVM class
+   * file format specification</a> for more details).
    */
+  @NullableDecl
   public abstract String getFileName();
 
   // Provide a common toString() implementation for only the public attributes.
@@ -156,11 +158,14 @@ public abstract class LogSite implements LogSiteKey {
     /** Bare method name (no signature information). */
     private final String methodName;
     private final int encodedLineNumber;
-    private final String sourceFileName;
+    @NullableDecl private final String sourceFileName;
     private int hashcode = 0;
 
     private InjectedLogSite(
-        String internalClassName, String methodName, int encodedLineNumber, String sourceFileName) {
+        String internalClassName,
+        String methodName,
+        int encodedLineNumber,
+        @NullableDecl String sourceFileName) {
       this.internalClassName = checkNotNull(internalClassName, "class name");
       this.methodName = checkNotNull(methodName, "method name");
       this.encodedLineNumber = encodedLineNumber;
@@ -188,6 +193,7 @@ public abstract class LogSite implements LogSiteKey {
     }
 
     @Override
+    @NullableDecl
     public String getFileName() {
       return sourceFileName;
     }

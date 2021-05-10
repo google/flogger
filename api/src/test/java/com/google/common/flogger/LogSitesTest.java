@@ -40,6 +40,17 @@ public final class LogSitesTest {
     assertThat(LogSites.callerOf(String.class)).isEqualTo(LogSite.INVALID);
   }
 
+  @Test
+  public void testCallerOf_from() {
+    StackTraceElement e = new StackTraceElement("class", "method", "file", 42);
+    LogSite logSite = LogSites.logSiteFrom(e);
+    assertThat(logSite.getClassName()).isEqualTo(e.getClassName());
+    assertThat(logSite.getMethodName()).isEqualTo(e.getMethodName());
+    assertThat(logSite.getFileName()).isEqualTo(e.getFileName());
+    assertThat(logSite.getLineNumber()).isEqualTo(e.getLineNumber());
+  }
+
+
   private static class MyLogUtil {
     static LogSite getCallerLogSite() {
       return LogSites.callerOf(MyLogUtil.class);

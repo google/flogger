@@ -18,9 +18,9 @@ package com.google.common.flogger.backend.system;
 
 import com.google.common.flogger.AbstractLogger;
 import com.google.common.flogger.LogSite;
+import com.google.common.flogger.LogSites;
 import com.google.common.flogger.backend.Platform.LogCallerFinder;
 import com.google.common.flogger.util.CallerFinder;
-import com.google.common.flogger.util.StackBasedLogSite;
 
 /**
  * Default caller finder implementation which should work on all recent Java releases.
@@ -53,7 +53,8 @@ public final class StackBasedCallerFinder extends LogCallerFinder {
     // to avoid even constructing the Throwable instance).
     StackTraceElement caller =
         CallerFinder.findCallerOf(loggerApi, new Throwable(), stackFramesToSkip + 1);
-    return caller != null ? new StackBasedLogSite(caller) : LogSite.INVALID;
+    // Returns INVALID if "caller" is null (no caller found for given API class).
+    return LogSites.logSiteFrom(caller);
   }
 
   @Override

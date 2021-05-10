@@ -17,6 +17,7 @@
 package com.google.common.flogger;
 
 import com.google.common.flogger.backend.Platform;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * Helper class to generate log sites for the current line of code. This class is deliberately
@@ -118,6 +119,17 @@ public final class LogSites {
   public static LogSite logSite() {
     // Don't call "callerOf()" to avoid making another stack entry.
     return Platform.getCallerFinder().findLogSite(LogSites.class, 0);
+  }
+
+  /**
+   * Returns a new {@code LogSite} which reflects the information in the given {@link
+   * StackTraceElement}, or {@link LogSite#INVALID} if given {@code null}.
+   *
+   * <p>This method is useful when log site information is only available via an external API which
+   * returns {@link StackTraceElement}.
+   */
+  public static LogSite logSiteFrom(@NullableDecl StackTraceElement e) {
+    return e != null ? new StackBasedLogSite(e) : LogSite.INVALID;
   }
 
   private LogSites() {}

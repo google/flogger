@@ -134,7 +134,7 @@ public abstract class ScopedLoggingContext {
    */
   public abstract static class Builder {
     private Tags tags = null;
-    private ScopeMetadata.Builder metadata = null;
+    private ContextMetadata.Builder metadata = null;
     private LogLevelMap logLevelMap = null;
 
     protected Builder() {}
@@ -158,7 +158,7 @@ public abstract class ScopedLoggingContext {
     @CheckReturnValue
     public final <T> Builder withMetadata(MetadataKey<T> key, T value) {
       if (metadata == null) {
-        metadata = ScopeMetadata.builder();
+        metadata = ContextMetadata.builder();
       }
       metadata.add(key, value);
       return this;
@@ -299,7 +299,7 @@ public abstract class ScopedLoggingContext {
      * be cached by context implementations.
      */
     @NullableDecl
-    protected final ScopeMetadata getMetadata() {
+    protected final ContextMetadata getMetadata() {
       return metadata != null ? metadata.build() : null;
     }
 
@@ -349,6 +349,22 @@ public abstract class ScopedLoggingContext {
    */
   @CheckReturnValue
   public abstract Builder newContext();
+
+  /**
+   * Creates a new context builder to which additional logging metadata can be attached before being
+   * installed or used to wrap some existing code.
+   *
+   * <p>This method is the same as {@link #newContext()} except it additionally binds a new {@link
+   * ScopeType} instance to the newly created context. This allows log statements to control
+   * stateful logging operations (e.g. rate limiting) using the {@link
+   * com.google.common.flogger.LoggingApi#per(ScopeType) per(ScopeType)} method.
+   *
+   * <p>Note for users: if you don't need an instance of {@code ScopedLoggingContext} for some
+   * reason such as testability (injecting it, for example), consider using the static methods in
+   * {@link ScopedLoggingContexts} instead to avoid the need to call {@link #getInstance}.
+   */
+  @CheckReturnValue
+  public abstract Builder newContext(ScopeType scopeType);
 
   /**
    * Deprecated equivalent to {@link #newContext()}.

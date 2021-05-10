@@ -44,6 +44,17 @@ public abstract class ContextDataProvider {
   }
 
   /**
+   * Returns the singleton no-op context data provider, which can be used by platform
+   * implementations which don't support {@code ScopedLoggingContext} for some reason. The returned
+   * provider has no effect and returns empty/default data in all cases.
+   *
+   * <p>In general this method should never need to be called outside the core Flogger libraries.
+   */
+  public static ContextDataProvider getNoOpProvider() {
+    return NoOpContextDataProvider.getNoOpInstance();
+  }
+
+  /**
    * Returns the context API with which users can create and modify the state of logging contexts
    * within an application. This method should be overridden by subclasses to provide the specific
    * implementation of the API.

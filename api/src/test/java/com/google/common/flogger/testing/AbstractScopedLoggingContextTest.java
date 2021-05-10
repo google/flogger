@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.MetadataKey;
+import com.google.common.flogger.LoggingScope;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
@@ -237,6 +238,60 @@ public abstract class AbstractScopedLoggingContextTest {
     assertLogging("other.package", Level.FINE).isFalse();
     assertLogging("foo.bar", Level.FINE).isFalse();
     assertLogging("foo.bar.Baz", Level.FINE).isFalse();
+    checkDone();
+  }
+
+  @Test
+  public void testNewContext_withBoundScopeTypes() {
+    assertThat(dataProvider.getScope(SUB_TASK)).isNull();
+    assertThat(dataProvider.getScope(BATCH_JOB)).isNull();
+    context
+        .newContext(SUB_TASK)
+        .run(
+            () -> {
+              LoggingScope taskScope = dataProvider.getScope(SUB_TASK);
+              assertThat(taskScope).isNotNull();
+              assertThat(taskScope.toString()).isEqualTo("sub task");
+              assertThat(dataProvider.getScope(BATCH_JOB)).isNull();
+              context
+                  .newContext(BATCH_JOB)
+                  .run(
+                      () -> {
+                        assertThat(dataProvider.getScope(SUB_TASK)).isSameInstanceAs(taskScope);
+                        assertThat(dataProvider.getScope(BATCH_JOB)).isNotNull();
+                        markTestAsDone();
+                      });
+              // Everything is restored after a scope.
+              assertThat(dataProvider.getScope(SUB_TASK)).isSameInstanceAs(taskScope);
+              assertThat(dataProvider.getScope(BATCH_JOB)).isNull();
+            });
+    // Everything is restored after a scope.
+    assertThat(dataProvider.getScope(SUB_TASK)).isNull();
+    assertThat(dataProvider.getScope(BATCH_JOB)).isNull();
+    checkDone();
+  }
+
+  @Test
+  public void testNewContext_repeatedScopesAreIdempotent() {
+    assertThat(dataProvider.getScope(SUB_TASK)).isNull();
+    context
+        .newContext(SUB_TASK)
+        .run(
+            () -> {
+              LoggingScope taskScope = dataProvider.getScope(SUB_TASK);
+              assertThat(taskScope).isNotNull();
+              assertThat(taskScope.toString()).isEqualTo("sub task");
+              context
+                  .newContext(SUB_TASK)
+                  .run(
+                      () -> {
+                        // We don't make a new scope instance if the same type is bound twice!
+                        assertThat(dataProvider.getScope(SUB_TASK)).isSameInstanceAs(taskScope);
+                        markTestAsDone();
+                      });
+              assertThat(dataProvider.getScope(SUB_TASK)).isNotNull();
+            });
+    assertThat(dataProvider.getScope(SUB_TASK)).isNull();
     checkDone();
   }
 }

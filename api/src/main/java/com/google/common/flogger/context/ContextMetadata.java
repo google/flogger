@@ -32,7 +32,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * needed by implementations of {@link ScopedLoggingContext} and should not be considered a stable
  * API.
  */
-public abstract class ScopeMetadata extends Metadata {
+public abstract class ContextMetadata extends Metadata {
   private static final class Entry<T> {
     final MetadataKey<T> key;
     final T value;
@@ -66,7 +66,7 @@ public abstract class ScopeMetadata extends Metadata {
       return this;
     }
 
-    public ScopeMetadata build() {
+    public ContextMetadata build() {
       // Analysis shows it's quicker to pass an empty array here and let the JVM optimize to avoid
       // creating an empty array just to overwrite all its elements.
       return new ImmutableScopeMetadata(entries.toArray(EMPTY_ARRAY));
@@ -79,17 +79,17 @@ public abstract class ScopeMetadata extends Metadata {
   }
 
   /** Returns a space efficient {@code ScopeMetadata} containing a single value. */
-  public static <T> ScopeMetadata singleton(MetadataKey<T> key, T value) {
+  public static <T> ContextMetadata singleton(MetadataKey<T> key, T value) {
     return new SingletonMetadata(key, value);
   }
 
   /** Returns the empty {@code ScopeMetadata}. */
   // We can't use empty() here as that's already taken by Metadata.
-  public static ScopeMetadata none() {
+  public static ContextMetadata none() {
     return EmptyMetadata.INSTANCE;
   }
 
-  private ScopeMetadata() {}
+  private ContextMetadata() {}
 
   /**
    * Concatenates the given context metadata <em>after</em> this instance. Key value pairs are simply
@@ -102,7 +102,7 @@ public abstract class ScopeMetadata extends Metadata {
    * metadata consistently with respect to single valued and repeated keys, and use {@link
    * Metadata#findValue(MetadataKey)} to lookup the "most recent" value for a single valued key.
    */
-  public abstract ScopeMetadata concatenate(ScopeMetadata metadata);
+  public abstract ContextMetadata concatenate(ContextMetadata metadata);
 
   // Internal method to deal in entries directly during concatenation.
   abstract Entry<?> get(int n);
@@ -117,7 +117,7 @@ public abstract class ScopeMetadata extends Metadata {
     return get(n).value;
   }
 
-  private static final class ImmutableScopeMetadata extends ScopeMetadata {
+  private static final class ImmutableScopeMetadata extends ContextMetadata {
     private final Entry<?>[] entries;
 
     ImmutableScopeMetadata(Entry<?>[] entries) {
@@ -149,7 +149,7 @@ public abstract class ScopeMetadata extends Metadata {
     }
 
     @Override
-    public ScopeMetadata concatenate(ScopeMetadata metadata) {
+    public ContextMetadata concatenate(ContextMetadata metadata) {
       int extraSize = metadata.size();
       if (extraSize == 0) {
         return this;
@@ -165,7 +165,7 @@ public abstract class ScopeMetadata extends Metadata {
     }
   }
 
-  private static final class SingletonMetadata extends ScopeMetadata {
+  private static final class SingletonMetadata extends ContextMetadata {
     private final Entry<?> entry;
 
     <T> SingletonMetadata(MetadataKey<T> key, T value) {
@@ -194,7 +194,7 @@ public abstract class ScopeMetadata extends Metadata {
     }
 
     @Override
-    public ScopeMetadata concatenate(ScopeMetadata metadata) {
+    public ContextMetadata concatenate(ContextMetadata metadata) {
       // No check for size() == 0 since this instance always has one value.
       int extraSize = metadata.size();
       if (extraSize == 0) {
@@ -213,8 +213,8 @@ public abstract class ScopeMetadata extends Metadata {
   // order to decouple its classloading when Metadata is loaded. Android users are particularly
   // careful about unnecessary class loading, and we've used similar mechanisms in Guava (see
   // CharMatchers).
-  private static final class EmptyMetadata extends ScopeMetadata {
-    static final ScopeMetadata INSTANCE = new EmptyMetadata();
+  private static final class EmptyMetadata extends ContextMetadata {
+    static final ContextMetadata INSTANCE = new EmptyMetadata();
 
     @Override
     public int size() {
@@ -235,7 +235,7 @@ public abstract class ScopeMetadata extends Metadata {
     }
 
     @Override
-    public ScopeMetadata concatenate(ScopeMetadata metadata) {
+    public ContextMetadata concatenate(ContextMetadata metadata) {
       return metadata;
     }
   }

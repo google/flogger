@@ -26,19 +26,19 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public final class ScopeMetadataTest {
+public final class ContextMetadataTest {
   private static final MetadataKey<String> FOO_KEY = MetadataKey.single("FOO", String.class);
   private static final MetadataKey<String> BAR_KEY = MetadataKey.repeated("BAR", String.class);
   private static final MetadataKey<String> UNUSED_KEY = MetadataKey.single("UNUSED", String.class);
 
   @Test
   public void testNone() {
-    assertThat(ScopeMetadata.none()).hasSize(0);
+    assertThat(ContextMetadata.none()).hasSize(0);
   }
 
   @Test
   public void testSingleton() {
-    ScopeMetadata metadata = ScopeMetadata.singleton(FOO_KEY, "foo");
+    ContextMetadata metadata = ContextMetadata.singleton(FOO_KEY, "foo");
     assertThat(metadata).hasSize(1);
     assertThat(metadata).containsEntries(FOO_KEY, "foo");
     assertThat(metadata.findValue(UNUSED_KEY)).isNull();
@@ -47,8 +47,8 @@ public final class ScopeMetadataTest {
 
   @Test
   public void testBuilder() {
-    ScopeMetadata metadata =
-        ScopeMetadata.builder()
+    ContextMetadata metadata =
+        ContextMetadata.builder()
             .add(FOO_KEY, "one")
             .add(BAR_KEY, "two")
             .add(BAR_KEY, "three")
@@ -70,16 +70,16 @@ public final class ScopeMetadataTest {
 
   @Test
   public void testConcatenate_none() {
-    ScopeMetadata metadata = ScopeMetadata.singleton(FOO_KEY, "foo");
-    assertThat(ScopeMetadata.none().concatenate(metadata)).isSameInstanceAs(metadata);
-    assertThat(metadata.concatenate(ScopeMetadata.none())).isSameInstanceAs(metadata);
+    ContextMetadata metadata = ContextMetadata.singleton(FOO_KEY, "foo");
+    assertThat(ContextMetadata.none().concatenate(metadata)).isSameInstanceAs(metadata);
+    assertThat(metadata.concatenate(ContextMetadata.none())).isSameInstanceAs(metadata);
   }
 
   @Test
   public void testConcatenate_duplicateSingleKey() {
-    ScopeMetadata metadata =
-        ScopeMetadata.singleton(FOO_KEY, "foo")
-            .concatenate(ScopeMetadata.singleton(FOO_KEY, "bar"));
+    ContextMetadata metadata =
+        ContextMetadata.singleton(FOO_KEY, "foo")
+            .concatenate(ContextMetadata.singleton(FOO_KEY, "bar"));
     assertThat(metadata).hasSize(2);
     // No reordering, no de-duplication.
     assertThat(metadata).containsEntries(FOO_KEY, "foo", "bar");
@@ -87,17 +87,17 @@ public final class ScopeMetadataTest {
 
   @Test
   public void testConcatenate_general() {
-    ScopeMetadata first =
-        ScopeMetadata.builder()
+    ContextMetadata first =
+        ContextMetadata.builder()
             .add(FOO_KEY, "one")
             .add(BAR_KEY, "two")
             .build();
-    ScopeMetadata second =
-        ScopeMetadata.builder()
+    ContextMetadata second =
+        ContextMetadata.builder()
             .add(BAR_KEY, "three")
             .add(FOO_KEY, "four")
             .build();
-    ScopeMetadata metadata = first.concatenate(second);
+    ContextMetadata metadata = first.concatenate(second);
     assertThat(metadata).hasSize(4);
     assertThat(metadata).containsEntries(FOO_KEY, "one", "four");
     assertThat(metadata).containsEntries(BAR_KEY, "two", "three");

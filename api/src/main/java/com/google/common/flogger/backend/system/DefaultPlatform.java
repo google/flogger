@@ -19,7 +19,6 @@ package com.google.common.flogger.backend.system;
 import static com.google.common.flogger.util.StaticMethodCaller.callGetterFromSystemProperty;
 
 import com.google.common.flogger.backend.LoggerBackend;
-import com.google.common.flogger.backend.NoOpContextDataProvider;
 import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.context.ContextDataProvider;
 
@@ -69,7 +68,7 @@ public class DefaultPlatform extends Platform {
     this.backendFactory = (factory != null) ? factory : SimpleBackendFactory.getInstance();
     ContextDataProvider context =
         callGetterFromSystemProperty(LOGGING_CONTEXT, ContextDataProvider.class);
-    this.context = (context != null) ? context : NoOpContextDataProvider.getInstance();
+    this.context = (context != null) ? context : ContextDataProvider.getNoOpProvider();
     Clock clock = callGetterFromSystemProperty(CLOCK, Clock.class);
     this.clock = (clock != null) ? clock : SystemClock.getInstance();
     // TODO(dbeaumont): Figure out how to handle StackWalker when it becomes available (Java9).

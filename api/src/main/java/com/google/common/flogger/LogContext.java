@@ -100,7 +100,7 @@ public abstract class LogContext<
             if (!keys.hasNext()) {
               out.handle(getLabel(), first);
             } else {
-              // Or we could emit the .
+              // In the very unlikely case there's more than one aggregation key, emit a list.
               StringBuilder buf = new StringBuilder();
               buf.append('[').append(first);
               do {
@@ -583,6 +583,10 @@ public abstract class LogContext<
     LogSiteKey logSiteKey = null;
     if (logSite != LogSite.INVALID) {
       logSiteKey = logSite;
+      // Log site keys are only modified when we have metadata in the log statement.
+      if (metadata != null && metadata.size() > 0) {
+        logSiteKey = specializeLogSiteKeyFromMetadata(logSiteKey, metadata);
+      }
     }
     if (!postProcess(logSiteKey)) {
       return false;
@@ -603,8 +607,11 @@ public abstract class LogContext<
   // that a log statement executed both in and outside of the context would currently see
   // different keys, when they should be the same. To fix this, specialization must be changed
   // to ignore repeated scopes. For now we only see log site metadata so this is not an issue.
+  //
   // TODO: Ignore repeated scopes (e.g. use a Bloom Filter mask on each scope).
   // TODO: Make a proper iterator on Metadata or use MetadataProcessor.
+  //
+  // Visible for testing
   static LogSiteKey specializeLogSiteKeyFromMetadata(LogSiteKey logSiteKey, Metadata metadata) {
     checkNotNull(logSiteKey, "logSiteKey"); // For package null checker only.
     for (int n = 0, size = metadata.size(); n < size; n++) {
@@ -702,15 +709,23 @@ public abstract class LogContext<
   }
 
   @Override
+  public final API per(Enum<?> key) {
+    return with(Key.LOG_SITE_GROUPING_KEY, key);
+  }
+
+  @Override
+  public API per(LoggingScopeProvider scopeProvider) {
+    return with(Key.LOG_SITE_GROUPING_KEY, scopeProvider.getCurrentScope());
+  }
+
+  @Override
   public final API withCause(Throwable cause) {
-    if (cause != null) {
-      addMetadata(Key.LOG_CAUSE, cause);
-    }
-    return api();
+    return with(Key.LOG_CAUSE, cause);
   }
 
   @Override
   public API withStackTrace(StackSize size) {
+    // Unlike other metadata methods, the "no-op" value is not null.
     if (checkNotNull(size, "stack size") != StackSize.NONE) {
       addMetadata(Key.CONTEXT_STACK_SIZE, size);
     }

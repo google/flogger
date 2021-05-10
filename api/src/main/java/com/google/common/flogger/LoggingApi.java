@@ -125,6 +125,78 @@ public interface LoggingApi<API extends LoggingApi<API>> {
   API atMostEvery(int n, TimeUnit unit);
 
   /**
+   * Aggregates stateful logging with respect to the given enum value.
+   *
+   * <p>Normally log statements with conditional behaviour (e.g. rate limiting) use the same state
+   * for each invocation (e.g. counters or timestamps). This method allows an additional qualifier
+   * to be given which allows for different conditional state for each unique qualifier.
+   *
+   * <p>This only makes a difference for log statements which use persistent state to control
+   * conditional behaviour (e.g. {@code atMostEvery()} or {@code every()}).
+   *
+   * <p>This method is most useful in helping to avoid cases where a rare event might never be
+   * logged due to rate limiting. For example, the following code will cause log statements with
+   * different {@code taskType}s to be rate-limited independently of each other.
+   *
+   * <pre>{@code
+   * // We want to rate limit logging separately for all task types.
+   * logger.at(INFO).per(taskType).atMostEvery(30, SECONDS).log("Start task: %s", taskSpec);
+   * }</pre>
+   *
+   * <p>The {@code key} passed to this method should always be a variable (passing a constant value
+   * has no effect). If {@code null} is passed, this call has no effect (e.g. rate limiting will
+   * apply normally, without respect to any specific scope).
+   *
+   * <p>If multiple aggregation keys are added to a single log statement, then they all take effect
+   * and logging is aggregated by the unique combination of keys passed to all "per" methods.
+   */
+  API per(@NullableDecl Enum<?> key);
+
+  /**
+   * Aggregates stateful logging with respect to a scoped context determined by the given scope
+   * provider.
+   *
+   * <p>When {@link com.google.common.flogger.context.ScopedLoggingContext ScopedLoggingContext} is
+   * used to create a context, it can be bound to a {@link
+   * com.google.common.flogger.context.ScopeType ScopeType}. For example:
+   *
+   * <pre>{@code
+   * ScopedLoggingContexts.newContext(REQUEST).run(() -> scopedMethod(x, y, z));
+   * }</pre>
+   *
+   * where {@link com.google.common.flogger.context.ScopeType#REQUEST REQUEST} defines the scope
+   * type for the context in which {@code scopedMethod()} is called. Within this context, the scope
+   * associated with the {@code REQUEST} type can then be used to aggregate logging behavior:
+   *
+   * <pre>{@code
+   * logger.atInfo().atMostEvery(5, SECONDS).per(REQUEST).log("Some message...");
+   * }</pre>
+   *
+   * <p>New scope types can be created for specific subtasks using {@link
+   * com.google.common.flogger.context.ScopeType#create ScopeType.create("<name>")} but it is
+   * recommended to use shared constants (such as {@code ScopeType.REQUEST}) wherever feasible to
+   * avoid confusion.
+   *
+   * <p>Note that in order for the request scope to be applied to a log statement, the {@code
+   * per(REQUEST)} method must still be called; just being inside the request scope isn't enough.
+   *
+   * <p>Unlike other {@code per()} methods, this method is expected to be given a constant value.
+   * This is because the given value <em>provides</em> the current scope, rather than <em>being</em>
+   * the current scope.
+   *
+   * <p>If a log statement using this method is invoked outside a context of the given type, this
+   * call has no effect (e.g. rate limiting will apply normally, without respect to any specific
+   * scope).
+   *
+   * <p>If multiple aggregation keys are added to a single log statement, then they all take effect
+   * and logging is aggregated by the unique combination of keys passed to all "per" methods.
+   *
+   * @param scopeProvider a constant used to defined the type of the scope in which logging is
+   *     aggregated.
+   */
+  API per(LoggingScopeProvider scopeProvider);
+
+  /**
    * Creates a synthetic exception and attaches it as the "cause" of the log statement as a way to
    * provide additional context for the logging call itself. The exception created by this method is
    * always of the type {@link LogSiteStackTrace}, and its message indicates the stack size.
@@ -132,11 +204,6 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * <p>If the {@code withCause(e)} method is also called for the log statement (either before or
    * after) {@code withStackTrace()}, the given exception becomes the cause of the synthetic
    * exception.
-   *
-   * <p>Note that this method is experimental and may change in the future (using a "cause" to
-   * provide additional debugging for normal log statements seems hacky and once ECatcher and other
-   * tools can process Flogger's data in a more structured way, there should be no need to tunnel
-   * the metadata via the cause).
    *
    * @param size the maximum size of the stack trace to be generated.
    */
@@ -676,6 +743,16 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     public final <T> API with(MetadataKey<Boolean> key) {
       // Do this inline rather than calling with(key, true) to keep no-op minimal.
       checkNotNull(key, "metadata key");
+      return noOp();
+    }
+
+    @Override
+    public API per(@NullableDecl Enum<?> key) {
+      return noOp();
+    }
+
+    @Override
+    public API per(LoggingScopeProvider scopeProvider) {
       return noOp();
     }
 

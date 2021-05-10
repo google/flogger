@@ -16,9 +16,9 @@
 
 package com.google.common.flogger.testing;
 
+import static com.google.common.flogger.util.Checks.checkState;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import com.google.common.base.Preconditions;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
@@ -146,13 +146,13 @@ public final class FakeLogData implements LogData {
 
   @Override
   public Object[] getArguments() {
-    Preconditions.checkState(context != null, "cannot get arguments without a context");
+    checkState(context != null, "cannot get arguments without a context");
     return arguments;
   }
 
   @Override
   public Object getLiteralArgument() {
-    Preconditions.checkState(context == null, "cannot get literal argument if context exists");
+    checkState(context == null, "cannot get literal argument if context exists");
     return literalArgument;
   }
 }

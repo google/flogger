@@ -14,27 +14,33 @@
  * limitations under the License.
  */
 
-package com.google.common.flogger.util;
+package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
+import static java.lang.Math.max;
 
-import com.google.common.flogger.LogSite;
 import com.google.errorprone.annotations.CheckReturnValue;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * A stack based log site which uses information from a given {@code StackTraceElement}.
- * <p>
- * Unlike truly unique injected log sites, StackBasedLogSite falls back to using the class name,
- * method name and line number for equals() and hashcode(). This makes it almost as good as a
- * globally unique instance in most cases, except if either of the following is true:
+ *
+ * <p>Unlike truly unique injected log sites, StackBasedLogSite falls back to using the class name,
+ * method name and line number for {@code equals()} and {@code hashcode()}. This makes it almost as
+ * good as a globally unique instance in most cases, except if either of the following is true:
+ *
  * <ul>
- * <li>There are two log statements on a single line.
- * </li>Line number information is stripped from the class.
+ *   <li>There are two log statements on a single line.
+ *   <li>Line number information is stripped from the class.
  * </ul>
+ *
+ * <p>This class should not be used directly outside the core Flogger libraries. If you need to
+ * generate a {@link LogSite} from a {@link StackTraceElement}, use {@link
+ * com.google.common.flogger.LogSites#logSiteFrom(StackTraceElement)
+ * LogSites.logSiteFrom(myStackTaceElement)}.
  */
 @CheckReturnValue
-public final class StackBasedLogSite extends LogSite {
+final class StackBasedLogSite extends LogSite {
   // StackTraceElement is unmodifiable once created.
   private final StackTraceElement stackElement;
 
@@ -55,7 +61,7 @@ public final class StackBasedLogSite extends LogSite {
   @Override
   public int getLineNumber() {
     // Prohibit negative numbers (which can appear in stack trace elements) from being returned.
-    return Math.max(stackElement.getLineNumber(), LogSite.UNKNOWN_LINE);
+    return max(stackElement.getLineNumber(), LogSite.UNKNOWN_LINE);
   }
 
   @Override
