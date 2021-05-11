@@ -22,7 +22,7 @@ import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MetadataHandler;
 import com.google.common.flogger.backend.MetadataProcessor;
-import com.google.common.flogger.context.ContextDataProvider;
+import com.google.common.flogger.backend.Platform;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -150,7 +150,7 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
 
   private StringMap createContextMap() {
     StringMap contextData = ContextDataFactory.createContextData(logData.getMetadata().size());
-    MetadataProcessor.forScopeAndLogSite(ContextDataProvider.getInstance().getMetadata(), logData.getMetadata())
+    MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata())
             .process(HANDLER, ((key, value) ->
                     contextData.putValue(key, ValueList.maybeWrap(value, contextData.getValue(key)))));
     contextData.freeze();
