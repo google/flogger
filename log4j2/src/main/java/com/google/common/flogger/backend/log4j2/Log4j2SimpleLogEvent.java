@@ -33,8 +33,6 @@ import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.util.StringMap;
 
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -149,11 +147,15 @@ final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHand
   }
 
   private StringMap createContextMap() {
-    StringMap contextData = ContextDataFactory.createContextData(logData.getMetadata().size());
-    MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata())
-            .process(HANDLER, ((key, value) ->
-                    contextData.putValue(key, ValueList.maybeWrap(value, contextData.getValue(key)))));
+    MetadataProcessor metadataProcessor = MetadataProcessor.forScopeAndLogSite(
+            Platform.getInjectedMetadata(), logData.getMetadata());
+
+    StringMap contextData = ContextDataFactory.createContextData(metadataProcessor.keyCount());
+    metadataProcessor.process(HANDLER, ((key, value) ->
+            contextData.putValue(key, ValueList.maybeWrap(value, contextData.getValue(key)))));
+
     contextData.freeze();
+
     return contextData;
   }
 
