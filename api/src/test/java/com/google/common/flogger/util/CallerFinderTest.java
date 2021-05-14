@@ -81,7 +81,7 @@ public class CallerFinderTest {
     }
 
     void internalMethodTwo() {
-      caller = CallerFinder.findCallerOf(LoggerCode.class, skipCount);
+      caller = CallerFinder.findCallerOf(LoggerCode.class, new Throwable(), skipCount);
     }
   }
 

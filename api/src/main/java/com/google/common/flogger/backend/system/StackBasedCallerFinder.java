@@ -38,7 +38,7 @@ public final class StackBasedCallerFinder extends LogCallerFinder {
   @Override
   public String findLoggingClass(Class<? extends AbstractLogger<?>> loggerClass) {
     // We can skip at most only 1 method from the analysis, the inferLoggingClass() method itself.
-    StackTraceElement caller = CallerFinder.findCallerOf(loggerClass, 1);
+    StackTraceElement caller = CallerFinder.findCallerOf(loggerClass, new Throwable(), 1);
     if (caller != null) {
       // This might contain '$' for inner/nested classes, but that's okay.
       return caller.getClassName();
@@ -51,7 +51,8 @@ public final class StackBasedCallerFinder extends LogCallerFinder {
     // Skip an additional stack frame because we create the Throwable inside this method, not at
     // the point that this method was invoked (which allows completely alternate implementations
     // to avoid even constructing the Throwable instance).
-    StackTraceElement caller = CallerFinder.findCallerOf(loggerApi, stackFramesToSkip + 1);
+    StackTraceElement caller =
+        CallerFinder.findCallerOf(loggerApi, new Throwable(), stackFramesToSkip + 1);
     // Returns INVALID if "caller" is null (no caller found for given API class).
     return LogSites.logSiteFrom(caller);
   }
