@@ -10,7 +10,7 @@ import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/*
+/**
  * A simple FIFO queue linked-list implementation designed to store multiple metadata values
  * efficiently in a StringMap that is tailored according to our needs. There are two aspects worth
  * pointing out:
@@ -163,10 +163,7 @@ public class ValueQueue implements Iterable<Object> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ValueQueue)) {
             return false;
         }
         ValueQueue that = (ValueQueue) o;
@@ -185,14 +182,17 @@ public class ValueQueue implements Iterable<Object> {
             current = valueQueue.head;
         }
 
+        @Override
         public boolean hasNext() {
             return current != null;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Object next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
@@ -215,10 +215,7 @@ public class ValueQueue implements Iterable<Object> {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
+            if (!(o instanceof Node)) {
                 return false;
             }
             Node node = (Node) o;

@@ -169,8 +169,8 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
             Platform.getInjectedMetadata(), logData.getMetadata());
 
     StringMap contextData = ContextDataFactory.createContextData(metadataProcessor.keyCount());
-    metadataProcessor.process(HANDLER, ((key, value) ->
-            contextData.putValue(key, ValueQueue.maybeWrap(value, contextData.getValue(key)))));
+    metadataProcessor.process(HANDLER, (key, value) ->
+            contextData.putValue(key, ValueQueue.maybeWrap(value, contextData.getValue(key))));
 
     contextData.freeze();
 
