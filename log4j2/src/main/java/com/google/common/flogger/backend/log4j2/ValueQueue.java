@@ -68,6 +68,10 @@ public class ValueQueue implements Iterable<Object> {
         }
     }
 
+    /**
+     * Helper method for creating and initializing a value queue with a non-nullable value.
+     * If value is an instance of Tags, each tag will be added to teh value queue.
+     */
     static ValueQueue appendValueToNewQueue(Object value) {
         ValueQueue valueQueue = new ValueQueue();
         ValueQueue.emit(null, value, (k, v) -> valueQueue.put(v));
@@ -83,9 +87,13 @@ public class ValueQueue implements Iterable<Object> {
      * added "id=xyz" so you think this isn't your log entry, but someone else added
      * "id=abcd" in a context you weren't aware of).
      *
-     * Given three tag mappings: "baz" -> , "foo" -> true and "foo" -> false the
-     * Value list is going to flatten the tags in order to store them as tags=[baz,
-     * foo=false, foo=true].
+     * <pre>{@code
+     * Given three tag mappings:
+     * "baz" -> , "foo" -> true and "foo" -> false
+     *
+     * the value queue is going to store the mappings as:
+     * tags=[baz, foo=false, foo=true]
+     * }</pre>
      *
      * Reusing the label 'tags' is intentional as this allows us to store the
      * flatten tags in Log4j2's ContextMap.

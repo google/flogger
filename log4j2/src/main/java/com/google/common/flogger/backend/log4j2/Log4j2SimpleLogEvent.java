@@ -91,6 +91,8 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
 
   private static void processTags(MetadataKey<Object> key, Object value, MetadataKey.KeyValueHandler kvh) {
     ValueQueue valueQueue = ValueQueue.appendValueToNewQueue(value);
+    // Unlike single metadata (which is usually formatted as a single value), tags are always formatted as a list.
+    // Given the tags: tags -> foo=[bar], it will be formnatted to tags=[foo=bar].
     ValueQueue.appendValues(key.getLabel(), valueQueue.size() == 1 ? ImmutableList.copyOf(valueQueue) : valueQueue, kvh);
   }
 
