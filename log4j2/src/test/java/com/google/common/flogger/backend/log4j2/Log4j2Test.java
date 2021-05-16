@@ -173,17 +173,20 @@ public final class Log4j2Test {
   @Test
   public void testMetadata() {
     backend.log(
-        FakeLogData.withPrintfStyle("Foo='%s'", "bar")
-            .addMetadata(COUNT_KEY, 23)
-            .addMetadata(ID_KEY, "test_ID")
-            .addMetadata(REPEATABLE_KEY, "foo")
-            .addMetadata(REPEATABLE_KEY, "bar")
-            .addMetadata(REPEATABLE_KEY, "baz"));
+            FakeLogData.withPrintfStyle("Foo='%s'", "bar")
+                    .addMetadata(COUNT_KEY, 23)
+                    .addMetadata(ID_KEY, "test_ID")
+                    .addMetadata(REPEATABLE_KEY, "foo")
+                    .addMetadata(REPEATABLE_KEY, "bar")
+                    .addMetadata(REPEATABLE_KEY, "baz"));
 
+    ValueQueue valueQueue = ValueQueue.newQueue("foo");
+    valueQueue.put("bar");
+    valueQueue.put("baz");
     Map<String, Object> contextMap = new HashMap<String, Object>();
     contextMap.put("count", 23);
     contextMap.put("id", "test_ID");
-    contextMap.put("rep", Arrays.asList("foo", "bar", "baz"));
+    contextMap.put("rep", valueQueue);
 
     assertLogEntry(0, INFO, "Foo='bar'", contextMap);
   }

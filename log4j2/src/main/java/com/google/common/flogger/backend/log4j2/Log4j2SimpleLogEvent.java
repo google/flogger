@@ -17,12 +17,14 @@
 package com.google.common.flogger.backend.log4j2;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MetadataHandler;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.backend.Platform;
+import com.google.common.flogger.context.Tags;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -42,12 +44,21 @@ import static com.google.common.flogger.backend.log4j2.Log4j2SimpleMessageFormat
  */
 final class Log4j2SimpleLogEvent implements SimpleLogHandler {
   private static final MetadataHandler<MetadataKey.KeyValueHandler> HANDLER = MetadataHandler
-      .builder((MetadataHandler.ValueHandler<Object, MetadataKey.KeyValueHandler>) (key, value, kvh) ->
-              ValueList.appendValues(key.getLabel(), value, kvh))
-      // Passing a list is important to delegate the formatting to the layout class.
-      // At this point we do not know the target format, e.g. PatternLayout vs
-      // JsonLayout
-      .setDefaultRepeatedHandler((key, values, kvh) -> kvh.handle(key.getLabel(), ImmutableList.copyOf(values)))
+      .builder((MetadataHandler.ValueHandler<Object, MetadataKey.KeyValueHandler>) (key, value, kvh) -> {
+          if (key.getClass().equals(LogContext.Key.TAGS.getClass())) {
+            processTags(key, value, kvh);
+          } else {
+            // In theory a user can define a custom tag and use it as a MetadataKey. Those keys shall be treated
+            // in the same way as LogContext.Key.TAGS when used as a MetadataKey.
+            // Might be removed if visibility of MetadataKey#clazz changes.
+            if (value instanceof Tags) {
+              processTags(key, value, kvh);
+            } else {
+              ValueQueue.appendValues(key.getLabel(), value, kvh);
+            }
+          }
+      })
+      .setDefaultRepeatedHandler((key, values, kvh) -> values.forEachRemaining(v -> kvh.handle(key.getLabel(), v)))
       .build();
 
   // Note: Currently the logger is only used to set the logger name in the log
@@ -76,6 +87,11 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
     this.logger = logger;
     this.logData = badLogData;
     Log4j2LogDataFormatter.formatBadLogData(error, badLogData, this);
+  }
+
+  private static void processTags(MetadataKey<Object> key, Object value, MetadataKey.KeyValueHandler kvh) {
+    ValueQueue valueQueue = ValueQueue.appendValueToNewQueue(value);
+    ValueQueue.appendValues(key.getLabel(), valueQueue.size() == 1 ? ImmutableList.copyOf(valueQueue) : valueQueue, kvh);
   }
 
   /**
@@ -154,7 +170,7 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
 
     StringMap contextData = ContextDataFactory.createContextData(metadataProcessor.keyCount());
     metadataProcessor.process(HANDLER, ((key, value) ->
-            contextData.putValue(key, ValueList.maybeWrap(value, contextData.getValue(key)))));
+            contextData.putValue(key, ValueQueue.maybeWrap(value, contextData.getValue(key)))));
 
     contextData.freeze();
 

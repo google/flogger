@@ -2,6 +2,7 @@ package com.google.common.flogger.backend.log4j2;
 
 import com.google.common.flogger.GoogleLogContext;
 import com.google.common.flogger.GoogleLogger;
+import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.context.ContextDataProvider;
@@ -22,6 +23,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +96,24 @@ public class Log4j2ScopedLoggingTest {
     }
 
     @Test
+    public void testTag() {
+        try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
+                .getContextApiSingleton()
+                .newContext()
+                .withTags(Tags.builder().addTag("foo", "bar").build())
+                .install()
+        ) {
+            GoogleLogContext logContext = (GoogleLogContext) googleLogger.atInfo();
+            logContext.log("test");
+            backend.log(logContext); // this event will be caught
+            Map<String, Object> contextMap = new HashMap<String, Object>();
+            contextMap.put("tags", "[foo=bar]");
+            assertLogCount(1);
+            assertLogEntry(0, INFO, "test", contextMap);
+        }
+    }
+
+    @Test
     public void testTags() {
         try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
                 .getContextApiSingleton()
@@ -104,7 +125,77 @@ public class Log4j2ScopedLoggingTest {
             logContext.log("test");
             backend.log(logContext); // this event will be caught
             Map<String, Object> contextMap = new HashMap<String, Object>();
-            contextMap.put("tags", "[foo, bar=baz2, bar=baz]");
+            contextMap.put("tags", "[bar=baz, bar=baz2, foo]");
+            assertLogCount(1);
+            assertLogEntry(0, INFO, "test", contextMap);
+        }
+    }
+
+    @Test
+    public void testSingleCustomTagAsMetadataKey() {
+        try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
+                .getContextApiSingleton()
+                .newContext()
+                .withMetadata(MetadataKey.single("tags", Tags.class), Tags.of("foo", "bar"))
+                .install()
+        ) {
+            GoogleLogContext logContext = (GoogleLogContext) googleLogger.atInfo();
+            logContext.log("test");
+            backend.log(logContext); // this event will be caught
+            Map<String, Object> contextMap = new HashMap<String, Object>();
+            contextMap.put("tags", "[foo=bar]");
+            assertLogCount(1);
+            assertLogEntry(0, INFO, "test", contextMap);
+        }
+    }
+
+    @Test
+    public void testSingleTagAsMetadataKey() {
+        try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
+                .getContextApiSingleton()
+                .newContext()
+                .withMetadata(LogContext.Key.TAGS, Tags.of("foo", "bar"))
+                .install()
+        ) {
+            GoogleLogContext logContext = (GoogleLogContext) googleLogger.atInfo();
+            logContext.log("test");
+            backend.log(logContext); // this event will be caught
+            Map<String, Object> contextMap = new HashMap<String, Object>();
+            contextMap.put("tags", "[foo=bar]");
+            assertLogCount(1);
+            assertLogEntry(0, INFO, "test", contextMap);
+        }
+    }
+
+    @Test
+    public void testEmptyCustomTags_doNotDisplay() {
+        try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
+                .getContextApiSingleton()
+                .newContext()
+                .withMetadata(MetadataKey.single("tags", Tags.class), Tags.builder().build())
+                .install()
+        ) {
+            GoogleLogContext logContext = (GoogleLogContext) googleLogger.atInfo();
+            logContext.log("test");
+            backend.log(logContext); // this event will be caught
+            Map<String, Object> contextMap = new HashMap<String, Object>();
+            assertLogCount(1);
+            assertLogEntry(0, INFO, "test", contextMap);
+        }
+    }
+
+    @Test
+    public void testEmptyTags_doNotDisplay() {
+        try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
+                .getContextApiSingleton()
+                .newContext()
+                .withMetadata(LogContext.Key.TAGS, Tags.builder().build())
+                .install()
+        ) {
+            GoogleLogContext logContext = (GoogleLogContext) googleLogger.atInfo();
+            logContext.log("test");
+            backend.log(logContext); // this event will be caught
+            Map<String, Object> contextMap = new HashMap<String, Object>();
             assertLogCount(1);
             assertLogEntry(0, INFO, "test", contextMap);
         }
@@ -123,7 +214,7 @@ public class Log4j2ScopedLoggingTest {
             logContext.log("test");
             backend.log(logContext); // this event will be caught
             Map<String, Object> contextMap = new HashMap<String, Object>();
-            contextMap.put("tags", "[foo, bar=baz2, bar=baz, aTag]");
+            contextMap.put("tags", "[aTag, bar=baz, bar=baz2, foo]");
             assertLogCount(1);
             assertLogEntry(0, INFO, "test", contextMap);
         }
@@ -143,7 +234,7 @@ public class Log4j2ScopedLoggingTest {
             logContext.log("test");
             backend.log(logContext); // this event will be caught
             Map<String, Object> contextMap = new HashMap<String, Object>();
-            contextMap.put("tags", "[foo, bar=baz2, bar=baz, [aTag, anotherTag]]");
+            contextMap.put("tags", "[aTag, anotherTag, bar=baz, bar=baz2, foo]");
             assertLogCount(1);
             assertLogEntry(0, INFO, "test", contextMap);
         }
@@ -163,7 +254,47 @@ public class Log4j2ScopedLoggingTest {
             logContext.log("test");
             backend.log(logContext); // this event will be caught
             Map<String, Object> contextMap = new HashMap<String, Object>();
-            contextMap.put("tags", "[foo, bar=baz2, bar=baz, anotherTag]");
+            contextMap.put("tags", "[anotherTag, bar=baz, bar=baz2, foo]");
+            assertLogCount(1);
+            assertLogEntry(0, INFO, "test", contextMap);
+        }
+    }
+
+    @Test
+    public void testClashOfTagsWithMetadataHoldingAList() {
+        try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
+                .getContextApiSingleton()
+                .newContext()
+                .withMetadata(MetadataKey.single("tags", List.class), Arrays.asList(1, 2, 3))
+                .withTags(Tags.builder().addTag("foo").addTag("bar", "baz").build())
+                .install()
+        ) {
+            GoogleLogContext logContext = (GoogleLogContext) googleLogger.atInfo();
+            logContext.log("test");
+            backend.log(logContext); // this event will be caught
+            Map<String, Object> contextMap = new HashMap<String, Object>();
+            contextMap.put("tags", "[[1, 2, 3], bar=baz, foo]");
+            assertLogCount(1);
+            assertLogEntry(0, INFO, "test", contextMap);
+        }
+    }
+
+    @Test
+    public void testClashOfTagsWithMetadataHoldingAListAndRepeatableMetadata() {
+        try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
+                .getContextApiSingleton()
+                .newContext()
+                .withMetadata(MetadataKey.single("tags", List.class), Arrays.asList(1, 2, 3))
+                .withMetadata(REP_TAGS, "a")
+                .withMetadata(REP_TAGS, "b")
+                .withTags(Tags.builder().addTag("foo").addTag("bar", "baz").build())
+                .install()
+        ) {
+            GoogleLogContext logContext = (GoogleLogContext) googleLogger.atInfo();
+            logContext.log("test");
+            backend.log(logContext); // this event will be caught
+            Map<String, Object> contextMap = new HashMap<String, Object>();
+            contextMap.put("tags", "[[1, 2, 3], a, b, bar=baz, foo]");
             assertLogCount(1);
             assertLogEntry(0, INFO, "test", contextMap);
         }
@@ -183,7 +314,7 @@ public class Log4j2ScopedLoggingTest {
             logContext.log("test");
             backend.log(logContext); // this event will be caught
             Map<String, Object> contextMap = new HashMap<String, Object>();
-            contextMap.put("tags", "[foo, bar=baz2, bar=baz, [aValue, anotherValue]]");
+            contextMap.put("tags", "[aValue, anotherValue, bar=baz, bar=baz2, foo]");
             assertLogCount(1);
             assertLogEntry(0, INFO, "test", contextMap);
         }
@@ -221,7 +352,7 @@ public class Log4j2ScopedLoggingTest {
             logContext.log("test");
             backend.log(logContext); // this event will be caught
             Map<String, Object> contextMap = new HashMap<String, Object>();
-            contextMap.put("id", "[002, 001]");
+            contextMap.put("id", "[001, 002]");
             assertLogCount(1);
             assertLogEntry(0, INFO, "test", contextMap);
         }
@@ -265,6 +396,24 @@ public class Log4j2ScopedLoggingTest {
     }
 
     @Test
+    public void testSingleNonRepeatableMetadataList() {
+        try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
+                .getContextApiSingleton()
+                .newContext()
+                .withMetadata(MetadataKey.single("items", List.class), Arrays.asList(23))
+                .install()
+        ) {
+            GoogleLogContext logContext = (GoogleLogContext) googleLogger.atInfo();
+            logContext.log("test");
+            backend.log(logContext); // this event will be caught
+            Map<String, Object> contextMap = new HashMap<String, Object>();
+            contextMap.put("items", Collections.singletonList(23));
+            assertLogCount(1);
+            assertLogEntry(0, INFO, "test", contextMap);
+        }
+    }
+
+    @Test
     public void testScopedLoggingContext() {
         try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
                 .getContextApiSingleton()
@@ -278,7 +427,7 @@ public class Log4j2ScopedLoggingTest {
             backend.log(logContext); // this event will be caught
             Map<String, Object> contextMap = new HashMap<String, Object>();
             contextMap.put("count", 23);
-            contextMap.put("tags", "[foo, baz=bar2, baz=bar]");
+            contextMap.put("tags", "[baz=bar, baz=bar2, foo]");
             assertLogCount(1);
             assertLogEntry(0, INFO, "test", contextMap);
         }
@@ -305,7 +454,7 @@ public class Log4j2ScopedLoggingTest {
                 backend.log(logContext); // this event will be caught
                 Map<String, Object> contextMap = new HashMap<String, Object>();
                 contextMap.put("id", "002");
-                contextMap.put("tags", "[foo, baz=bar2, baz=bar]");
+                contextMap.put("tags", "[baz=bar, baz=bar2, foo]");
                 assertLogCount(1);
                 assertLogEntry(0, INFO, "test", contextMap);
             }
