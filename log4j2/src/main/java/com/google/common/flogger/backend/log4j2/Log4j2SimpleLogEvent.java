@@ -35,10 +35,12 @@ import org.apache.logging.log4j.util.StringMap;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.flogger.backend.log4j2.Log4j2SimpleMessageFormatter.SimpleLogHandler;
+
 /**
  * Class that represents a log entry that can be written to log4j2.
  */
-final class Log4j2SimpleLogEvent implements Log4j2MessageFormatter.SimpleLogHandler {
+final class Log4j2SimpleLogEvent implements SimpleLogHandler {
   private static final MetadataHandler<MetadataKey.KeyValueHandler> HANDLER = MetadataHandler
       .builder((MetadataHandler.ValueHandler<Object, MetadataKey.KeyValueHandler>) (key, value, kvh) ->
               ValueList.appendValues(key.getLabel(), value, kvh))

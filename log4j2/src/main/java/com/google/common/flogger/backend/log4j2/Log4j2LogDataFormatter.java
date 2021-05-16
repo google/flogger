@@ -22,6 +22,7 @@ import com.google.common.flogger.backend.Metadata;
 
 import java.util.logging.Level;
 
+import static com.google.common.flogger.backend.log4j2.Log4j2SimpleMessageFormatter.SimpleLogHandler;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -35,8 +36,8 @@ final class Log4j2LogDataFormatter {
    * Formats the log message and any metadata for the given {@link LogData}, calling the supplied
    * receiver object with the results.
    */
-  static void format(LogData logData, Log4j2MessageFormatter.SimpleLogHandler receiver) {
-    Log4j2MessageFormatter.format(logData, receiver);
+  static void format(LogData logData, SimpleLogHandler receiver) {
+    Log4j2SimpleMessageFormatter.format(logData, receiver);
   }
 
   /**
@@ -45,7 +46,7 @@ final class Log4j2LogDataFormatter {
    * as the cause. The level of this record is the maximum of WARNING or the original level.
    */
   static void formatBadLogData(
-          RuntimeException error, LogData badLogData, Log4j2MessageFormatter.SimpleLogHandler receiver) {
+          RuntimeException error, LogData badLogData, SimpleLogHandler receiver) {
     StringBuilder errorMsg =
             new StringBuilder("LOGGING ERROR: ").append(error.getMessage()).append('\n');
     int length = errorMsg.length();
