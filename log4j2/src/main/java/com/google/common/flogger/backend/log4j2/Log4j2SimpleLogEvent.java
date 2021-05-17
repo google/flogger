@@ -37,7 +37,7 @@ import org.apache.logging.log4j.util.StringMap;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.flogger.backend.log4j2.Log4j2SimpleMessageFormatter.SimpleLogHandler;
+import static com.google.common.flogger.backend.log4j2.Log4j2LogMessageFormatter.SimpleLogHandler;
 
 /**
  * Class that represents a log entry that can be written to log4j2.
@@ -142,7 +142,7 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
     // }
     //
     // The statement above will result in adding the following data to the context map:
-    // {count=23, tags=[foo, baz=bar2, baz=bar]}.
+    // {count=23, tags=[baz=bar, baz=bar2, foo]}.
     // By using '%X{key}' or '%X' in the ConversionPattern of an appender the metadata can be included in the
     // logs.
 

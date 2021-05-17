@@ -16,13 +16,15 @@
 
 package com.google.common.flogger.backend.log4j2;
 
+import com.google.common.flogger.LogContext;
+import com.google.common.flogger.backend.BaseMessageFormatter;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
 
 import java.util.logging.Level;
 
-import static com.google.common.flogger.backend.log4j2.Log4j2SimpleMessageFormatter.SimpleLogHandler;
+import static com.google.common.flogger.backend.log4j2.Log4j2LogMessageFormatter.*;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -37,7 +39,10 @@ final class Log4j2LogDataFormatter {
    * receiver object with the results.
    */
   static void format(LogData logData, SimpleLogHandler receiver) {
-    Log4j2SimpleMessageFormatter.format(logData, receiver);
+    Metadata metadata = logData.getMetadata();
+    Throwable thrown = metadata.findValue(LogContext.Key.LOG_CAUSE);
+    StringBuilder out = BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder());
+    receiver.handleFormattedLogMessage(logData.getLevel(), out.toString(), thrown);
   }
 
   /**
