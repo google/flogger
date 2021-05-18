@@ -12,113 +12,21 @@ load("//tools:maven.bzl", "pom_file")
 
 SYSTEM_BACKEND_SRCS = glob(["src/main/java/com/google/common/flogger/backend/system/**/*.java"])
 
-STACK_GETTER_STACK_WALKER_IMPL_SRCS = [
-    "src/main/java/com/google/common/flogger/util/StackWalkerStackGetter.java",
-]
-
-STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS = [
-    "src/main/java/com/google/common/flogger/util/JavaLangAccessStackGetter.java",
-]
-
-STACK_GETTER_COMMON_SRCS = [
-    "src/main/java/com/google/common/flogger/util/StackGetter.java",
-    "src/main/java/com/google/common/flogger/util/ThrowableStackGetter.java",
-]
-
-CHECKS = [
-    "src/main/java/com/google/common/flogger/util/Checks.java",
-]
-
 # The core 'frontend' Flogger library.
 java_library(
     name = "api",
     srcs = glob(
         ["src/main/java/**/*.java"],
-        exclude = SYSTEM_BACKEND_SRCS +
-                  STACK_GETTER_STACK_WALKER_IMPL_SRCS +
-                  STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS +
-                  STACK_GETTER_COMMON_SRCS + CHECKS,
+        exclude = SYSTEM_BACKEND_SRCS,
     ),
     javacopts = ["-source 1.6 -target 1.6"],
     tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
     visibility = ["//visibility:public"],
-    exports = [":checks"],
     deps = [
-        ":checks",
         ":platform_provider",
-        ":stack_getter_common",
-        ":stack_getter_impl",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
     ],
-)
-
-java_import(
-    name = "stack_getter_impl",
-    jars = [
-        "stack_getter_java_lang_access_impl.jar",
-        "stack_getter_stack_walker_impl.jar",
-    ],
-    deps = [":stack_getter_common"],
-)
-
-genrule(
-    name = "gen_stack_getter_java_lang_access_impl",
-    srcs = STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS + [
-        ":stack_getter_common",
-        ":checks",
-    ],
-    outs = ["stack_getter_java_lang_access_impl.jar"],
-    cmd = """
-set -eu
-TMPDIR=$$(mktemp -d)
-OUTPUT=$$PWD/$@
-STACK_GETTER_COMMON=$(location :stack_getter_common)
-CHECKS=$(location :checks)
-JAVABASE=$$PWD/$(JAVABASE)
-JAR=$$PWD/$(JAVABASE)/bin/jar
-$$JAVABASE/bin/javac -d $$TMPDIR -source 1.6 -target 1.6 -cp $${STACK_GETTER_COMMON}:$${CHECKS} -implicit:none \
-    $(location src/main/java/com/google/common/flogger/util/JavaLangAccessStackGetter.java)
-cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
-    """,
-    toolchains = ["@openjdk8//:runtime"],
-    tools = ["@openjdk8//:runtime"],
-)
-
-genrule(
-    name = "gen_stack_getter_stack_walker_impl",
-    srcs = STACK_GETTER_STACK_WALKER_IMPL_SRCS + [
-        ":stack_getter_common",
-        ":checks",
-    ],
-    outs = ["stack_getter_stack_walker_impl.jar"],
-    cmd = """
-set -eu
-TMPDIR=$$(mktemp -d)
-OUTPUT=$$PWD/$@
-STACK_GETTER_COMMON=$(location :stack_getter_common)
-CHECKS=$(location :checks)
-JAVABASE=$$PWD/$(JAVABASE)
-JAR=$$PWD/$(JAVABASE)/bin/jar
-$$JAVABASE/bin/javac -d $$TMPDIR -source 1.8 -target 1.8 -cp $${STACK_GETTER_COMMON}:$${CHECKS} -implicit:none \
-    $(location src/main/java/com/google/common/flogger/util/StackWalkerStackGetter.java)
-cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
-    """,
-    toolchains = ["@openjdk11//:runtime"],
-    tools = ["@openjdk11//:runtime"],
-)
-
-java_library(
-    name = "stack_getter_common",
-    srcs = STACK_GETTER_COMMON_SRCS,
-    javacopts = ["-source 8 -target 8"],
-    deps = [":checks"],
-)
-
-java_library(
-    name = "checks",
-    srcs = CHECKS,
-    javacopts = ["-source 8 -target 8"],
 )
 
 pom_file(
@@ -140,9 +48,7 @@ javadoc_library(
     name = "api_javadoc",
     srcs = glob(
         ["src/main/java/**/*.java"],
-        exclude = SYSTEM_BACKEND_SRCS +
-                  STACK_GETTER_STACK_WALKER_IMPL_SRCS +
-                  STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS,
+        exclude = SYSTEM_BACKEND_SRCS,
     ),
     root_packages = ["com.google.common.flogger"],
     deps = [":api"],
@@ -191,7 +97,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         ":api",
-        ":checks",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
         "@google_bazel_common//third_party/java/guava",
@@ -249,11 +154,7 @@ filegroup(
 filegroup(
     name = "javadoc_sources",
     testonly = 1,
-    srcs = glob(
-        ["src/main/java/**"],
-        exclude = STACK_GETTER_STACK_WALKER_IMPL_SRCS +
-                  STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS,
-    ) + TESTING_SRCS,
+    srcs = glob(["src/main/java/**"]) + TESTING_SRCS,
     visibility = ["//visibility:public"],
 )
 
@@ -269,8 +170,6 @@ gen_java_tests(
     ),
     deps = [
         ":api",
-        ":stack_getter_common",
-        ":stack_getter_impl",
         ":system_backend",
         ":testing",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
