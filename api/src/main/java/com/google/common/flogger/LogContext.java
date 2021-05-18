@@ -555,7 +555,7 @@ public abstract class LogContext<
             new LogSiteStackTrace(
                 getMetadata().findValue(Key.LOG_CAUSE),
                 stackSize,
-                getStackForCallerOf(LogContext.class, new Throwable(), stackSize.getMaxDepth(), 1));
+                getStackForCallerOf(LogContext.class, stackSize.getMaxDepth(), 1));
         // The "cause" is a unique metadata key, we must replace any existing value.
         addMetadata(Key.LOG_CAUSE, context);
       }
