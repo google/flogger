@@ -28,6 +28,7 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
+import org.apache.logging.log4j.util.SortedArrayStringMap;
 
 /** Class that represents a log entry that can be written to log4j2. */
 final class Log4j2SimpleLogEvent implements SimpleLogHandler {
@@ -84,9 +85,9 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
     // are written from the current thread.
     //
     // Example:
-    //  MDC.put("user.id", userId);
+    //  ThreadContext.put("user.id", userId);
     //  // do business logic that triggers logs
-    //  MDC.clear();
+    //  ThreadContext.clear();
     //
     // By using '%X{key}' in the ConversionPattern of an appender this data can be included in the
     // logs.
@@ -112,7 +113,7 @@ final class Log4j2SimpleLogEvent implements SimpleLogHandler {
         .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
         .setIncludeLocation(true)
         .setSource(getLocationInfo())
-        .setContextMap(mdcProperties)
+        .setContextData(new SortedArrayStringMap(mdcProperties))
         .build();
   }
 
