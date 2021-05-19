@@ -30,3 +30,25 @@ http_archive(
 load("@google_bazel_common//:workspace_defs.bzl", "google_common_workspace_rules")
 
 google_common_workspace_rules()
+
+http_archive(
+    name = "openjdk8",
+    build_file_content = """
+java_runtime(name = 'runtime', srcs =  glob(['**']), visibility = ['//visibility:public'])
+exports_files(["WORKSPACE"], visibility = ["//visibility:public"])
+""",
+    sha256 = "568e7578f1b20b1e62a8ed2c374bad4eb0e75d221323ccfa6ba8d7bc56cf33cf",
+    strip_prefix = "zulu8.38.0.13-ca-jdk8.0.212-linux_x64",
+    urls = ["https://mirror.bazel.build/openjdk/azul-zulu8.38.0.13-ca-jdk8.0.212/zulu8.38.0.13-ca-jdk8.0.212-linux_x64.tar.gz"],
+)
+
+http_archive(
+    name = "openjdk11",
+    build_file_content = """
+java_runtime(name = 'runtime', srcs =  glob(['**']), visibility = ['//visibility:public'])
+exports_files(["WORKSPACE"], visibility = ["//visibility:public"])
+""",
+    sha256 = "ddb0fd4526089cf1ce2db36282c282263f587a9e8be373fa02f511a12923cc48",
+    strip_prefix = "zulu11.31.11-ca-jdk11.0.3-linux_x64",
+    urls = ["https://mirror.bazel.build/openjdk/azul-zulu11.31.11-ca-jdk11.0.3/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz"],
+)
