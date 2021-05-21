@@ -228,7 +228,7 @@ public abstract class AbstractLogRecord extends LogRecord {
    * differs from {@link #getMessage()} if this log record was modified externally after creation
    * by resetting the log message or parameters.
    *
-   * <p>Use {@link appendFormattedMessageTo(StringBuilder)} whenever a buffer is already available.
+   * <p>Use {@link #appendFormattedMessageTo(StringBuilder)} whenever a buffer is already available.
    */
   public final String getFormattedMessage() {
     if (getParameters().length == 0) {

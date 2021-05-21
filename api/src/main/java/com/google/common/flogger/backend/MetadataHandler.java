@@ -73,8 +73,8 @@ public abstract class MetadataHandler<C> {
    *
    * <p>A default handler is required because no handler can know the complete set of keys which
    * might be available and it is very undesirable to drop unknown keys. If default repeated values
-   * should be handled together, then {@link
-   * Builder#setDefaultRepeatedHandler(RepeatedValueHandler)} should be called as well.
+   * should be handled together, {@link Builder#setDefaultRepeatedHandler(RepeatedValueHandler)}
+   * should be called as well.
    *
    * <p>Unknown keys/values can only be handled in a generic fashion unless a given key is matched
    * to a known constant. However the entire point of this map-based handler is to avoid any need to
@@ -157,12 +157,11 @@ public abstract class MetadataHandler<C> {
 
     /**
      * Sets a handler for any unknown repeated keys which allows values to be processed via a
-     * generic {@link Iterator<Object>}. To handle repeated values against a known key with their
-     * expected type, register a handler via {@link #addRepeatedHandler(MetadataKey,
-     * RepeatedValueHandler)}.
+     * generic {@link Iterator}. To handle repeated values against a known key with their expected
+     * type, register a handler via {@link #addRepeatedHandler(MetadataKey,RepeatedValueHandler)}.
      *
      * <p>Note that if a repeated key is associated with an individual value handler (i.e. via
-     * {@link #addHandler(MetadataKey, ValueHandler)}), then that will be used in preference to the
+     * {@link #addHandler(MetadataKey,ValueHandler)}), then that will be used in preference to the
      * default handler set here.
      *
      * @param defaultHandler the default handler for unknown repeated keys/values.
