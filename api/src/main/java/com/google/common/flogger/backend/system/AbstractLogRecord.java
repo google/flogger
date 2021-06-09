@@ -152,7 +152,7 @@ public abstract class AbstractLogRecord extends LogRecord {
    * requiring a new field in this class (to cut down on instance size).
    */
   protected LogMessageFormatter getLogMessageFormatter() {
-    return SimpleMessageFormatter.getDefaultFormatter();
+    return SimpleMessageFormatter.getDefaultFormatter(data.getMetadata());
   }
 
   @Override
