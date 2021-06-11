@@ -24,6 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
+/**
+ * A mutable fake {@link Metadata} implementation to help test logging backends and other log
+ * handling code.
+ */
 public final class FakeMetadata extends Metadata {
 
   private static final class KeyValuePair<T> {

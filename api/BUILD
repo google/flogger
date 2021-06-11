@@ -178,8 +178,8 @@ javadoc_library(
 
 # Utilities to help test Fluent Loggers. This target includes simple fakes for
 # creating injectable test data as well as Truth subjects for asserting things
-# about log statements. This
-# should only be needed by anyone writing their own fluent logger.
+# about log statements. This should only be needed by anyone writing their own
+# fluent logger.
 
 TESTING_SRCS = glob(["src/test/java/com/google/common/flogger/testing/**/*.java"])
 
@@ -192,6 +192,7 @@ java_library(
     deps = [
         ":api",
         ":checks",
+        ":system_backend",  # For AbstractLogRecord needed for FakeLogRecord
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
         "@google_bazel_common//third_party/java/guava",
