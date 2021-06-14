@@ -26,6 +26,7 @@ import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.MetadataProcessor;
+import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
 import java.util.Collections;
 import java.util.Map;
@@ -37,14 +38,20 @@ import org.apache.logging.log4j.core.time.MutableInstant;
 import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
 
-/** Helper to format LogData */
+/** Helper to format LogData.
+ *
+ * <p>Note: Any changes in this code should, as far as possible, be reflected in the equivalently
+ * named log4j implementation. If the behaviour of this class starts to deviate from that of the
+ * log4j backend in any significant way, this difference should be called out clearly in the
+ * documentation.
+ */
 final class Log4j2LogEventUtil {
 
   private Log4j2LogEventUtil() {}
 
   static LogEvent toLog4jLogEvent(String loggerName, LogData logData) {
     MetadataProcessor metadata =
-        MetadataProcessor.forScopeAndLogSite(Metadata.empty(), logData.getMetadata());
+        MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata());
     String message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
     return toLog4jLogEvent(

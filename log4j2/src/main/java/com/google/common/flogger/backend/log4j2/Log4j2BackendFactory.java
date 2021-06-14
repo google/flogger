@@ -31,6 +31,11 @@ import org.apache.logging.log4j.core.Logger;
  *   <li>{@code flogger.backend_factory=
  *       com.google.common.flogger.backend.log4j2.Log4j2BackendFactory#getInstance}
  * </ul>
+ *
+ * <p>Note: Any changes in this code should, as far as possible, be reflected in the equivalently
+ * named log4j implementation. If the behaviour of this class starts to deviate from that of the
+ * log4j backend in any significant way, this difference should be called out clearly in the
+ * documentation.
  */
 public final class Log4j2BackendFactory extends BackendFactory {
   private static final Log4j2BackendFactory INSTANCE = new Log4j2BackendFactory();
