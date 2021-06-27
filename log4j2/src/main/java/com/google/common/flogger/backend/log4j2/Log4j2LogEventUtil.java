@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
+import com.google.common.flogger.backend.BaseMessageFormatter;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
@@ -63,7 +64,7 @@ final class Log4j2LogEventUtil {
     // For the moment, I'd argue we want to pass the context data to log4j2 and make use of a log4j2
     // condiguration file. Hence the line below ist commented out.
     // String message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
-    String message = BaseMessageFormatter.appendFormattedMessage(logData, buffer);
+    String message = BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder()).toString();
 
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
     return toLog4jLogEvent(
