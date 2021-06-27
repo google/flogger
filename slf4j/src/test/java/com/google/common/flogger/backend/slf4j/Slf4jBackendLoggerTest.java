@@ -102,7 +102,9 @@ public class Slf4jBackendLoggerTest {
     Logger logger = mock(Logger.class);
     LoggerBackend backend = newBackend(logger);
 
-    LogData data = FakeLogData.withPrintfStyle("Hello %?X World", "ignored");
+    LogData data =
+        FakeLogData.withPrintfStyle("Hello %?X World", "ignored")
+            .addMetadata(LogContext.Key.LOG_CAUSE, new RuntimeException("<<error message>>"));
     try {
       backend.log(data);
       fail("expected ParseException");
@@ -115,6 +117,8 @@ public class Slf4jBackendLoggerTest {
                   + "  original message: Hello %?X World\n"
                   + "  original arguments:\n"
                   + "    ignored\n"
+                  + "  metadata:\n"
+                  + "    cause: java.lang.RuntimeException: <<error message>>\n"
                   + "  level: INFO\n"
                   + "  timestamp (nanos): 0\n"
                   + "  class: com.google.FakeClass\n"

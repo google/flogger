@@ -367,12 +367,13 @@ public interface LoggingApi<API extends LoggingApi<API>> {
   /**
    * Logs a formatted representation of values in the given array, using the specified message
    * template.
-   * <p>
-   * This method is only expected to be invoked with an existing varargs array passed in from
+   *
+   * <p>This method is only expected to be invoked with an existing varargs array passed in from
    * another method. Unlike {@link #log(String, Object)}, which would treat an array as a single
    * parameter, this method will unwrap the given array.
    *
-   * @param message the message template string containing a single argument placeholder.
+   * @param message the message template string containing an argument placeholder for each element
+   *     of {@code varargs}.
    * @param varargs the non-null array of arguments to be formatted.
    */
   void logVarargs(String message, @NullableDecl Object[] varargs);

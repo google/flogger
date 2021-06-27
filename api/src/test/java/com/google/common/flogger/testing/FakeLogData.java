@@ -31,10 +31,8 @@ import com.google.common.flogger.parser.MessageParser;
 import java.util.logging.Level;
 
 /**
- * Helper class to test logging backends without needing to create actual loggers.
- * <p>
- * This helps decouple the testing of the backend from the frontend, and makes the intent of the
- * tests clearer.
+ * A mutable fake {@link LogData} implementation to help test logging backends and other log
+ * handling code.
  */
 public final class FakeLogData implements LogData {
   public static final String FAKE_LOGGER_NAME = "com.google.LoggerName";

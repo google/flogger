@@ -42,22 +42,29 @@ import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.util.StringMap;
 
-/** Helper to format LogData */
+/** Helper to format LogData.
+ *
+ * <p>Note: Any changes in this code should, as far as possible, be reflected in the equivalently
+ * named log4j implementation. If the behaviour of this class starts to deviate from that of the
+ * log4j backend in any significant way, this difference should be called out clearly in the
+ * documentation.
+ */
 final class Log4j2LogEventUtil {
 
   private Log4j2LogEventUtil() {}
 
   static LogEvent toLog4jLogEvent(String loggerName, LogData logData) {
     MetadataProcessor metadata =
-        MetadataProcessor.forScopeAndLogSite(Metadata.empty(), logData.getMetadata());
+        MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata());
     // TODO: Check if the user of the log4j2 backend requires more flexibility when deciding which
     //       formatter to use. I'd argue that the BaseMessageFormatter is sufficient, whenever a log4j2.xml
     //       file is present. However, users might be fine with not using log4j2 specifics when using flogger
     //       and then it is sufficient to use the default formatter.
     // For the moment, I'd argue we want to pass the context data to log4j2 and make use of a log4j2
-    // application file. Hence the line below ist commented out.
-    //  String message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
+    // condiguration file. Hence the line below ist commented out.
+    // String message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
     String message = BaseMessageFormatter.appendFormattedMessage(logData, buffer);
+
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
     return toLog4jLogEvent(
         loggerName, logData, message, toLog4jLevel(logData.getLevel()), thrown);
