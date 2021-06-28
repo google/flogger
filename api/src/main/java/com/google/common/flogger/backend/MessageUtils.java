@@ -51,7 +51,7 @@ public final class MessageUtils {
    */
   public static String safeToString(Object value) {
     try {
-      return value != null ? toString(value) : "null";
+      return toString(value);
     } catch (RuntimeException e) {
       return getErrorString(value, e);
     }
@@ -62,13 +62,19 @@ public final class MessageUtils {
    * return a human readable representation, possibly going beyond the default {@code toString()}
    * representation for some well defined types.
    *
-   * @param value the non-null value to be formatted.
-   * @return a readable string representation of the given value.
+   * @param value the value to be formatted (possibly null).
+   * @return a non-null string representation of the given value (possibly "null").
    */
   private static String toString(Object value) {
-    if (!value.getClass().isArray()) {
-      return String.valueOf(value);
+    if (value == null) {
+      return "null";
     }
+    if (!value.getClass().isArray()) {
+      // toString() itself can return null and surprisingly "String.valueOf(value)" doesn't handle
+      // that, so we MUST do "String.valueOf(value.toString())" to ensure we never return "null".
+      return String.valueOf(value.toString());
+    }
+    // None of the following methods can return null if given a non-null value.
     if (value instanceof int[]) {
       return Arrays.toString((int[]) value);
     }

@@ -49,7 +49,19 @@ public class MessageUtilsTest {
   }
 
   @Test
-  public void testSafeToString_error() {
+  public void testSafeToString_nullToString() {
+    Object value =
+        new Object() {
+          @Override
+          public String toString() {
+            return null;
+          }
+        };
+    assertThat(MessageUtils.safeToString(value)).isEqualTo("null");
+  }
+
+  @Test
+  public void testSafeToString_toStringError() {
     Object value =
         new Object() {
           @Override
