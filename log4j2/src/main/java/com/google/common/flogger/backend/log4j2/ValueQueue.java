@@ -28,14 +28,11 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
  * label while being memory efficient in the common case where each label really does only have one
  * value.
  */
-public class ValueQueue implements Iterable<Object> {
+final class ValueQueue implements Iterable<Object> {
 
-    private Node head, tail;
+    private Node head;
+    private Node tail;
     private int size;
-
-    private ValueQueue() {
-        head = tail = null;
-    }
 
     static ValueQueue newQueue(Object item) {
         checkNotNull(item, "item");
@@ -183,7 +180,7 @@ public class ValueQueue implements Iterable<Object> {
         return Objects.hash(head, tail, size);
     }
 
-    private static class LinkedIterator implements Iterator<Object> {
+    private static final class LinkedIterator implements Iterator<Object> {
         private Node current;
 
         private LinkedIterator(ValueQueue valueQueue) {
@@ -211,7 +208,7 @@ public class ValueQueue implements Iterable<Object> {
         }
     }
 
-    private static class Node {
+    private static final class Node {
         private final Object item;
         private Node next;
 
