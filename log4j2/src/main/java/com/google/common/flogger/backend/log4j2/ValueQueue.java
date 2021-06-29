@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.flogger.util.Checks.checkNotNull;
 
 /**
  * A simple FIFO queue linked-list implementation designed to store multiple metadata values
@@ -38,14 +38,14 @@ public class ValueQueue implements Iterable<Object> {
     }
 
     static ValueQueue newQueue(Object item) {
-        checkNotNull(item);
+        checkNotNull(item, "item");
         ValueQueue valueQueue = new ValueQueue();
         valueQueue.put(item);
         return valueQueue;
     }
 
     static Object maybeWrap(Object value, @NullableDecl Object existingValue) {
-        checkNotNull(value);
+        checkNotNull(value, "value");
         if (existingValue == null) {
             return value;
         } else {
@@ -125,7 +125,7 @@ public class ValueQueue implements Iterable<Object> {
     }
 
     void put(Object item) {
-        checkNotNull(item);
+        checkNotNull(item, "item");
         Node node = tail;
         tail = new Node(item);
         if (isEmpty()) {
@@ -216,7 +216,7 @@ public class ValueQueue implements Iterable<Object> {
         private Node next;
 
         Node(Object item) {
-            checkNotNull(item);
+            checkNotNull(item, "item");
             this.item = item;
             next = null;
         }

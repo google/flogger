@@ -20,7 +20,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.WARNING;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
@@ -34,6 +33,8 @@ import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.impl.ContextDataFactory;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
@@ -199,7 +200,11 @@ final class Log4j2LogEventUtil {
     ValueQueue valueQueue = ValueQueue.appendValueToNewQueue(value);
     // Unlike single metadata (which is usually formatted as a single value), tags are always formatted as a list.
     // Given the tags: tags -> foo=[bar], it will be formatted as tags=[foo=bar].
-    ValueQueue.appendValues(key.getLabel(), valueQueue.size() == 1 ? ImmutableList.copyOf(valueQueue) : valueQueue, kvh);
+    ValueQueue.appendValues(
+            key.getLabel(),
+            valueQueue.size() == 1
+                    ? StreamSupport.stream(valueQueue.spliterator(), false).collect(Collectors.toList())
+                    : valueQueue, kvh);
   }
 
   /**
