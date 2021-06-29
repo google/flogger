@@ -18,7 +18,6 @@ java_library(
     deps = [
         "//api",
         "//api:system_backend",
-        "//grpc:grpc_context",
         "@com_google_errorprone_error_prone_annotations",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/log4j2",
