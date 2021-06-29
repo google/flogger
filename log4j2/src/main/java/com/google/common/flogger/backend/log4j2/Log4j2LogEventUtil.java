@@ -31,7 +31,6 @@ import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.MetadataHandler;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.backend.Platform;
-import com.google.common.flogger.backend.SimpleMessageFormatter;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
@@ -63,7 +62,7 @@ final class Log4j2LogEventUtil {
     //       file is present. However, users might be fine with not using log4j2 specifics when using flogger
     //       and then it is sufficient to use the default formatter.
     // For the moment, I'd argue we want to pass the context data to log4j2 and make use of a log4j2
-    // configuration file. 
+    // configuration file.
     String message = BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder()).toString();
 
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
