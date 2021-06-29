@@ -32,6 +32,7 @@ import com.google.common.flogger.backend.MetadataHandler;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
+import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
 import org.apache.logging.log4j.core.LogEvent;
@@ -62,8 +63,7 @@ final class Log4j2LogEventUtil {
     //       file is present. However, users might be fine with not using log4j2 specifics when using flogger
     //       and then it is sufficient to use the default formatter.
     // For the moment, I'd argue we want to pass the context data to log4j2 and make use of a log4j2
-    // condiguration file. Hence the line below ist commented out.
-    // String message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
+    // configuration file. 
     String message = BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder()).toString();
 
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
@@ -204,29 +204,11 @@ final class Log4j2LogEventUtil {
   }
 
   /**
-   * We do not support 'MDC.getContext()' and 'NDC.getStack()' and we do not make any attempt to merge Log4j2
-   * context data with Flogger's context data. Instead, users should use the ScopedLoggingContext (Grpc).
+   * We do not support {@code MDC.getContext()} and {@code NDC.getStack()} and we do not make any attempt to merge
+   * Log4j2 context data with Flogger's context data. Instead, users should use the {@link ScopedLoggingContext}.
    *
-   * Flogger's ScopedLoggingContext allows to include additional metadata and tags into logs which are
-   * written from current thread.
-   *
-   * Example:
-   * <pre>{@code
-   * try (ScopedLoggingContext.LoggingContextCloseable ctx = ContextDataProvider.getInstance()
-   *          .getContextApiSingleton()
-   *          .newContext()
-   *          .withMetadata(COUNT_KEY, 23)
-   *          .withTags(Tags.builder().addTag("foo").addTag("baz", "bar").addTag("baz", "bar2").build())
-   *          .install()) {
-   *
-   *      // do business logic that triggers logs
-   * }
-   * }</pre>
-   *
-   * The statement above will result in adding the following data to the context map:
-   *  {count=23, tags=[baz=bar, baz=bar2, foo]}.
-   * By using '%X{key}' or '%X' in the ConversionPattern of an appender the metadata can be included in the
-   * logs.
+   * Flogger's {@link ScopedLoggingContext} allows to include additional metadata and tags into logs which are
+   * written from current thread. This context data will be added to the log4j2 event.
    */
   private static StringMap createContextMap(LogData logData) {
     MetadataProcessor metadataProcessor = MetadataProcessor.forScopeAndLogSite(
