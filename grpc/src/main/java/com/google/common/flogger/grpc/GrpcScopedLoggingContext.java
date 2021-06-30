@@ -37,10 +37,11 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * platform is configured) since other classes it uses may well use fluent loggers.
  */
 final class GrpcScopedLoggingContext extends ScopedLoggingContext {
-  private static final ScopedLoggingContext INSTANCE = new GrpcScopedLoggingContext();
 
-  static ScopedLoggingContext getGrpcConfigInstance() {
-    return INSTANCE;
+  private final GrpcContextDataProvider provider;
+
+  GrpcScopedLoggingContext(GrpcContextDataProvider provider) {
+    this.provider = provider;
   }
 
   @Override
@@ -60,7 +61,7 @@ final class GrpcScopedLoggingContext extends ScopedLoggingContext {
       @Override
       public LoggingContextCloseable install() {
         GrpcContextData newContextData =
-            new GrpcContextData(GrpcContextDataProvider.currentContext(), scopeType);
+            new GrpcContextData(GrpcContextDataProvider.currentContext(), scopeType, provider);
         newContextData.addTags(getTags());
         newContextData.addMetadata(getMetadata());
         newContextData.applyLogLevelMap(getLogLevelMap());

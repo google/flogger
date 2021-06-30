@@ -42,14 +42,6 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  */
 public final class GrpcContextDataProvider extends ContextDataProvider {
 
-  // A public no-arg constructor is necessary for use by ServiceLoader
-  public GrpcContextDataProvider() {}
-
-  // When this is false we can skip some work for every log statement. This is set to true if _any_
-  // context adds a log level map at any point (this is generally rare and only used for targeted
-  // debugging so will often never occur during normal application use). This is never reset.
-  private volatile boolean hasLogLevelMap = false;
-
   // For use by GrpcScopedLoggingContext (same package). We cannot define the keys in there because
   // this class must not depend on GrpcScopedLoggingContext during static initialization. We must
   // also delay initializing this value (via a lazy-holder) to avoid any risks during logger
@@ -64,6 +56,20 @@ public final class GrpcContextDataProvider extends ContextDataProvider {
     return getContextKey().get();
   }
 
+  // This is created lazily to avoid requiring it to be initiated at the same time as
+  // GrpcContextDataProvider (which is created as the Platform instance is initialized). By doing
+  // this we break any initialization cycles and allow the config API perform its own logging if
+  // necessary.
+  private volatile GrpcScopedLoggingContext configInstance = null;
+
+  // When this is false we can skip some work for every log statement. This is set to true if _any_
+  // context adds a log level map at any point (this is generally rare and only used for targeted
+  // debugging so will often never occur during normal application use). This is never reset.
+  private volatile boolean hasLogLevelMap = false;
+
+  // A public no-arg constructor is necessary for use by ServiceLoader
+  public GrpcContextDataProvider() {}
+
   /** Sets the flag to enable checking for a log level map after one is set for the first time. */
   void setLogLevelMapFlag() {
     hasLogLevelMap = true;
@@ -71,11 +77,13 @@ public final class GrpcContextDataProvider extends ContextDataProvider {
 
   @Override
   public ScopedLoggingContext getContextApiSingleton() {
-    // This is a lazy-holder to avoid requiring the API instance to be initiated at the same time
-    // as the LoggingContext (which is created as the Platform instance is initialized). By doing
-    // this we break any static initialization cycles and allow the config API perform its own
-    // logging if necessary. DO NOT cache the config instance in a static field in this class!!
-    return GrpcScopedLoggingContext.getGrpcConfigInstance();
+    GrpcScopedLoggingContext result = configInstance;
+    if (result == null) {
+      // GrpcScopedLoggingContext is stateless so we shouldn't need double-checked locking here to
+      // ensure we don't make more than one.
+      configInstance = result = new GrpcScopedLoggingContext(this);
+    }
+    return result;
   }
 
   @Override
