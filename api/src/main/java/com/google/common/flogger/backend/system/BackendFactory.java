@@ -43,6 +43,19 @@ import com.google.common.flogger.backend.LoggerBackend;
  * <p>While this sounds onerous it's not difficult to achieve because this API is a singleton, and
  * can delay any actual work until its methods are called. For example if any additional state is
  * required in the implementation, it can be held via a "lazy holder" to defer initialization.
+ *
+ * <h2>This is a service type</h2>
+ *
+ * <p>This type is considered a <i>service type</i> and implemenations may be loaded from the
+ * classpath via {@link java.util.ServiceLoader} provided the proper service metadata is included in
+ * the jar file containing the implementation. When creating an implementation of this class, you
+ * can provide serivce metadata (and thereby allow users to get your implementation just by
+ * including your jar file) by either manually including a {@code
+ * META-INF/services/com.google.common.flogger.backend.system.BackendFactory} file containing the
+ * name of your implementation class or by annotating your implementation class using <a
+ * href="https://github.com/google/auto/tree/master/service">
+ * {@code @AutoService(BackendFactory.class)}</a>. See the documentation of both {@link
+ * java.util.ServiceLoader} and {@link DefaultPlatform} for more information.
  */
 public abstract class BackendFactory {
   /**

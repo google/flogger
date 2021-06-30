@@ -17,6 +17,7 @@
 package com.google.common.flogger.grpc;
 
 import com.google.common.flogger.LoggingScope;
+import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.context.ContextMetadata;
 import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopeType;
@@ -133,7 +134,7 @@ final class GrpcContextData {
     if (logLevelMap != null) {
       // Set the global flag to trigger testing of the log level map from now on (we only apply a
       // log level map to an active context or one that's about to become active).
-      GrpcContextDataProvider.INSTANCE.setLogLevelMapFlag();
+      ((GrpcContextDataProvider) Platform.getContextDataProvider()).setLogLevelMapFlag();
       logLevelMapRef.mergeFrom(logLevelMap);
     }
   }

@@ -274,6 +274,7 @@ gen_java_tests(
         ":stack_getter_impl",
         ":system_backend",
         ":testing",
+        "@google_bazel_common//third_party/java/auto:service",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/junit",

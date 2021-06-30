@@ -65,6 +65,8 @@ public class DefaultPlatformTest {
   @Mock ContextDataProvider mockContext;
   @Mock Clock mockClock;
   @Mock LogCallerFinder mockCallerFinder;
+
+  // The fake platform doesn't attempt to look up any real services, they are just injected mocks.
   private FakeDefaultPlatform platform;
 
   @Before
@@ -106,7 +108,7 @@ public class DefaultPlatformTest {
     assertThat(platform.getConfigInfoImpl()).contains(DefaultPlatform.class.getName());
     assertThat(platform.getConfigInfoImpl()).contains("Clock: Mock Clock");
     assertThat(platform.getConfigInfoImpl()).contains("BackendFactory: Mock Backend Factory");
-    assertThat(platform.getConfigInfoImpl()).contains("LoggingContext: Mock Logging Context");
+    assertThat(platform.getConfigInfoImpl()).contains("ContextDataProvider: Mock Logging Context");
     assertThat(platform.getConfigInfoImpl()).contains("LogCallerFinder: Mock Caller Finder");
   }
 }
