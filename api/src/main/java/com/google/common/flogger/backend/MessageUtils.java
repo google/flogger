@@ -35,11 +35,34 @@ import java.util.Locale;
  * message formatting.
  */
 public final class MessageUtils {
+
+  // Error message for if toString() returns null.
+  private static final String NULL_TOSTRING_MESSAGE = "toString() returned null";
+
   private MessageUtils() {}
 
   // It would be more "proper" to use "Locale.getDefault(Locale.Category.FORMAT)" here, but also
   // removes the capability of optimising certain formatting operations.
   static final Locale FORMAT_LOCALE = Locale.ROOT;
+
+  /**
+   * Appends log-site information in the default format, including a trailing space.
+   *
+   * @param logSite the log site to be appended (ingored if {@link LogSite#INVALID}).
+   * @param out the destination buffer.
+   * @return whether the log-site was appended.
+   */
+  public static boolean appendLogSite(LogSite logSite, StringBuilder out) {
+    if (logSite == LogSite.INVALID) {
+      return false;
+    }
+    out.append(logSite.getClassName())
+        .append('.')
+        .append(logSite.getMethodName())
+        .append(':')
+        .append(logSite.getLineNumber());
+    return true;
+  }
 
   /**
    * Returns a string representation of the user supplied value accounting for any possible runtime
@@ -51,7 +74,7 @@ public final class MessageUtils {
    */
   public static String safeToString(Object value) {
     try {
-      return toString(value);
+      return toNonNullString(value);
     } catch (RuntimeException e) {
       return getErrorString(value, e);
     }
@@ -65,14 +88,16 @@ public final class MessageUtils {
    * @param value the value to be formatted (possibly null).
    * @return a non-null string representation of the given value (possibly "null").
    */
-  private static String toString(Object value) {
+  private static String toNonNullString(Object value) {
     if (value == null) {
       return "null";
     }
     if (!value.getClass().isArray()) {
       // toString() itself can return null and surprisingly "String.valueOf(value)" doesn't handle
-      // that, so we MUST do "String.valueOf(value.toString())" to ensure we never return "null".
-      return String.valueOf(value.toString());
+      // that, and we want to ensure we never return "null". We also want to distinguish a null
+      // value (which is normal) from having toString() return null (which is an error).
+      String s = value.toString();
+      return s != null ? s : formatErrorMessageFor(value, NULL_TOSTRING_MESSAGE);
     }
     // None of the following methods can return null if given a non-null value.
     if (value instanceof int[]) {
@@ -184,6 +209,10 @@ public final class MessageUtils {
       // Ok, now you're just being silly...
       errorMessage = runtimeException.getClass().getSimpleName();
     }
+    return formatErrorMessageFor(value, errorMessage);
+  }
+
+  private static String formatErrorMessageFor(Object value, String errorMessage) {
     return "{"
         + value.getClass().getName()
         + "@"
@@ -191,24 +220,5 @@ public final class MessageUtils {
         + ": "
         + errorMessage
         + "}";
-  }
-
-  /**
-   * Appends log-site information in the default format, including a trailing space.
-   *
-   * @param logSite the log site to be appended (ingored if {@link LogSite#INVALID}).
-   * @param out the destination buffer.
-   * @return whether the log-site was appended.
-   */
-  public static boolean appendLogSite(LogSite logSite, StringBuilder out) {
-    if (logSite == LogSite.INVALID) {
-      return false;
-    }
-    out.append(logSite.getClassName())
-        .append('.')
-        .append(logSite.getMethodName())
-        .append(':')
-        .append(logSite.getLineNumber());
-    return true;
   }
 }
