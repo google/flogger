@@ -5,15 +5,16 @@ import com.google.common.flogger.context.Tags;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 /**
  * A simple FIFO queue linked-list implementation designed to store multiple metadata values
- * efficiently in a StringMap that is tailored according to our needs. There are two aspects worth
- * pointing out:
+ * in a StringMap. There are two aspects worth pointing out:
  * <p>
  * First, it is expected that a value queue always contains at least a single item.
  * You cannot add null references to the queue and you cannot create an empty queue.
@@ -30,9 +31,11 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
  */
 final class ValueQueue implements Iterable<Object> {
 
-    private Node head;
-    private Node tail;
-    private int size;
+    private final List<Object> values;
+
+    ValueQueue() {
+        values = new LinkedList<>();
+    }
 
     static ValueQueue newQueue(Object item) {
         checkNotNull(item, "item");
@@ -91,7 +94,7 @@ final class ValueQueue implements Iterable<Object> {
      * the value queue is going to store the mappings as:
      * tags=[baz, foo=false, foo=true]
      * }</pre>
-     *
+     * <p>
      * Reusing the label 'tags' is intentional as this allows us to store the
      * flatten tags in Log4j2's ContextMap.
      */
@@ -114,27 +117,16 @@ final class ValueQueue implements Iterable<Object> {
 
     @Override
     public Iterator<Object> iterator() {
-        return new LinkedIterator(this);
-    }
-
-    boolean isEmpty() {
-        return head == null;
+        return values.iterator();
     }
 
     void put(Object item) {
         checkNotNull(item, "item");
-        Node node = tail;
-        tail = new Node(item);
-        if (isEmpty()) {
-            head = tail;
-        } else {
-            node.next = tail;
-        }
-        size++;
+        values.add(item);
     }
 
-    public int size() {
-        return size;
+    int size() {
+        return values.size();
     }
 
     /**
@@ -146,90 +138,33 @@ final class ValueQueue implements Iterable<Object> {
     @Override
     public String toString() {
         // This case shouldn't actually happen unless you use the value queue for storing emitted values
-        if (isEmpty()) return "";
-
-        if (head.next == null) {
-            return head.item.toString();
+        if (values.isEmpty()) {
+            return "";
         }
 
-        StringBuilder out = new StringBuilder();
-        out.append("[");
-        Iterator<Object> it = iterator();
-        do {
-            out.append(it.next());
-            if (it.hasNext()) {
-                out.append(", ");
-            }
-        } while (it.hasNext());
-        out.append(']');
+        if (values.size() == 1) {
+            return values.get(0).toString();
+        }
 
-        return out.toString();
+        return values.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(", ", "[", "]"));
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof ValueQueue)) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         ValueQueue that = (ValueQueue) o;
-        return size == that.size && Objects.equals(head, that.head) && Objects.equals(tail, that.tail);
+        return values.equals(that.values);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(head, tail, size);
-    }
-
-    private static final class LinkedIterator implements Iterator<Object> {
-        private Node current;
-
-        private LinkedIterator(ValueQueue valueQueue) {
-            current = valueQueue.head;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return current != null;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Object next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            Object item = current.item;
-            current = current.next;
-            return item;
-        }
-    }
-
-    private static final class Node {
-        private final Object item;
-        private Node next;
-
-        Node(Object item) {
-            checkNotNull(item, "item");
-            this.item = item;
-            next = null;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof Node)) {
-                return false;
-            }
-            Node node = (Node) o;
-            return item.equals(node.item) && Objects.equals(next, node.next);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(item, next);
-        }
+        return Objects.hash(values);
     }
 }
