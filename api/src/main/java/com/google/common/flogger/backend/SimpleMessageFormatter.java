@@ -19,6 +19,7 @@ package com.google.common.flogger.backend;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.MetadataKey.KeyValueHandler;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -53,12 +54,15 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 public final class SimpleMessageFormatter {
   @SuppressWarnings("ConstantCaseForConstants")
   private static final Set<MetadataKey<?>> DEFAULT_KEYS_TO_IGNORE =
-      Collections.<MetadataKey<?>>singleton(LogContext.Key.LOG_CAUSE);
+          Collections.unmodifiableSet(new HashSet<MetadataKey<?>>(Arrays.asList(
+              LogContext.Key.LOG_CAUSE,
+              LogContext.Key.CONTEXT_PREFIX,
+              LogContext.Key.CONTEXT_SUFFIX)));
 
   private static final LogMessageFormatter DEFAULT_FORMATTER = newFormatter(DEFAULT_KEYS_TO_IGNORE);
 
   /**
-   * Returns the singleton default log message formatter. This formats log messages in the form:
+   * Returns the default log message formatter. This formats log messages in the form:
    *
    * <pre>{@code
    * Log message [CONTEXT key="value" id=42 ]
@@ -71,9 +75,20 @@ public final class SimpleMessageFormatter {
    * <p>The {@code cause} is omitted from the context section, since it's handled separately by most
    * logger backends and not considered part of the formatted message. Other internal metadata keys
    * may also be suppressed.
+   *
+   * <p>{@code
+   * LogContext.addMetadata(MetadataKey, Object)} can be used to change prefix and suffix, instead
+   * of using the default.
    */
-  public static LogMessageFormatter getDefaultFormatter() {
-    return DEFAULT_FORMATTER;
+  public static LogMessageFormatter getDefaultFormatter(Metadata metadata) {
+    if (metadata == null
+            || metadata.equals(Metadata.empty())
+            || metadata.findValue(LogContext.Key.CONTEXT_PREFIX) == null) {
+      return DEFAULT_FORMATTER;
+    }
+    return newFormatter(DEFAULT_KEYS_TO_IGNORE,
+            metadata.findValue(LogContext.Key.CONTEXT_PREFIX),
+            metadata.findValue(LogContext.Key.CONTEXT_SUFFIX));
   }
 
   /**
@@ -95,7 +110,7 @@ public final class SimpleMessageFormatter {
    */
   public static LogMessageFormatter getSimpleFormatterIgnoring(MetadataKey<?>... extraIgnoredKeys) {
     if (extraIgnoredKeys.length == 0) {
-      return getDefaultFormatter();
+      return DEFAULT_FORMATTER;
     }
     Set<MetadataKey<?>> ignored = new HashSet<MetadataKey<?>>(DEFAULT_KEYS_TO_IGNORE);
     Collections.addAll(ignored, extraIgnoredKeys);
@@ -121,8 +136,13 @@ public final class SimpleMessageFormatter {
   public static StringBuilder appendContext(
       MetadataProcessor metadataProcessor,
       MetadataHandler<KeyValueHandler> metadataHandler,
+      String prefix,
+      String suffix,
       StringBuilder buffer) {
-    KeyValueFormatter kvf = new KeyValueFormatter("[CONTEXT ", " ]", buffer);
+    KeyValueFormatter kvf = new KeyValueFormatter(
+            prefix == null ? "" : prefix,
+            suffix == null ? "" : suffix,
+            buffer);
     metadataProcessor.process(metadataHandler, kvf);
     kvf.done();
     return buffer;
@@ -179,7 +199,9 @@ public final class SimpleMessageFormatter {
    * Returns a new "simple" formatter which ignores the given set of metadata keys. The caller must
    * ensure that the given set is effectively immutable.
    */
-  private static LogMessageFormatter newFormatter(final Set<MetadataKey<?>> keysToIgnore) {
+  private static LogMessageFormatter newFormatter(final Set<MetadataKey<?>> keysToIgnore,
+                                                  final String prefix,
+                                                  final String suffix) {
     return new LogMessageFormatter() {
       private final MetadataHandler<KeyValueHandler> handler =
           MetadataKeyValueHandlers.getDefaultHandler(keysToIgnore);
@@ -188,7 +210,7 @@ public final class SimpleMessageFormatter {
       public StringBuilder append(
           LogData logData, MetadataProcessor metadata, StringBuilder buffer) {
         BaseMessageFormatter.appendFormattedMessage(logData, buffer);
-        return appendContext(metadata, handler, buffer);
+        return appendContext(metadata, handler, prefix, suffix, buffer);
       }
 
       @Override
@@ -202,6 +224,14 @@ public final class SimpleMessageFormatter {
     };
   }
 
+  /**
+   * Returns a new "simple" default formatter which ignores the given set of metadata keys. The caller must
+   * ensure that the given set is effectively immutable.
+   */
+  private static LogMessageFormatter newFormatter(final Set<MetadataKey<?>> keysToIgnore) {
+    return newFormatter(keysToIgnore, "[CONTEXT ", " ]");
+  }
+
   // ---- Everything below this point is deprecated and will be removed. ----
 
   /** @deprecated Use a {@link LogMessageFormatter} and obtain the level and cause separately. */
@@ -213,7 +243,7 @@ public final class SimpleMessageFormatter {
         MetadataProcessor.forScopeAndLogSite(Metadata.empty(), logData.getMetadata());
     receiver.handleFormattedLogMessage(
         logData.getLevel(),
-        getDefaultFormatter().format(logData, metadata),
+        getDefaultFormatter(logData.getMetadata()).format(logData, metadata),
         metadata.getSingleValue(LogContext.Key.LOG_CAUSE));
   }
 

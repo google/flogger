@@ -31,7 +31,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class AbstractLogRecordTest {
   private static final LogMessageFormatter DEFAULT_FORMATTER =
-      SimpleMessageFormatter.getDefaultFormatter();
+      SimpleMessageFormatter.getDefaultFormatter(Metadata.empty());
 
   private static final LogMessageFormatter TEST_MESSAGE_FORMATTER =
       new LogMessageFormatter() {
