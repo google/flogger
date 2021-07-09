@@ -43,7 +43,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.DefaultConfiguration;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.After;
 import org.junit.Before;
@@ -90,6 +92,11 @@ public final class Log4j2Test {
 
   @Before
   public void setUpLoggerBackend() {
+    // need to reset logger config to prevent a clash with log4j2scopedloggingtest
+    final LoggerContext context = (LoggerContext) LogManager.getContext(false);
+    context.setConfiguration(new DefaultConfiguration());
+    context.updateLoggers();
+
     System.getProperties().put(
             "flogger.logging_context",
             "com.google.common.flogger.grpc.GrpcContextDataProvider#getInstance");
@@ -122,20 +129,11 @@ public final class Log4j2Test {
   }
 
   void assertLogEntry(int index, Level level, String message) {
-    assertLogEntry(index, level, message, ImmutableMap.of());
-  }
-
-  void assertLogEntry(int index, Level level, String message, Map<String, Object> contextData) {
     LogEvent event = events.get(index);
     assertThat(event.getLoggerName()).isEqualTo(logger.getName());
     assertThat(event.getLevel()).isEqualTo(level);
     assertThat(event.getMessage().getFormattedMessage()).isEqualTo(message);
     assertThat(event.getThrown()).isNull();
-
-    for (Map.Entry<String, Object> entry : contextData.entrySet()) {
-      assertThat(event.getContextData().containsKey(entry.getKey())).isTrue();
-      assertThat(event.getContextData().getValue(entry.getKey()).equals(entry.getValue())).isTrue();;
-    }
   }
 
   void assertLogSite(int index, String className, String methodName, int line, String file) {
@@ -173,22 +171,12 @@ public final class Log4j2Test {
   @Test
   public void testMetadata() {
     backend.log(
-            FakeLogData.withPrintfStyle("Foo='%s'", "bar")
-                    .addMetadata(COUNT_KEY, 23)
-                    .addMetadata(ID_KEY, "test_ID")
-                    .addMetadata(REPEATABLE_KEY, "foo")
-                    .addMetadata(REPEATABLE_KEY, "bar")
-                    .addMetadata(REPEATABLE_KEY, "baz"));
+        FakeLogData.withPrintfStyle("Foo='%s'", "bar")
+            .addMetadata(COUNT_KEY, 23)
+            .addMetadata(ID_KEY, "test ID"));
 
-    ValueQueue valueQueue = ValueQueue.newQueue("foo");
-    valueQueue.put("bar");
-    valueQueue.put("baz");
-    Map<String, Object> contextMap = new HashMap<String, Object>();
-    contextMap.put("count", 23);
-    contextMap.put("id", "test_ID");
-    contextMap.put("rep", valueQueue);
-
-    assertLogEntry(0, INFO, "Foo='bar'", contextMap);
+    assertLogCount(1);
+    assertLogEntry(0, INFO, "Foo='bar' [CONTEXT count=23 id=\"test ID\" ]");
   }
 
   @Test

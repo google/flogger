@@ -12,8 +12,11 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.xml.XmlConfiguration;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.After;
 import org.junit.Before;
@@ -22,6 +25,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,7 +58,13 @@ public class Log4j2ScopedLoggingTest {
     private List<LogEvent> events;
 
     @BeforeClass
-    public static void init() {
+    public static void init() throws IOException {
+        // As an alternative to loading the configuration file from file system.
+        final LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        String log4j2Config = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Configuration status=\"WARN\"> <Appenders><Console name=\"Console\" target=\"SYSTEM_OUT\"><PatternLayout pattern=\"%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg %X %n\"/></Console></Appenders><Loggers><Root level=\"error\"><AppenderRef ref=\"Console\"/></Root></Loggers></Configuration>";
+        context.setConfiguration(new XmlConfiguration(context, new ConfigurationSource(new ByteArrayInputStream(log4j2Config.getBytes(StandardCharsets.UTF_8)))));
+        context.updateLoggers();
+
         Configurator.setRootLevel(Level.TRACE);
         System.getProperties().put("flogger.backend_factory", "com.google.common.flogger.backend.log4j2.Log4j2BackendFactory#getInstance");
         System.getProperties().put("flogger.logging_context", "com.google.common.flogger.grpc.GrpcContextDataProvider#getInstance");

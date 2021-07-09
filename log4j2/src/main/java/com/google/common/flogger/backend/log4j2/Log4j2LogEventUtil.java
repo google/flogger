@@ -30,18 +30,23 @@ import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.MetadataHandler;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.backend.Platform;
+import com.google.common.flogger.backend.SimpleMessageFormatter;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.DefaultConfiguration;
 import org.apache.logging.log4j.core.impl.ContextDataFactory;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.core.time.Instant;
 import org.apache.logging.log4j.core.time.MutableInstant;
 import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.util.StringMap;
 
 /** Helper to format LogData.
@@ -58,13 +63,27 @@ final class Log4j2LogEventUtil {
   static LogEvent toLog4jLogEvent(String loggerName, LogData logData) {
     MetadataProcessor metadata =
         MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata());
-    // TODO: Check if the user of the log4j2 backend requires more flexibility when deciding which
-    //       formatter to use. I'd argue that the BaseMessageFormatter is sufficient, whenever a log4j2.xml
-    //       file is present. However, users might be fine with not using log4j2 specifics when using flogger
-    //       and then it is sufficient to use the default formatter.
-    // For the moment, I'd argue we want to pass the context data to log4j2 and make use of a log4j2
-    // configuration file.
-    String message = BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder()).toString();
+
+    /* If no configuration file could be located, Log4j2 will use the DefaultConfiguration. This will cause logging
+     * output to go to the console and the context data will be ignored. This mechanism can be used to detect,
+     * if a configuration file has been loaded (or if the default configuration was overwritten through the means of
+     * a configuration factory) by checking the type of the current configuration class.
+     *
+     * Be aware that the LoggerContext class is not part of Log4j2's public API and behavior can change with any
+     * minor release.
+     *
+     * For the future we are thinking about implementing a Flogger aware Log4j2 configuration (e.g., using
+     * a configuration builder with a custom ConfigurationFactory) to configure a formatter, which can perhaps be
+     * installed as default if nothing else is present. Then, we would not rely on Log4j2 internals.
+     */
+    LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+    Configuration config = ctx.getConfiguration();
+    String message;
+    if (config instanceof DefaultConfiguration) {
+      message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
+    } else {
+      message = BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder()).toString();
+    }
 
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
     return toLog4jLogEvent(
