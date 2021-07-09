@@ -13,7 +13,7 @@ jobs:
     name: "JDK ${{ matrix.java }}"
     strategy:
       matrix:
-        java: [8, 11, 15]
+        java: [6, 8, 11, 15]
     runs-on: ubuntu-latest
     env:
       # Used by bazelisk: https://github.com/bazelbuild/bazelisk
