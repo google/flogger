@@ -60,7 +60,7 @@ public class Log4j2ScopedLoggingTest {
     @BeforeClass
     public static void init() throws IOException {
         // As an alternative to loading the configuration file from file system.
-        final LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        final LoggerContext context = LoggerContext.getContext(false);
         String log4j2Config = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Configuration status=\"WARN\"> <Appenders><Console name=\"Console\" target=\"SYSTEM_OUT\"><PatternLayout pattern=\"%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg %X %n\"/></Console></Appenders><Loggers><Root level=\"error\"><AppenderRef ref=\"Console\"/></Root></Loggers></Configuration>";
         context.setConfiguration(new XmlConfiguration(context, new ConfigurationSource(new ByteArrayInputStream(log4j2Config.getBytes(StandardCharsets.UTF_8)))));
         context.updateLoggers();

@@ -93,7 +93,7 @@ public final class Log4j2Test {
   @Before
   public void setUpLoggerBackend() {
     // need to reset logger config to prevent a clash with log4j2scopedloggingtest
-    final LoggerContext context = (LoggerContext) LogManager.getContext(false);
+    final LoggerContext context = LoggerContext.getContext(false);
     context.setConfiguration(new DefaultConfiguration());
     context.updateLoggers();
 

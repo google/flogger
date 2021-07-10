@@ -76,7 +76,7 @@ final class Log4j2LogEventUtil {
      * a configuration builder with a custom ConfigurationFactory) to configure a formatter, which can perhaps be
      * installed as default if nothing else is present. Then, we would not rely on Log4j2 internals.
      */
-    LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+    LoggerContext ctx = LoggerContext.getContext(false);
     Configuration config = ctx.getConfiguration();
     String message;
     if (config instanceof DefaultConfiguration) {
