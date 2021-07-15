@@ -31,6 +31,20 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * logging platform is loaded, care must be taken to avoid cyclic references during static
  * initialisation. This means that no static fields or static initialization can reference fluent
  * loggers or the logging platform (either directly or indirectly).
+ *
+ * <h2>This is a service type</h2>
+ *
+ * <p>This type is considered a <i>service type</i> and implemenations may be loaded from the
+ * classpath via {@link java.util.ServiceLoader} provided the proper service metadata is included in
+ * the jar file containing the implementation. When creating an implementation of this class, you
+ * can provide serivce metadata (and thereby allow users to get your implementation just by
+ * including your jar file) by either manually including a {@code
+ * META-INF/services/com.google.common.flogger.context.ContextDataProvider} file containing the name
+ * of your implementation class or by annotating your implementation class using <a
+ * href="https://github.com/google/auto/tree/master/service">
+ * {@code @AutoService(ContextDataProvider.class)}</a>. See the documentation of both {@link
+ * java.util.ServiceLoader} and {@link com.google.common.flogger.backend.system.DefaultPlatform} for
+ * more information.
  */
 public abstract class ContextDataProvider {
   /**

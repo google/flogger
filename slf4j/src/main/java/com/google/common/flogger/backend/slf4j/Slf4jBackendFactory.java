@@ -23,22 +23,20 @@ import org.slf4j.LoggerFactory;
 /**
  * BackendFactory for SLF4J.
  *
- * <p>To configure this backend for Flogger set the following system property (also see {@link
- * com.google.common.flogger.backend.system.DefaultPlatform}):
+ * <p>When using Flogger's {@link com.google.common.flogger.backend.system.DefaultPlatform}, this
+ * factory will automatically be used if it is included on the classpath and no other implementation
+ * of {@code BackendFactory} (other than the default implementation) is. To specify it more
+ * explicitly or to work around an issue where multiple {@code BackendFactory} implementations are
+ * on the classpath, you can set the {@code flogger.backend_factory} system property:
  *
  * <ul>
- *   <li>{@code flogger.backend_factory=
- *       com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance}.
+ *   <li>{@code flogger.backend_factory=com.google.common.flogger.backend.slf4j.Slf4jBackendFactory}
  * </ul>
  */
 public final class Slf4jBackendFactory extends BackendFactory {
 
-  private static final Slf4jBackendFactory INSTANCE = new Slf4jBackendFactory();
-
-  /** This method is expected to be called via reflection (and might otherwise be unused). */
-  public static BackendFactory getInstance() {
-    return INSTANCE;
-  }
+  // Must be public for ServiceLoader
+  public Slf4jBackendFactory() {}
 
   @Override
   public LoggerBackend create(String loggingClassName) {
@@ -49,6 +47,4 @@ public final class Slf4jBackendFactory extends BackendFactory {
   public String toString() {
     return "SLF4J backend";
   }
-
-  private Slf4jBackendFactory() {}
 }

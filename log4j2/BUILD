@@ -10,10 +10,13 @@ load("//tools:maven.bzl", "pom_file")
 
 LOG4J2_BACKEND_SRCS = glob(["src/main/java/**/*.java"])
 
+LOG4J2_BACKEND_RESOURCES = glob(["src/main/resources/**"])
+
 java_library(
     name = "log4j2_backend",
     srcs = LOG4J2_BACKEND_SRCS,
     javacopts = ["-source 1.8 -target 1.8"],
+    resources = LOG4J2_BACKEND_RESOURCES,
     tags = ["maven_coordinates=com.google.flogger:flogger-log4j2-backend:${project.version}"],
     deps = [
         "//api",
@@ -46,6 +49,7 @@ gen_java_tests(
     deps = [
         ":log4j2_backend",
         "//api",
+        "//api:system_backend",
         "//api:testing",
         "//google:flogger",
         "//grpc:grpc_context",

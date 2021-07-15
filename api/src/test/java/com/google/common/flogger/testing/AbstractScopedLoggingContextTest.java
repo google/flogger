@@ -21,8 +21,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.LoggingScope;
+import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
@@ -117,18 +117,17 @@ public abstract class AbstractScopedLoggingContextTest {
 
   @Test
   public void testNewContext_withLogLevelMap() {
-    assertThat(dataProvider.shouldForceLogging("foo.bar.Bar", Level.FINE, false)).isFalse();
+    assertLogging("foo.bar.Bar", Level.FINE).isFalse();
     LogLevelMap levelMap = LogLevelMap.create(ImmutableMap.of("foo.bar", Level.FINE), Level.FINE);
     context
         .newContext()
         .withLogLevelMap(levelMap)
         .run(
             () -> {
-              assertThat(dataProvider.shouldForceLogging("foo.bar.Bar", Level.FINE, false))
-                  .isTrue();
+              assertLogging("foo.bar.Bar", Level.FINE).isTrue();
               markTestAsDone();
             });
-    assertThat(dataProvider.shouldForceLogging("foo.bar.Bar", Level.FINE, false)).isFalse();
+    assertLogging("foo.bar.Bar", Level.FINE).isFalse();
     checkDone();
   }
 

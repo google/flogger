@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.context;
 
+import com.google.common.flogger.MetadataKey;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 /**
@@ -40,5 +41,53 @@ public final class ScopedLoggingContexts {
   @CheckReturnValue
   public static ScopedLoggingContext.Builder newContext() {
     return ScopedLoggingContext.getInstance().newContext();
+  }
+
+  /**
+   * Adds tags to the current set of log tags for the current context. Tags are merged together and
+   * existing tags cannot be modified. This is deliberate since two pieces of code may not know
+   * about each other and could accidentally use the same tag name; in that situation it's important
+   * that both tag values are preserved.
+   *
+   * <p>Furthermore, the types of data allowed for tag values are strictly controlled. This is also
+   * very deliberate since these tags must be efficiently added to every log statement and so it's
+   * important that they resulting string representation is reliably cacheable and can be calculated
+   * without invoking arbitrary code (e.g. the {@code toString()} method of some unknown user type).
+   *
+   * @return false if there is no current context, or scoped contexts are not supported.
+   */
+  public static boolean addTags(Tags tags) {
+    return ScopedLoggingContext.getInstance().addTags(tags);
+  }
+
+  /**
+   * Adds a single metadata key/value pair to the current context.
+   *
+   * <p>Unlike {@link Tags}, which have a well defined value ordering, independent of the order in
+   * which values were added, context metadata preserves the order of addition. As such, it is not
+   * advised to add values for the same metadata key from multiple threads, since that may create
+   * non-deterministic ordering. It is recommended (where possible) to add metadata when building a
+   * new context, rather than adding it to context visible to multiple threads.
+   */
+  public static <T> boolean addMetadata(MetadataKey<T> key, T value) {
+    return ScopedLoggingContext.getInstance().addMetadata(key, value);
+  }
+
+  /**
+   * Applies the given log level map to the current context. Log level settings are merged with any
+   * existing setting from the current (or parent) contexts such that logging will be enabled for a
+   * log statement if:
+   *
+   * <ul>
+   *   <li>It was enabled by the given map.
+   *   <li>It was already enabled by the current context.
+   * </ul>
+   *
+   * <p>The effects of this call will be undone only when the current context terminates.
+   *
+   * @return false if there is no current context, or scoped contexts are not supported.
+   */
+  public static <T> boolean applyLogLevelMap(LogLevelMap logLevelMap) {
+    return ScopedLoggingContext.getInstance().applyLogLevelMap(logLevelMap);
   }
 }

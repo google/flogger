@@ -16,7 +16,9 @@
 
 package com.google.common.flogger.context;
 
+
 import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.StackSize;
 import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -79,13 +81,20 @@ final class NoOpContextDataProvider extends ContextDataProvider {
     @Override
     public boolean addTags(Tags tags) {
       logWarningOnceOnly();
-      return false;
+      // Superclass methods still do argument checking, which is important for consistent behaviour.
+      return super.addTags(tags);
     }
 
     @Override
-    public boolean applyLogLevelMap(LogLevelMap m) {
+    public <T> boolean addMetadata(MetadataKey<T> key, T value) {
       logWarningOnceOnly();
-      return false;
+      return super.addMetadata(key, value);
+    }
+
+    @Override
+    public boolean applyLogLevelMap(LogLevelMap logLevelMap) {
+      logWarningOnceOnly();
+      return super.applyLogLevelMap(logLevelMap);
     }
 
     @Override

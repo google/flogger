@@ -95,8 +95,13 @@ final class GrpcContextData {
   private final ScopedReference<Tags> tagRef;
   private final ScopedReference<ContextMetadata> metadataRef;
   private final ScopedReference<LogLevelMap> logLevelMapRef;
+  // Only needed to register that log level maps are being used (as a performance optimization).
+  private final GrpcContextDataProvider provider;
 
-  GrpcContextData(@NullableDecl GrpcContextData parent, @NullableDecl ScopeType scopeType) {
+  GrpcContextData(
+      @NullableDecl GrpcContextData parent,
+      @NullableDecl ScopeType scopeType,
+      GrpcContextDataProvider provider) {
     this.scopes = ScopeList.addScope(parent != null ? parent.scopes : null, scopeType);
     this.tagRef =
         new ScopedReference<Tags>(parent != null ? parent.tagRef.get() : null) {
@@ -119,6 +124,7 @@ final class GrpcContextData {
             return current.merge(delta);
           }
         };
+    this.provider = provider;
   }
 
   void addTags(@NullableDecl Tags tags) {
@@ -133,7 +139,7 @@ final class GrpcContextData {
     if (logLevelMap != null) {
       // Set the global flag to trigger testing of the log level map from now on (we only apply a
       // log level map to an active context or one that's about to become active).
-      GrpcContextDataProvider.INSTANCE.setLogLevelMapFlag();
+      provider.setLogLevelMapFlag();
       logLevelMapRef.mergeFrom(logLevelMap);
     }
   }

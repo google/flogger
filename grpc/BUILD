@@ -10,9 +10,12 @@ load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 
 GRPC_CONTEXT_SRCS = glob(["src/main/java/**/*.java"])
 
+GRPC_CONTEXT_RESOURCES = glob(["src/main/resources/**"])
+
 java_library(
     name = "grpc_context",
     srcs = GRPC_CONTEXT_SRCS,
+    resources = GRPC_CONTEXT_RESOURCES,
     tags = ["maven_coordinates=com.google.flogger:flogger-grpc-context:${project.version}"],
     visibility = ["//visibility:public"],
     deps = [

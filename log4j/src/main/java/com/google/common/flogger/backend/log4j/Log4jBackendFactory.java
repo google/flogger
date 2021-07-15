@@ -23,12 +23,14 @@ import org.apache.log4j.Logger;
 /**
  * BackendFactory for log4j.
  *
- * <p>To configure this backend for Flogger set the following system property (also see {@link
- * com.google.common.flogger.backend.system.DefaultPlatform}):
+ * <p>When using Flogger's {@link com.google.common.flogger.backend.system.DefaultPlatform}, this
+ * factory will automatically be used if it is included on the classpath and no other implementation
+ * of {@code BackendFactory} (other than the default implementation) is. To specify it more
+ * explicitly or to work around an issue where multiple {@code BackendFactory} implementations are
+ * on the classpath, you can set the {@code flogger.backend_factory} system property:
  *
  * <ul>
- *   <li>{@code flogger.backend_factory=
- *       com.google.common.flogger.backend.log4j.Log4jBackendFactory#getInstance}
+ *   <li>{@code flogger.backend_factory=com.google.common.flogger.backend.log4j.Log4jBackendFactory}
  * </ul>
  *
  * <p>Note: This code is mostly derived from the equivalently named class in the Log4j2 backend
@@ -38,14 +40,9 @@ import org.apache.log4j.Logger;
  * significant way, this difference should be called out clearly in the documentation.
  */
 public final class Log4jBackendFactory extends BackendFactory {
-  private static final Log4jBackendFactory INSTANCE = new Log4jBackendFactory();
 
-  private Log4jBackendFactory() {}
-
-  /** This method is expected to be called via reflection (and might otherwise be unused). */
-  public static BackendFactory getInstance() {
-    return INSTANCE;
-  }
+  // Must be public for ServiceLoader
+  public Log4jBackendFactory() {}
 
   @Override
   public LoggerBackend create(String loggingClassName) {

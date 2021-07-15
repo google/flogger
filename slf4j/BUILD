@@ -10,10 +10,13 @@ load("//tools:maven.bzl", "pom_file")
 
 SLF4J_BACKEND_SRCS = glob(["src/main/java/**/*.java"])
 
+SLF4J_BACKEND_RESOURCES = glob(["src/main/resources/**"])
+
 java_library(
     name = "slf4j_backend",
     srcs = SLF4J_BACKEND_SRCS,
     javacopts = ["-source 1.6 -target 1.6"],
+    resources = SLF4J_BACKEND_RESOURCES,
     tags = ["maven_coordinates=com.google.flogger:flogger-slf4j-backend:${project.version}"],
     deps = [
         "//api",
@@ -44,9 +47,12 @@ gen_java_tests(
     deps = [
         ":slf4j_backend",
         "//api",
+        "//api:system_backend",
         "//api:testing",
+        "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/mockito",
         "@google_bazel_common//third_party/java/slf4j_api",
+        "@google_bazel_common//third_party/java/truth",
     ],
 )

@@ -49,7 +49,21 @@ public class MessageUtilsTest {
   }
 
   @Test
-  public void testSafeToString_error() {
+  public void testSafeToString_nullToString() {
+    Object value =
+        new Object() {
+          @SuppressWarnings("ToStringReturnsNull") // intentional for testing
+          @Override
+          public String toString() {
+            return null;
+          }
+        };
+    assertThat(MessageUtils.safeToString(value)).contains(value.getClass().getName());
+    assertThat(MessageUtils.safeToString(value)).contains("toString() returned null");
+  }
+
+  @Test
+  public void testSafeToString_toStringError() {
     Object value =
         new Object() {
           @Override
