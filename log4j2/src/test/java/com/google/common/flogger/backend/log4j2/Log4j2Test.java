@@ -24,6 +24,7 @@ import static org.apache.logging.log4j.Level.TRACE;
 import static org.apache.logging.log4j.Level.WARN;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LogData;
@@ -31,14 +32,20 @@ import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.parser.ParseException;
 import com.google.common.flogger.testing.FakeLogData;
 import com.google.common.flogger.testing.FakeLogSite;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.DefaultConfiguration;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.After;
 import org.junit.Before;
@@ -52,6 +59,7 @@ public final class Log4j2Test {
 
   private static final MetadataKey<Integer> COUNT_KEY = MetadataKey.single("count", Integer.class);
   private static final MetadataKey<String> ID_KEY = MetadataKey.single("id", String.class);
+  private static final MetadataKey<String> REPEATABLE_KEY = MetadataKey.repeated("rep", String.class);
 
   // -------- Test setup shenanigans --------
 
@@ -84,6 +92,15 @@ public final class Log4j2Test {
 
   @Before
   public void setUpLoggerBackend() {
+    // need to reset logger config to prevent a clash with log4j2scopedloggingtest
+    final LoggerContext context = LoggerContext.getContext(false);
+    context.setConfiguration(new DefaultConfiguration());
+    context.updateLoggers();
+
+    System.getProperties().put(
+            "flogger.logging_context",
+            "com.google.common.flogger.grpc.GrpcContextDataProvider#getInstance");
+
     // A unique name should produce a different logger for each test allowing tests to be run in
     // parallel.
     String loggerName = String.format("%s_%02d", Log4j2Test.class.getName(), uid.incrementAndGet());
