@@ -15,7 +15,7 @@ SLF4J_BACKEND_RESOURCES = glob(["src/main/resources/**"])
 java_library(
     name = "slf4j_backend",
     srcs = SLF4J_BACKEND_SRCS,
-    javacopts = ["-source 1.6 -target 1.6"],
+    javacopts = ["-source 7 -target 7"],
     resources = SLF4J_BACKEND_RESOURCES,
     tags = ["maven_coordinates=com.google.flogger:flogger-slf4j-backend:${project.version}"],
     deps = [
