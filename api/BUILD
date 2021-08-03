@@ -39,7 +39,7 @@ java_library(
                   STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS +
                   STACK_GETTER_COMMON_SRCS + CHECKS,
     ),
-    javacopts = ["-source 1.6 -target 1.6"],
+    javacopts = ["-source 7 -target 7"],
     tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
     visibility = ["//visibility:public"],
     exports = [":checks"],
@@ -77,7 +77,7 @@ STACK_GETTER_COMMON=$(location :stack_getter_common)
 CHECKS=$(location :checks)
 JAVABASE=$$PWD/$(JAVABASE)
 JAR=$$PWD/$(JAVABASE)/bin/jar
-$$JAVABASE/bin/javac -d $$TMPDIR -source 1.6 -target 1.6 -cp $${STACK_GETTER_COMMON}:$${CHECKS} -implicit:none \
+$$JAVABASE/bin/javac -d $$TMPDIR -source 7 -target 7 -cp $${STACK_GETTER_COMMON}:$${CHECKS} -implicit:none \
     $(location src/main/java/com/google/common/flogger/util/JavaLangAccessStackGetter.java)
 cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
     """,
@@ -153,7 +153,7 @@ javadoc_library(
 java_library(
     name = "system_backend",
     srcs = SYSTEM_BACKEND_SRCS,
-    javacopts = ["-source 1.6 -target 1.6"],
+    javacopts = ["-source 7 -target 7"],
     tags = ["maven_coordinates=com.google.flogger:flogger-system-backend:${project.version}"],
     visibility = ["//visibility:public"],
     deps = [
