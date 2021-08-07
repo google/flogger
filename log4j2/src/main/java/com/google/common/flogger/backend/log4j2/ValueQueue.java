@@ -31,11 +31,9 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
  */
 final class ValueQueue implements Iterable<Object> {
 
-    private final List<Object> values;
+    private final List<Object> values = new LinkedList<>();
 
-    ValueQueue() {
-        values = new LinkedList<>();
-    }
+    private ValueQueue() { }
 
     static ValueQueue newQueue(Object item) {
         checkNotNull(item, "item");

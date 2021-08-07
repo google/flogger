@@ -97,10 +97,6 @@ public final class Log4j2Test {
     context.setConfiguration(new DefaultConfiguration());
     context.updateLoggers();
 
-    System.getProperties().put(
-            "flogger.logging_context",
-            "com.google.common.flogger.grpc.GrpcContextDataProvider#getInstance");
-
     // A unique name should produce a different logger for each test allowing tests to be run in
     // parallel.
     String loggerName = String.format("%s_%02d", Log4j2Test.class.getName(), uid.incrementAndGet());
