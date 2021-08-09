@@ -22,6 +22,7 @@ import com.google.common.flogger.AbstractLogger;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.Tags;
+import com.google.common.flogger.util.RecursionDepth;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 
@@ -96,6 +97,33 @@ public abstract class Platform {
       throw new IllegalStateException(
           errorMessage.insert(0, "No logging platforms found:").toString());
     }
+  }
+
+  /**
+   * Returns the current depth of recursion for logging in the current thread.
+   *
+   * <p>This method is intended only for use by logging backends or the core Flogger library and
+   * only needs to be called by code which is invoking user code which itself might trigger
+   * reentrant logging.
+   *
+   * <ul>
+   *   <li>A value of 1 means that this thread is currently in a normal log statement. This is the
+   *   expected state and the caller should behave normally.
+   *   <li>A value greater than 1 means that this thread is currently performing reentrant logging,
+   *   and the caller may choose to change behaviour depending on the value if there is a risk that
+   *   reentrant logging is being caused by the caller's code.
+   *   <li>A value of zero means that this thread is not currently logging (though since this method
+   *   should only be called as part of a logging library, this is expected to never happen). It
+   *   should be ignored.
+   * </ul>
+   *
+   * <p>When the core Flogger library detects the depth exceeding a preset threshold, it may start
+   * to modify its behaviour to attempt to mitigate the risk of unbounded reentrant logging. For
+   * example, some or all metadata may be removed from log sites, since processing user provided
+   * metadata may itself trigger reentrant logging.
+   */
+  public static int getCurrentRecursionDepth() {
+    return RecursionDepth.getCurrentDepth();
   }
 
   /**
