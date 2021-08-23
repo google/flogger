@@ -22,23 +22,34 @@ import static java.util.logging.Level.WARNING;
 
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LogSite;
+import com.google.common.flogger.MetadataKey;
+import com.google.common.flogger.backend.BaseMessageFormatter;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
+import com.google.common.flogger.backend.MetadataHandler;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
-import java.util.Collections;
-import java.util.Map;
+import com.google.common.flogger.context.ScopedLoggingContext;
+import com.google.common.flogger.context.Tags;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.DefaultConfiguration;
+import org.apache.logging.log4j.core.impl.ContextDataFactory;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.core.time.Instant;
 import org.apache.logging.log4j.core.time.MutableInstant;
 import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
+import org.apache.logging.log4j.util.StringMap;
 
-/** Helper to format LogData.
+/**
+ * Helper to format LogData.
  *
  * <p>Note: Any changes in this code should, as far as possible, be reflected in the equivalently
  * named log4j implementation. If the behaviour of this class starts to deviate from that of the
@@ -52,10 +63,34 @@ final class Log4j2LogEventUtil {
   static LogEvent toLog4jLogEvent(String loggerName, LogData logData) {
     MetadataProcessor metadata =
         MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata());
-    String message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
+
+    /*
+     * If no configuration file could be located, Log4j2 will use the DefaultConfiguration. This
+     * will cause logging output to go to the console and the context data will be ignored. This
+     * mechanism can be used to detect if a configuration file has been loaded (or if the default
+     * configuration was overwritten through the means of a configuration factory) by checking the
+     * type of the current configuration class.
+     *
+     * Be aware that the LoggerContext class is not part of Log4j2's public API and behavior can
+     * change with any minor release.
+     *
+     * For the future we are thinking about implementing a Flogger aware Log4j2 configuration (e.g.
+     * using a configuration builder with a custom ConfigurationFactory) to configure a formatter,
+     * which can perhaps be installed as default if nothing else is present. Then, we would not rely
+     * on Log4j2 internals.
+     */
+    LoggerContext ctx = LoggerContext.getContext(false);
+    Configuration config = ctx.getConfiguration();
+    String message;
+    if (config instanceof DefaultConfiguration) {
+      message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
+    } else {
+      message =
+          BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder()).toString();
+    }
+
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
-    return toLog4jLogEvent(
-        loggerName, logData, message, toLog4jLevel(logData.getLevel()), thrown);
+    return toLog4jLogEvent(loggerName, logData, message, toLog4jLevel(logData.getLevel()), thrown);
   }
 
   static LogEvent toLog4jLogEvent(String loggerName, RuntimeException error, LogData badData) {
@@ -71,21 +106,6 @@ final class Log4j2LogEventUtil {
       String message,
       org.apache.logging.log4j.Level level,
       Throwable thrown) {
-    // The Mapped Diagnostic Context (MDC) allows to include additional metadata into logs which
-    // are written from the current thread.
-    //
-    // Example:
-    //  MDC.put("user.id", userId);
-    //  // do business logic that triggers logs
-    //  MDC.clear();
-    //
-    // By using '%X{key}' in the ConversionPattern of an appender this data can be included in the
-    // logs.
-    //
-    // We could include this data here by doing 'MDC.getContext()', but we don't want to encourage
-    // people using the log4j specific MDC. Instead this should be supported by a LoggingContext and
-    // usage of Flogger tags.
-    Map<String, String> mdcProperties = Collections.emptyMap();
 
     LogSite logSite = logData.getLogSite();
     StackTraceElement locationInfo =
@@ -105,7 +125,7 @@ final class Log4j2LogEventUtil {
         .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
         .setIncludeLocation(true)
         .setSource(locationInfo)
-        .setContextMap(mdcProperties)
+        .setContextData(createContextMap(logData))
         .build();
   }
 
@@ -179,5 +199,64 @@ final class Log4j2LogEventUtil {
     out.append("\n  class: ").append(data.getLogSite().getClassName());
     out.append("\n  method: ").append(data.getLogSite().getMethodName());
     out.append("\n  line number: ").append(data.getLogSite().getLineNumber());
+  }
+
+  private static final MetadataHandler<MetadataKey.KeyValueHandler> HANDLER =
+      MetadataHandler.builder(
+              (MetadataHandler.ValueHandler<Object, MetadataKey.KeyValueHandler>)
+                  (key, value, kvh) -> {
+                    if (key.getClass().equals(LogContext.Key.TAGS.getClass())) {
+                      processTags(key, value, kvh);
+                    } else {
+                      // In theory a user can define a custom tag and use it as a MetadataKey. Those
+                      // keys shall be treated in the same way as LogContext.Key.TAGS when used as a
+                      // MetadataKey. Might be removed if visibility of MetadataKey#clazz changes.
+                      if (value instanceof Tags) {
+                        processTags(key, value, kvh);
+                      } else {
+                        ValueQueue.appendValues(key.getLabel(), value, kvh);
+                      }
+                    }
+                  })
+          .setDefaultRepeatedHandler(
+              (key, values, kvh) -> values.forEachRemaining(v -> kvh.handle(key.getLabel(), v)))
+          .build();
+
+  private static void processTags(
+      MetadataKey<Object> key, Object value, MetadataKey.KeyValueHandler kvh) {
+    ValueQueue valueQueue = ValueQueue.appendValueToNewQueue(value);
+    // Unlike single metadata (which is usually formatted as a single value), tags are always
+    // formatted as a list.
+    // Given the tags: tags -> foo=[bar], it will be formatted as tags=[foo=bar].
+    ValueQueue.appendValues(
+        key.getLabel(),
+        valueQueue.size() == 1
+            ? StreamSupport.stream(valueQueue.spliterator(), false).collect(Collectors.toList())
+            : valueQueue,
+        kvh);
+  }
+
+  /**
+   * We do not support {@code MDC.getContext()} and {@code NDC.getStack()} and we do not make any
+   * attempt to merge Log4j2 context data with Flogger's context data. Instead, users should use the
+   * {@link ScopedLoggingContext}.
+   *
+   * <p>Flogger's {@link ScopedLoggingContext} allows to include additional metadata and tags into
+   * logs which are written from current thread. This context data will be added to the log4j2
+   * event.
+   */
+  private static StringMap createContextMap(LogData logData) {
+    MetadataProcessor metadataProcessor =
+        MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata());
+
+    StringMap contextData = ContextDataFactory.createContextData(metadataProcessor.keyCount());
+    metadataProcessor.process(
+        HANDLER,
+        (key, value) ->
+            contextData.putValue(key, ValueQueue.maybeWrap(value, contextData.getValue(key))));
+
+    contextData.freeze();
+
+    return contextData;
   }
 }

@@ -38,7 +38,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.DefaultConfiguration;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.After;
 import org.junit.Before;
@@ -84,6 +86,11 @@ public final class Log4j2Test {
 
   @Before
   public void setUpLoggerBackend() {
+    // need to reset logger config to prevent a clash with log4j2scopedloggingtest
+    final LoggerContext context = LoggerContext.getContext(false);
+    context.setConfiguration(new DefaultConfiguration());
+    context.updateLoggers();
+
     // A unique name should produce a different logger for each test allowing tests to be run in
     // parallel.
     String loggerName = String.format("%s_%02d", Log4j2Test.class.getName(), uid.incrementAndGet());

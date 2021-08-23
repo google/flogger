@@ -15,13 +15,15 @@ LOG4J2_BACKEND_RESOURCES = glob(["src/main/resources/**"])
 java_library(
     name = "log4j2_backend",
     srcs = LOG4J2_BACKEND_SRCS,
-    javacopts = ["-source 7 -target 7"],
+    javacopts = ["-source 8 -target 8"],
     resources = LOG4J2_BACKEND_RESOURCES,
     tags = ["maven_coordinates=com.google.flogger:flogger-log4j2-backend:${project.version}"],
     deps = [
         "//api",
         "//api:system_backend",
+        "@com_google_errorprone_error_prone_annotations",
         "@google_bazel_common//third_party/java/log4j2",
+        "@org_checkerframework_checker_compat_qual",
     ],
 )
 
@@ -49,7 +51,8 @@ gen_java_tests(
         "//api",
         "//api:system_backend",
         "//api:testing",
-        "@google_bazel_common//third_party/java/guava",
+        "//google:flogger",
+        "//grpc:grpc_context",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/log4j2",
         "@google_bazel_common//third_party/java/truth",
