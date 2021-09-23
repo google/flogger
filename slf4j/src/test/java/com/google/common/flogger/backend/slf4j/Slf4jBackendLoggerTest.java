@@ -21,7 +21,6 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
@@ -109,7 +108,7 @@ public class Slf4jBackendLoggerTest {
       backend.log(data);
       fail("expected ParseException");
     } catch (ParseException expected) {
-      verifyZeroInteractions(logger);
+      verifyNoMoreInteractions(logger);
       backend.handleError(expected, data);
       verify(logger)
           .error(
