@@ -202,25 +202,23 @@ final class Log4j2LogEventUtil {
   }
 
   private static final MetadataHandler<MetadataKey.KeyValueHandler> HANDLER =
-      MetadataHandler.builder(
-              (MetadataHandler.ValueHandler<Object, MetadataKey.KeyValueHandler>)
-                  (key, value, kvh) -> {
-                    if (key.getClass().equals(LogContext.Key.TAGS.getClass())) {
-                      processTags(key, value, kvh);
-                    } else {
-                      // In theory a user can define a custom tag and use it as a MetadataKey. Those
-                      // keys shall be treated in the same way as LogContext.Key.TAGS when used as a
-                      // MetadataKey. Might be removed if visibility of MetadataKey#clazz changes.
-                      if (value instanceof Tags) {
-                        processTags(key, value, kvh);
-                      } else {
-                        ValueQueue.appendValues(key.getLabel(), value, kvh);
-                      }
-                    }
-                  })
-          .setDefaultRepeatedHandler(
-              (key, values, kvh) -> values.forEachRemaining(v -> kvh.handle(key.getLabel(), v)))
-          .build();
+      MetadataHandler.builder(Log4j2LogEventUtil::handleMetadata).build();
+
+  private static void handleMetadata(
+      MetadataKey<Object> key, Object value, MetadataKey.KeyValueHandler kvh) {
+    if (key.getClass().equals(LogContext.Key.TAGS.getClass())) {
+      processTags(key, value, kvh);
+    } else {
+      // In theory a user can define a custom tag and use it as a MetadataKey. Those
+      // keys shall be treated in the same way as LogContext.Key.TAGS when used as a
+      // MetadataKey. Might be removed if visibility of MetadataKey#clazz changes.
+      if (value instanceof Tags) {
+        processTags(key, value, kvh);
+      } else {
+        ValueQueue.appendValues(key.getLabel(), value, kvh);
+      }
+    }
+  }
 
   private static void processTags(
       MetadataKey<Object> key, Object value, MetadataKey.KeyValueHandler kvh) {

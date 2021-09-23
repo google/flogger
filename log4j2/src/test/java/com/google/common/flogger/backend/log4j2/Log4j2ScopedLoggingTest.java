@@ -21,14 +21,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.logging.log4j.Level.INFO;
 import static org.apache.logging.log4j.Level.TRACE;
 
-import com.google.common.flogger.GoogleLogContext;
-import com.google.common.flogger.GoogleLogger;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
+import com.google.common.flogger.testing.TestLogger;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,16 +66,16 @@ public class Log4j2ScopedLoggingTest {
   private static final MetadataKey<String> ID_KEY2 = MetadataKey.single("id", String.class);
   private static final MetadataKey<String> TAGS = MetadataKey.single("tags", String.class);
   private static final MetadataKey<String> REP_TAGS = MetadataKey.repeated("tags", String.class);
-  private static GoogleLogger googleLogger;
+
   private Logger logger;
   private CapturingAppender appender;
-  private LoggerBackend backend;
   private List<LogEvent> events;
+  private TestLogger testLogger;
 
   @BeforeClass
   public static void init() throws IOException {
     // As an alternative to loading the configuration file from file system.
-    final LoggerContext context = LoggerContext.getContext(false);
+    LoggerContext context = LoggerContext.getContext(false);
     String log4j2Config =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Configuration status=\"WARN\">"
             + " <Appenders><Console name=\"Console\" target=\"SYSTEM_OUT\"><PatternLayout"
@@ -90,15 +89,6 @@ public class Log4j2ScopedLoggingTest {
     context.updateLoggers();
 
     Configurator.setRootLevel(Level.TRACE);
-    System.getProperties()
-        .put(
-            "flogger.backend_factory",
-            "com.google.common.flogger.backend.log4j2.Log4j2BackendFactory#getInstance");
-    System.getProperties()
-        .put(
-            "flogger.logging_context",
-            "com.google.common.flogger.grpc.GrpcContextDataProvider#getInstance");
-    googleLogger = GoogleLogger.forEnclosingClass();
   }
 
   @Before
@@ -112,8 +102,10 @@ public class Log4j2ScopedLoggingTest {
     appender = new CapturingAppender();
     logger.addAppender(appender);
     logger.setLevel(TRACE);
-    backend = new Log4j2LoggerBackend(logger);
+    LoggerBackend backend = new Log4j2LoggerBackend(logger);
     events = appender.events;
+
+    testLogger = TestLogger.create(backend);
   }
 
   @After
@@ -152,9 +144,7 @@ public class Log4j2ScopedLoggingTest {
             .newContext()
             .withTags(Tags.builder().addTag("foo", "bar").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[foo=bar]");
       assertLogCount(1);
@@ -171,9 +161,7 @@ public class Log4j2ScopedLoggingTest {
             .withTags(
                 Tags.builder().addTag("foo").addTag("bar", "baz").addTag("bar", "baz2").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[bar=baz, bar=baz2, foo]");
       assertLogCount(1);
@@ -189,9 +177,7 @@ public class Log4j2ScopedLoggingTest {
             .newContext()
             .withMetadata(MetadataKey.single("tags", Tags.class), Tags.of("foo", "bar"))
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[foo=bar]");
       assertLogCount(1);
@@ -207,9 +193,7 @@ public class Log4j2ScopedLoggingTest {
             .newContext()
             .withMetadata(LogContext.Key.TAGS, Tags.of("foo", "bar"))
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[foo=bar]");
       assertLogCount(1);
@@ -225,9 +209,7 @@ public class Log4j2ScopedLoggingTest {
             .newContext()
             .withMetadata(MetadataKey.single("tags", Tags.class), Tags.builder().build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       assertLogCount(1);
       assertLogEntry(0, INFO, "test", contextMap);
@@ -242,9 +224,7 @@ public class Log4j2ScopedLoggingTest {
             .newContext()
             .withMetadata(LogContext.Key.TAGS, Tags.builder().build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       assertLogCount(1);
       assertLogEntry(0, INFO, "test", contextMap);
@@ -261,9 +241,7 @@ public class Log4j2ScopedLoggingTest {
             .withTags(
                 Tags.builder().addTag("foo").addTag("bar", "baz").addTag("bar", "baz2").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[aTag, bar=baz, bar=baz2, foo]");
       assertLogCount(1);
@@ -282,9 +260,7 @@ public class Log4j2ScopedLoggingTest {
             .withTags(
                 Tags.builder().addTag("foo").addTag("bar", "baz").addTag("bar", "baz2").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[aTag, anotherTag, bar=baz, bar=baz2, foo]");
       assertLogCount(1);
@@ -303,9 +279,7 @@ public class Log4j2ScopedLoggingTest {
             .withTags(
                 Tags.builder().addTag("foo").addTag("bar", "baz").addTag("bar", "baz2").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[anotherTag, bar=baz, bar=baz2, foo]");
       assertLogCount(1);
@@ -322,9 +296,7 @@ public class Log4j2ScopedLoggingTest {
             .withMetadata(MetadataKey.single("tags", List.class), Arrays.asList(1, 2, 3))
             .withTags(Tags.builder().addTag("foo").addTag("bar", "baz").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[[1, 2, 3], bar=baz, foo]");
       assertLogCount(1);
@@ -343,9 +315,7 @@ public class Log4j2ScopedLoggingTest {
             .withMetadata(REP_TAGS, "b")
             .withTags(Tags.builder().addTag("foo").addTag("bar", "baz").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[[1, 2, 3], a, b, bar=baz, foo]");
       assertLogCount(1);
@@ -364,9 +334,7 @@ public class Log4j2ScopedLoggingTest {
             .withTags(
                 Tags.builder().addTag("foo").addTag("bar", "baz").addTag("bar", "baz2").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("tags", "[aValue, anotherValue, bar=baz, bar=baz2, foo]");
       assertLogCount(1);
@@ -383,9 +351,7 @@ public class Log4j2ScopedLoggingTest {
             .withMetadata(REP_KEY, 1)
             .withMetadata(REP_KEY, 2)
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("rep", "[1, 2]");
       assertLogCount(1);
@@ -402,9 +368,7 @@ public class Log4j2ScopedLoggingTest {
             .withMetadata(ID_KEY, "001")
             .withMetadata(ID_KEY2, "002")
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("id", "[001, 002]");
       assertLogCount(1);
@@ -421,9 +385,7 @@ public class Log4j2ScopedLoggingTest {
             .withMetadata(COUNT_KEY, 1)
             .withMetadata(COUNT_KEY, 2)
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("count", 2);
       assertLogCount(1);
@@ -439,9 +401,7 @@ public class Log4j2ScopedLoggingTest {
             .newContext()
             .withMetadata(COUNT_KEY, 23)
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("count", 23);
       assertLogCount(1);
@@ -457,9 +417,7 @@ public class Log4j2ScopedLoggingTest {
             .newContext()
             .withMetadata(MetadataKey.single("items", List.class), Arrays.asList(23))
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("items", Collections.singletonList(23));
       assertLogCount(1);
@@ -477,9 +435,7 @@ public class Log4j2ScopedLoggingTest {
             .withTags(
                 Tags.builder().addTag("foo").addTag("baz", "bar").addTag("baz", "bar2").build())
             .install()) {
-      GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-      logContext.log("test");
-      backend.log(logContext); // this event will be caught
+      testLogger.atInfo().log("test");
       Map<String, Object> contextMap = new HashMap<>();
       contextMap.put("count", 23);
       contextMap.put("tags", "[baz=bar, baz=bar2, foo]");
@@ -504,9 +460,7 @@ public class Log4j2ScopedLoggingTest {
               .withMetadata(ID_KEY, "002")
               .withTags(Tags.builder().addTag("foo").addTag("baz", "bar2").build())
               .install()) {
-        GoogleLogContext<?, ?> logContext = (GoogleLogContext<?, ?>) googleLogger.atInfo();
-        logContext.log("test");
-        backend.log(logContext); // this event will be caught
+        testLogger.atInfo().log("test");
         Map<String, Object> contextMap = new HashMap<>();
         contextMap.put("id", "002");
         contextMap.put("tags", "[baz=bar, baz=bar2, foo]");
