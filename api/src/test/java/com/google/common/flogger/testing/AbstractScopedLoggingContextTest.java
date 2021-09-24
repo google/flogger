@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.testing;
 
+import static com.google.common.flogger.LogContext.Key.TAGS;
 import static com.google.common.flogger.testing.MetadataSubject.assertThat;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -28,6 +29,8 @@ import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
+import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
+import com.google.common.flogger.context.ScopedLoggingContexts;
 import com.google.common.flogger.context.Tags;
 import com.google.common.truth.BooleanSubject;
 import java.util.Map;
@@ -97,6 +100,32 @@ public abstract class AbstractScopedLoggingContextTest {
             });
     assertThat(getTagMap()).isEmpty();
     checkDone();
+  }
+
+  // Note that general Metadata isn't merged automatically in the same way as Tags at the moment,
+  // so there's no equivalent test for it.
+  @Test
+  public void testLoggedTags_areMerged() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    Tags logSiteTags = Tags.of("foo", "bar");
+    // We need to add tags manually inside a context to check if there is a "real" context data
+    // provider installed. We can't use getImplementationUnderTest() here sadly since these APIs
+    // go via the Platform class, which uses the installed provider, which can differ from what's
+    // returned by getImplementationUnderTest(). This code only needs to be tested by one "real"
+    // implementation to get coverage however as merging tags is not done by the data provider.
+    boolean canAddTags;
+    try (LoggingContextCloseable ctx = ScopedLoggingContexts.newContext().install()) {
+      canAddTags = ScopedLoggingContexts.addTags(Tags.of("foo", "baz"));
+      logger.atInfo().with(TAGS, logSiteTags).log("With tags");
+    }
+
+    // Merged tag values are ordered based on the values, not the order in which that are added.
+    Tags expected =
+        canAddTags ? Tags.builder().addTag("foo", "bar").addTag("foo", "baz").build() : logSiteTags;
+    assertThat(backend.getLoggedCount()).isEqualTo(1);
+    backend.assertLogged(0).metadata().containsUniqueEntry(TAGS, expected);
   }
 
   @Test

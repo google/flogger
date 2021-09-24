@@ -31,6 +31,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.flogger.LogContext.Key;
+import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.testing.FakeLogSite;
 import com.google.common.flogger.testing.FakeLoggerBackend;
 import com.google.common.flogger.testing.FakeMetadata;
@@ -171,6 +172,20 @@ public class LogContextTest {
     // Just check nothing weird happens when the metadata is interleaved in the log statement.
     backend.assertLogged(3).metadata().containsEntries(REPEATED_KEY, "foo", "bar");
     backend.assertLogged(3).metadata().containsUniqueEntry(FLAG_KEY, true);
+  }
+
+  // For testing that log-site tags are correctly merged with metadata, see
+  // AbstractScopedLoggingContextTest.
+  @Test
+  public void testLoggedTags() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    FluentLogger logger = new FluentLogger(backend);
+
+    Tags tags = Tags.of("foo", "bar");
+    logger.atInfo().with(Key.TAGS, tags).log("With tags");
+
+    assertThat(backend.getLoggedCount()).isEqualTo(1);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.TAGS, tags);
   }
 
   @Test
