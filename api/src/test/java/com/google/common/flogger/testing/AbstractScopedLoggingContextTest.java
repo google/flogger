@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.testing;
 
+import static com.google.common.flogger.LogContext.Key.TAGS;
 import static com.google.common.flogger.testing.MetadataSubject.assertThat;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -28,6 +29,7 @@ import com.google.common.flogger.context.ContextDataProvider;
 import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
+import com.google.common.flogger.context.ScopedLoggingContexts;
 import com.google.common.flogger.context.Tags;
 import com.google.common.truth.BooleanSubject;
 import java.util.Map;
@@ -97,6 +99,23 @@ public abstract class AbstractScopedLoggingContextTest {
             });
     assertThat(getTagMap()).isEmpty();
     checkDone();
+  }
+
+  // Note that general Metadata isn't merged automatically in the same way as Tags at the moment,
+  // so there's no equivalent test for it.
+  @Test
+  public void testLoggedTags_areMerged() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    ScopedLoggingContexts.newContext()
+        .withTags(Tags.of("foo", "baz"))
+        .run(() -> logger.atInfo().with(TAGS, Tags.of("foo", "bar")).log("With tags"));
+
+    // Tag values are ordered based on the values.
+    Tags merged = Tags.builder().addTag("foo", "bar").addTag("foo", "baz").build();
+    assertThat(backend.getLoggedCount()).isEqualTo(1);
+    backend.assertLogged(0).metadata().containsUniqueEntry(TAGS, merged);
   }
 
   @Test
