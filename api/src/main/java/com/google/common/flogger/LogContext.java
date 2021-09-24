@@ -145,33 +145,28 @@ public abstract class LogContext<
         MetadataKey.single("forced", Boolean.class);
 
     /**
-     * The key associated with any injected {@link Tags}.
-     *
-     * <p>If tags are injected, they are added after post-processing if the log site is enabled.
-     * Thus they are not available to the {@code postProcess()} method itself. The rationale is that
-     * a log statement's behavior should only be affected by code at the log site (other than
+     * The key associated with any injected metadata (in the form of a {@code Tags} instance.
+     * <p>
+     * If tags are injected, they are added after post-processing if the log site is enabled. Thus
+     * they are not available to the {@code postProcess()} method itself. The rationale is that a
+     * log statement's behavior should only be affected by code at the log site (other than
      * "forcing" log statements, which is slightly a special case).
-     *
-     * <p>Tags can be added at the log site, although this should rarely be necessary and using
-     * normal log message arguments is always the preferred way to indicate unstrctured log data.
-     * Users should never build new {@link Tags} instances just to pass them into a log statement.
      */
-    public static final MetadataKey<Tags> TAGS =
-        new MetadataKey<Tags>("tags", Tags.class, false) {
-          @Override
-          public void emit(Tags tags, KeyValueHandler out) {
-            for (Map.Entry<String, ? extends Set<Object>> e : tags.asMap().entrySet()) {
-              Set<Object> values = e.getValue();
-              if (!values.isEmpty()) {
-                for (Object v : e.getValue()) {
-                  out.handle(e.getKey(), v);
-                }
-              } else {
-                out.handle(e.getKey(), null);
-              }
+    public static final MetadataKey<Tags> TAGS = new MetadataKey<Tags>("tags", Tags.class, false) {
+      @Override
+      public void emit(Tags tags, KeyValueHandler out) {
+        for (Map.Entry<String, ? extends Set<Object>> e : tags.asMap().entrySet()) {
+          Set<Object> values = e.getValue();
+          if (!values.isEmpty()) {
+            for (Object v : e.getValue()) {
+              out.handle(e.getKey(), v);
             }
+          } else {
+            out.handle(e.getKey(), null);
           }
-        };
+        }
+      }
+    };
 
     /**
      * Key associated with the metadata for specifying additional stack information with a log
@@ -593,7 +588,17 @@ public abstract class LogContext<
         logSiteKey = specializeLogSiteKeyFromMetadata(logSiteKey, metadata);
       }
     }
-    return postProcess(logSiteKey);
+    if (!postProcess(logSiteKey)) {
+      return false;
+    }
+    // Right at the end of post processing add any tags injected by the platform. Alternately this
+    // could be done in logImpl(), but it would have the same effect. This should be the last piece
+    // of metadata added to a LogData instance (but users are not allowed to rely on that).
+    Tags tags = Platform.getInjectedTags();
+    if (!tags.isEmpty()) {
+      addMetadata(Key.TAGS, tags);
+    }
+    return true;
   }
 
   // WARNING: If we ever start to use combined log-site and scoped context metadata here via
@@ -645,17 +650,6 @@ public abstract class LogContext<
     if (message != LITERAL_VALUE_MESSAGE) {
       this.templateContext = new TemplateContext(getMessageParser(), message);
     }
-    // Right at the end of processing add any tags injected by the platform. Any tags supplied at
-    // the log site are merged with the injected tags (though this should be very rare).
-    Tags tags = Platform.getInjectedTags();
-    if (!tags.isEmpty()) {
-      Tags logSiteTags = getMetadata().findValue(Key.TAGS);
-      if (logSiteTags != null) {
-        tags = tags.merge(logSiteTags);
-      }
-      addMetadata(Key.TAGS, tags);
-    }
-    // Pass the completed log data to the backend (it should not be modified after this point).
     getLogger().write(this);
   }
 
