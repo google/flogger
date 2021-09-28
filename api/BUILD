@@ -100,7 +100,7 @@ STACK_GETTER_COMMON=$(location :stack_getter_common)
 CHECKS=$(location :checks)
 JAVABASE=$$PWD/$(JAVABASE)
 JAR=$$PWD/$(JAVABASE)/bin/jar
-$$JAVABASE/bin/javac -d $$TMPDIR -source 1.8 -target 1.8 -cp $${STACK_GETTER_COMMON}:$${CHECKS} -implicit:none \
+$$JAVABASE/bin/javac -d $$TMPDIR -source 8 -target 8 -cp $${STACK_GETTER_COMMON}:$${CHECKS} -implicit:none \
     $(location src/main/java/com/google/common/flogger/util/StackWalkerStackGetter.java)
 cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
     """,
@@ -111,14 +111,14 @@ cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.cl
 java_library(
     name = "stack_getter_common",
     srcs = STACK_GETTER_COMMON_SRCS,
-    javacopts = ["-source 8 -target 8"],
+    javacopts = ["-source 7 -target 7"],
     deps = [":checks"],
 )
 
 java_library(
     name = "checks",
     srcs = CHECKS,
-    javacopts = ["-source 8 -target 8"],
+    javacopts = ["-source 7 -target 7"],
 )
 
 pom_file(
@@ -132,7 +132,10 @@ jarjar_library(
     name = "merged_api",
     jars = [
         ":api",
+        ":checks",
         ":platform_provider",
+        ":stack_getter_common",
+        ":stack_getter_impl",
     ],
 )
 
