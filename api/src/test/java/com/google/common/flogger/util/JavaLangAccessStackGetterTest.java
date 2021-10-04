@@ -29,16 +29,27 @@ public class JavaLangAccessStackGetterTest {
   @Test
   public void testCallerOf() {
     assumeJava8();
-    StackGetterTestUtil.runTestCallerOf(new JavaLangAccessStackGetter());
+    StackGetterTestUtil.runTestCallerOf(getJavaLangAccessStackGetter());
   }
 
   @Test
   public void testCallerOfBadOffset() {
     assumeJava8();
-    StackGetterTestUtil.runTestCallerOfBadOffset(new JavaLangAccessStackGetter());
+    StackGetterTestUtil.runTestCallerOfBadOffset(getJavaLangAccessStackGetter());
   }
 
   private static void assumeJava8() {
     assumeTrue(JAVA_SPECIFICATION_VERSION.value().equals("1.8"));
+  }
+
+  private static StackGetter getJavaLangAccessStackGetter() {
+    try {
+      return Class.forName("com.google.common.flogger.util.JavaLangAccessStackGetter")
+          .asSubclass(StackGetter.class)
+          .getDeclaredConstructor()
+          .newInstance();
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
   }
 }
