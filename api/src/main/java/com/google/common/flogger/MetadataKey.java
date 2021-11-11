@@ -20,6 +20,7 @@ import static com.google.common.flogger.util.Checks.checkMetadataIdentifier;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 import static com.google.common.flogger.util.Checks.checkState;
 
+import com.google.common.flogger.backend.Platform;
 import java.util.Iterator;
 
 /**
@@ -35,27 +36,30 @@ import java.util.Iterator;
  * <ul>
  *   <li>Logging a value with special semantics (e.g. values that are handled specially by the
  *       logger backend).
- *   <li>Passing flags or configuration to a specific logger backend to modify behaviour.
- *   <li>Logging a value in many places with consistent formatting (e.g. so it can later be
- *       re-parsed by logs related tools).
+ *   <li>Passing configuration to a specific logger backend to modify behaviour for individual log
+ *       statements or all log statements in a {@code ScopedLoggingContext}.
+ *   <li>Logging a structured value in many places with consistent formatting (e.g. so it can later
+ *       be re-parsed by logs related tools).
  * </ul>
  *
- * <p>If you just want to log an general "key value pair" in a small number of log statements, it's
+ * <p>If you just want to log an general "key value pair" in a small number of log statements, it is
  * still better to just do something like {@code log("key=%s", value)}.
  *
  * <p>Metadata keys are expected to be singleton constants, and should never be allocated at the log
- * site itself. They should always be referenced via static final fields. However comparing keys
- * should still be done via {@code equals()} (rather than '==') since this will be safe in cases
- * where non-singleton keys exist, and is just as fast if the keys are singletons.
+ * site itself. Even though they are expected to be singletons, comparing keys should be done via
+ * {@code equals()} (rather than '==') since this will be safe in cases where non-singleton keys
+ * exist, and is just as fast if the keys are singletons.
  *
- * <p>It is strongly recommended that any public {@link MetadataKey} instances are defined as
- * {@code public static final} fields in a top-level or nested class which does no logging. Ideally
- * a separate class would be defined to hold only the keys, since this allows keys to be loaded very
- * early in the logging platform lifecycle without risking any static initialization issues.
+ * <p>It is strongly recommended that any public {@link MetadataKey} instances are defined as {@code
+ * public static final} fields in a top-level or nested class which does no logging. Ideally a
+ * separate class would be defined to hold only the keys, since this allows keys to be loaded very
+ * early in the logging {@link Platform} lifecycle without risking any static initialization issues.
  *
- * <p>Additionally, custom keys which override either of the {@link #emit} methods should ensure
- * that any code in those methods cannot trigger reentrant logging. This is important if keys are
- * used as part of logging scopes, since it will otherwise trigger infinite recursion.
+ * <p>Custom subclasses of {@code MetadataKey} which override either of the protected {@link #emit}
+ * methods should take care to avoid calling any code which might trigger logging since this could
+ * lead to unexpected recusrion, especially if the key is being logged as part of a {@code
+ * ScopedLoggingContext}. While there is protection against unbounded reentrant logging in Flogger,
+ * it is still best practice to avoid it where possible.
  *
  * <p>Metadata keys are passed to a log statement via the {@code with()} method, so it can aid
  * readability to choose a name for the constant field which reads "fluently" as part of the log
@@ -68,7 +72,6 @@ import java.util.Iterator;
  * logger.atInfo().with(SET_LOGGING_TO_USER_FILE, user).log("User specific log message...");
  * }</pre>
  *
- *
  * <p>Logger backends can act upon metadata present in log statements to modify behaviour. Any
  * metadata entries that are not handled by a backend explicitly are, by default, rendered as part
  * of the log statement in a default format.
@@ -77,8 +80,12 @@ import java.util.Iterator;
  * limiting), but a metadata entry remains present to record the fact that rate limiting was
  * enabled.
  */
-// TODO(dbeaumont): Figure out an efficient way to protect from reentrant logging during "emit".
 public class MetadataKey<T> {
+  // High levels of reentrant logging could well be caused by custom metadata keys. This is set
+  // lower than the total limit on reentrant logging because it's one of the more likely ways in
+  // which unbounded reentrant logging could occur, but it's also easy to mitigate.
+  private static final int MAX_CUSTOM_METADATAKEY_RECURSION_DEPTH = 20;
+
   /**
    * Callback interface to handle additional contextual {@code Metadata} in log statements. This
    * interface is only intended to be implemented by logger backend classes as part of handling
@@ -91,34 +98,35 @@ public class MetadataKey<T> {
   }
 
   /**
-   * Creates a key for a single piece of metadata. If metadata is set more than once using this
-   * key for the same log statement, the last set value will be the one used, and other values
-   * will be ignored (although callers should never rely on this behavior).
-   * <p>
-   * Key instances behave like singletons, and two key instances with the same label will still
+   * Creates a key for a single piece of metadata. If metadata is set more than once using this key
+   * for the same log statement, the last set value will be the one used, and other values will be
+   * ignored (although callers should never rely on this behavior).
+   *
+   * <p>Key instances behave like singletons, and two key instances with the same label will still
    * be considered distinct. The recommended approach is to always assign {@code MetadataKey}
    * instances to static final constants.
    */
   public static <T> MetadataKey<T> single(String label, Class<? extends T> clazz) {
-    return new MetadataKey<T>(label, clazz, false);
+    return new MetadataKey<T>(label, clazz, false, false);
   }
 
   /**
-   * Creates a key for a repeated piece of metadata. If metadata is added more than once using
-   * this key for a log statement, all values will be retained as key/value pairs in the order
-   * they were added.
-   * <p>
-   * Key instances behave like singletons, and two key instances with the same label will still
+   * Creates a key for a repeated piece of metadata. If metadata is added more than once using this
+   * key for a log statement, all values will be retained as key/value pairs in the order they were
+   * added.
+   *
+   * <p>Key instances behave like singletons, and two key instances with the same label will still
    * be considered distinct. The recommended approach is to always assign {@code MetadataKey}
    * instances to static final constants.
    */
   public static <T> MetadataKey<T> repeated(String label, Class<T> clazz) {
-    return new MetadataKey<T>(label, clazz, true);
+    return new MetadataKey<T>(label, clazz, true, false);
   }
 
   private final String label;
   private final Class<? extends T> clazz;
   private final boolean canRepeat;
+  private final boolean isCustom;
   private final long bloomFilterMask;
 
   /**
@@ -127,15 +135,22 @@ public class MetadataKey<T> {
    * values or to have a family of related keys with a common parent type.
    */
   protected MetadataKey(String label, Class<? extends T> clazz, boolean canRepeat) {
+    this(label, clazz, canRepeat, true);
+  }
+
+  // Private constructor to allow instances generated by static factory methods to be marked as
+  // non-custom.
+  private MetadataKey(String label, Class<? extends T> clazz, boolean canRepeat, boolean isCustom) {
     this.label = checkMetadataIdentifier(label);
     this.clazz = checkNotNull(clazz, "class");
     this.canRepeat = canRepeat;
+    this.isCustom = isCustom;
     this.bloomFilterMask = createBloomFilterMaskFromSystemHashcode();
   }
 
   /**
-   * Returns a short, human readable text label which will prefix the metadata in cases where it
-   * is formatted as part of the log message.
+   * Returns a short, human readable text label which will prefix the metadata in cases where it is
+   * formatted as part of the log message.
    */
   public final String getLabel() {
     return label;
@@ -152,16 +167,53 @@ public class MetadataKey<T> {
   }
 
   /**
-   * Emits one or more key/value pairs for the given metadata value. By default this method simply
-   * emits the given value with this key's label, but it can be overridden to emit multiple
-   * key/value pairs if necessary.
+   * Emits one or more key/value pairs for the given metadata value. Call this method in preference
+   * to using {@link #emitRepeated} directly to protect against unbounded reentrant logging.
+   */
+  public final void safeEmit(T value, KeyValueHandler kvh) {
+    if (isCustom && Platform.getCurrentRecursionDepth() > MAX_CUSTOM_METADATAKEY_RECURSION_DEPTH) {
+      // Recursive logging detected, possibly caused by custom metadata keys triggering reentrant
+      // logging. To halt recursion, emit the keys in the default non-custom format without invoking
+      // user overridable methods.
+      kvh.handle(getLabel(), value);
+    } else {
+      emit(value, kvh);
+    }
+  }
+
+  /**
+   * Emits one or more key/value pairs for a sequence of repeated metadata values. Call this method
+   * in preference to using {@link #emitRepeated} directly to protect against unbounded reentrant
+   * logging.
+   */
+  public final void safeEmitRepeated(Iterator<T> values, KeyValueHandler kvh) {
+    checkState(canRepeat, "non repeating key");
+    if (isCustom && Platform.getCurrentRecursionDepth() > MAX_CUSTOM_METADATAKEY_RECURSION_DEPTH) {
+      // Recursive logging detected, possibly caused by custom metadata keys triggering reentrant
+      // logging. To halt recursion, emit the keys in the default non-custom format without invoking
+      // user overridable methods.
+      while (values.hasNext()) {
+        kvh.handle(getLabel(), values.next());
+      }
+    } else {
+      emitRepeated(values, kvh);
+    }
+  }
+
+  /**
+   * Override this method to provide custom logic for emitting one or more key/value pairs for a
+   * given metadata value (call {@link #safeEmit(Object,KeyValueHandler)} from logging code to
+   * actually emit values).
+   *
+   * <p>By default this method simply emits the given value with this key's label, but it can be
+   * customized key/value pairs if necessary.
    *
    * <p>Note that if multiple key/value pairs are emitted, the following best-practice should be
    * followed:
    *
    * <ul>
    *   <li>Key names should be of the form {@code "<label>.<suffix>"}.
-   *   <li>Suffixes may only contain lower case ASCII letters and underscore (i.e. [a-z_]).
+   *   <li>Suffixes should only contain lower case ASCII letters and underscore (i.e. [a-z_]).
    * </ul>
    *
    * <p>This method is called as part of logs processing and could be invoked a very large number of
@@ -183,24 +235,26 @@ public class MetadataKey<T> {
    *
    * <p>By default this method just calls {@code out.handle(getLabel(), value)}.
    */
-  public void emit(T value, KeyValueHandler out) {
-    out.handle(getLabel(), value);
+  protected void emit(T value, KeyValueHandler kvh) {
+    kvh.handle(getLabel(), value);
   }
 
   /**
-   * Emits one or more key/value pairs for a sequence of repeated metadata values. By default this
-   * method simply calls {@link #emit} once for each value, in order. However it could be overridden
-   * to treat the sequence of values for a repeated key as a single entity (e.g. by joining elements
-   * with a separator such as {@code '/'}).
+   * Override this method to provide custom logic for emitting one or more key/value pairs for a
+   * sequence of metadata values (call {@link #safeEmitRepeated(Iterator,KeyValueHandler)} from
+   * logging code to actually emit values).
    *
-   * <p>By default this method just calls {@code emit(value, out)} for each repeated value.
+   * <p>Emits one or more key/value pairs for a sequence of repeated metadata values. By default
+   * this method simply calls {@link #emit(Object,KeyValueHandler)} once for each value, in order.
+   * However it could be overridden to treat the sequence of values for a repeated key as a single
+   * entity (e.g. by joining elements with a separator).
    *
-   * <p>See the {@link #emit} method for additional caveats for custom implementations.
+   * <p>See the {@link #emit(Object,KeyValueHandler)} method for additional caveats for custom
+   * implementations.
    */
-  public void emitRepeated(Iterator<T> values, KeyValueHandler out) {
-    checkState(canRepeat, "non repeating key");
+  protected void emitRepeated(Iterator<T> values, KeyValueHandler kvh) {
     while (values.hasNext()) {
-      emit(values.next(), out);
+      emit(values.next(), kvh);
     }
   }
 

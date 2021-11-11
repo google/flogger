@@ -25,15 +25,15 @@ import java.util.Set;
 
 /**
  * A helper class providing the default callbacks and handlers for processing metadata as key/value
- * pairs. It is expected that most text-based logger backends will format unknown metadata using
- * the handlers from this class.
+ * pairs. It is expected that most text-based logger backends will format unknown metadata using the
+ * handlers from this class.
  */
 public final class MetadataKeyValueHandlers {
   private static final ValueHandler<Object, KeyValueHandler> EMIT_METADATA =
       new ValueHandler<Object, KeyValueHandler>() {
         @Override
         public void handle(MetadataKey<Object> key, Object value, KeyValueHandler kvf) {
-          key.emit(value, kvf);
+          key.safeEmit(value, kvf);
         }
       };
 
@@ -41,7 +41,7 @@ public final class MetadataKeyValueHandlers {
       new RepeatedValueHandler<Object, KeyValueHandler>() {
         @Override
         public void handle(MetadataKey<Object> key, Iterator<Object> value, KeyValueHandler kvf) {
-          key.emitRepeated(value, kvf);
+          key.safeEmitRepeated(value, kvf);
         }
       };
 
@@ -79,8 +79,7 @@ public final class MetadataKeyValueHandlers {
    *
    * @return a handler configured with the default key/value handlers and ignored keys.
    */
-  public static MetadataHandler<KeyValueHandler> getDefaultHandler(
-      Set<MetadataKey<?>> ignored) {
+  public static MetadataHandler<KeyValueHandler> getDefaultHandler(Set<MetadataKey<?>> ignored) {
     return getDefaultBuilder(ignored).build();
   }
 
