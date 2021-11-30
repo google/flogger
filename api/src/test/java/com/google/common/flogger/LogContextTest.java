@@ -411,7 +411,11 @@ public class LogContextTest {
   public void testNullLiteral() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentLogger logger = new FluentLogger(backend);
-    logger.atInfo().log((String) null);
+    // We want to call log(String) (not log(Object)) with a null value. If we try to do
+    // log((String) null), the expression isn't considered constant, so we use a final local
+    // variable of type String instead.
+    final String nullString = null;
+    logger.atInfo().log(nullString);
     backend.assertLastLogged().hasMessage(null);
   }
 
@@ -719,18 +723,18 @@ public class LogContextTest {
     }
     // Expect: Foo -> 0, 2, 4, 6 and Bar -> 0, 3, 6 (but not in that order)
     assertThat(backend.getLoggedCount()).isEqualTo(7);
-    backend.assertLogged(0).hasMessage("Foo: 0");
-    backend.assertLogged(1).hasMessage("Bar: 0");
-    backend.assertLogged(2).hasMessage("Foo: 2");
-    backend.assertLogged(3).hasMessage("Bar: 3");
-    backend.assertLogged(4).hasMessage("Foo: 4");
-    backend.assertLogged(5).hasMessage("Foo: 6");
-    backend.assertLogged(6).hasMessage("Bar: 6");
+    backend.assertLogged(0).hasArguments("Foo: 0");
+    backend.assertLogged(1).hasArguments("Bar: 0");
+    backend.assertLogged(2).hasArguments("Foo: 2");
+    backend.assertLogged(3).hasArguments("Bar: 3");
+    backend.assertLogged(4).hasArguments("Foo: 4");
+    backend.assertLogged(5).hasArguments("Foo: 6");
+    backend.assertLogged(6).hasArguments("Bar: 6");
   }
 
   // In normal use, the logger would never need to be passed in and you'd use logVarargs().
   private static void logHelper(FluentLogger logger, LogSite logSite, int n, String message) {
-    logger.atInfo().withInjectedLogSite(logSite).every(n).log(message);
+    logger.atInfo().withInjectedLogSite(logSite).every(n).log("%s", message);
   }
 
   // It's important that injecting an INVALID log site acts as a override to suppress log site
