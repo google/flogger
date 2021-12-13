@@ -409,6 +409,9 @@ public static void logFooFailure(FooException error, String message) {
       .log("Foo failure[%s]: %s", error.getStatus(), message);
 ```
 
+Note: `LogSites.callerOf` returns a constant placeholder on Android
+(b/175230262).
+
 You can also obtain a [`LogSite`] for the current line of code using
 `LogSites.logSite()` if you cannot use `LogSites.callerOf(...)` for any reason,
 but it's a more error-prone approach since it effectively separates the log
