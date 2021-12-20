@@ -22,9 +22,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # https://travis-ci.org/github/google/flogger/builds
 http_archive(
     name = "google_bazel_common",
-    sha256 = "f42b709953b056af2ecdea7582bb3204df0c66a8ea24134c158d1347239ce425",
-    strip_prefix = "bazel-common-200e4a8af169ccbeaf5dccd01c83c9fe20970a1e",
-    urls = ["https://github.com/google/bazel-common/archive/200e4a8af169ccbeaf5dccd01c83c9fe20970a1e.zip"],
+    sha256 = "61cd7c2a24a1b066848a68c56deca799dd9d0329cb9032d1686859cdd2c05be2",
+    strip_prefix = "bazel-common-2e42988b7a3d1e3b11ab4db2d7c28f794500a672",
+    urls = ["https://github.com/google/bazel-common/archive/2e42988b7a3d1e3b11ab4db2d7c28f794500a672.zip"],
 )
 
 load("@google_bazel_common//:workspace_defs.bzl", "google_common_workspace_rules")
