@@ -191,9 +191,10 @@ Overall while these utilities can have value, it can also be a burden on future
 maintainers to use helper classes like this. See also [LogSite](#log-site) for
 more information on how to implement better static helper methods.
 
-## Don't create a `Throwable` just to log it {#stack-trace}
+## Don't create a `Throwable` just to log a stack trace {#stack-trace}
 
-There is no need to do this:
+If you want to log a stack trace outside the context of handling an exception,
+there is no need to do this:
 
 ```java
 logger.atInfo().withCause(new Exception()).log("Message");
