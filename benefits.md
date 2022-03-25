@@ -9,7 +9,7 @@ characters to write, it permits a far greater functionality and will hopefully
 lead to more readable and expressive log statements.
 
 When non-fluent loggings APIs add new functionality, it is often achieved by
-creating overrides of existing methods with additional parameters, or adding new
+creating overloads of existing methods with additional parameters, or adding new
 methods with distinct names. In either case this tends to create a more complex
 API surface with more chance for confusion and misuse.
 
