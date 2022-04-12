@@ -411,11 +411,8 @@ public class LogContextTest {
   public void testNullLiteral() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentLogger logger = new FluentLogger(backend);
-    // We want to call log(String) (not log(Object)) with a null value. If we try to do
-    // log((String) null), the expression isn't considered constant, so we use a final local
-    // variable of type String instead.
-    final String nullString = null;
-    logger.atInfo().log(nullString);
+    // We want to call log(String) (not log(Object)) with a null value.
+    logger.atInfo().log((String) null);
     backend.assertLastLogged().hasMessage(null);
   }
 
