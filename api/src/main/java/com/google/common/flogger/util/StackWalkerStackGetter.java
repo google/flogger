@@ -32,6 +32,12 @@ final class StackWalkerStackGetter implements StackGetter {
   private static final StackWalker STACK_WALKER =
       StackWalker.getInstance(StackWalker.Option.SHOW_REFLECT_FRAMES);
 
+  public StackWalkerStackGetter() {
+    // Due to b/241269335, we check in constructor whether this implementation crashes in runtime,
+    // and CallerFinder should catch any Throwable caused.
+    StackTraceElement unused = callerOf(StackWalkerStackGetter.class, 0);
+  }
+
   @Override
   public StackTraceElement callerOf(Class<?> target, int skipFrames) {
     checkArgument(skipFrames >= 0, "skipFrames must be >= 0");
