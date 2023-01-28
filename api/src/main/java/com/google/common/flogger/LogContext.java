@@ -179,6 +179,20 @@ public abstract class LogContext<
      */
     public static final MetadataKey<StackSize> CONTEXT_STACK_SIZE =
         MetadataKey.single("stack_size", StackSize.class);
+
+    /**
+     * Key associated with the metadata for specifying {@code KeyValueFormatter.prefix} with a log
+     * statement.
+     */
+    public static final MetadataKey<String> CONTEXT_PREFIX =
+            MetadataKey.single("prefix", String.class);
+
+    /**
+     * Key associated with the metadata for specifying {@code KeyValueFormatter.suffix} with a log
+     * statement.
+     */
+    public static final MetadataKey<String> CONTEXT_SUFFIX =
+            MetadataKey.single("suffix", String.class);
   }
 
   static final class MutableMetadata extends Metadata {

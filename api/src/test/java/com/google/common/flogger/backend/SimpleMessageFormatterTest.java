@@ -55,6 +55,31 @@ public class SimpleMessageFormatterTest {
     assertThat(format(logData, Metadata.empty())).isEqualTo("Hello World [CONTEXT bool=true ]");
   }
 
+  @Test
+  public void testCustomContextFormatFastPath() {
+    // Just formatting a literal argument with no metadata avoids copying the message in a buffer.
+    String literal = "Hello World";
+    FakeLogData logData = FakeLogData.of(literal);
+    assertThat(format(logData, Metadata.empty())).isSameInstanceAs(literal);
+
+    // It also works if the log data has a "cause" (which is a special case and never formatted).
+    Throwable cause = new IllegalArgumentException("Badness");
+    logData.addMetadata(LogContext.Key.LOG_CAUSE, cause);
+    assertThat(format(logData, Metadata.empty())).isSameInstanceAs(literal);
+
+    // Add metadata of custom format.
+    logData.addMetadata(LogContext.Key.CONTEXT_PREFIX, "{ ");
+    logData.addMetadata(LogContext.Key.CONTEXT_SUFFIX, " }");
+
+    // However it does not work as soon as there's any scope metadata.
+    assertThat(format(logData, new FakeMetadata().add(INT_KEY, 42)))
+            .isEqualTo("Hello World { int=42 }");
+
+    // Or if there's more metadata added to the log site.
+    logData.addMetadata(BOOL_KEY, true);
+    assertThat(format(logData, Metadata.empty())).isEqualTo("Hello World { bool=true }");
+  }
+
   // Parsing and basic formatting is well tested in BaseMessageFormatterTest.
   @Test
   public void testAppendFormatted() {
@@ -84,9 +109,41 @@ public class SimpleMessageFormatterTest {
         .isEqualTo("answer=42 [CONTEXT int=1 int=2 string=\"Hello\" first=\"foo\" last=\"bar\" ]");
   }
 
+  // Parsing and basic formatting is well tested in BaseMessageFormatterTest.
+  @Test
+  public void testCustomContextAppendFormatted() {
+    FakeLogData logData = FakeLogData.withPrintfStyle("answer=%d", 42);
+    assertThat(appendFormatted(logData, Metadata.empty())).isEqualTo("answer=42");
+
+    // Add metadata of custom format.
+    logData.addMetadata(LogContext.Key.CONTEXT_PREFIX, "{ ");
+    logData.addMetadata(LogContext.Key.CONTEXT_SUFFIX, " }");
+
+    FakeMetadata scope = new FakeMetadata().add(INT_KEY, 1);
+    assertThat(appendFormatted(logData, scope)).isEqualTo("answer=42 { int=1 }");
+
+    Throwable cause = new IllegalArgumentException("Badness");
+    logData.addMetadata(LogContext.Key.LOG_CAUSE, cause);
+    assertThat(appendFormatted(logData, scope)).isEqualTo("answer=42 { int=1 }");
+
+    logData.addMetadata(INT_KEY, 2);
+    assertThat(appendFormatted(logData, scope)).isEqualTo("answer=42 { int=1 int=2 }");
+
+    // Note that values are grouped by key, and keys are emitted in "encounter order" (scope first).
+    scope.add(STRING_KEY, "Hello");
+    assertThat(appendFormatted(logData, scope))
+            .isEqualTo("answer=42 { int=1 int=2 string=\"Hello\" }");
+
+    // Tags get embedded as metadata, and format in metadata order. So while tag keys are ordered
+    // locally, mixing tags and metadata does not result in a global ordering of context keys.
+    Tags tags = Tags.builder().addTag("last", "bar").addTag("first", "foo").build();
+    logData.addMetadata(LogContext.Key.TAGS, tags);
+    assertThat(appendFormatted(logData, scope))
+            .isEqualTo("answer=42 { int=1 int=2 string=\"Hello\" first=\"foo\" last=\"bar\" }");
+  }
+
   @Test
   public void testLogMessageFormatter() {
-    LogMessageFormatter formatter = SimpleMessageFormatter.getDefaultFormatter();
     FakeLogData logData = FakeLogData.of("message");
 
     FakeMetadata scope = new FakeMetadata();
@@ -94,11 +151,33 @@ public class SimpleMessageFormatterTest {
     Tags tags = Tags.builder().addTag("last", "bar").addTag("first", "foo").build();
     logData.addMetadata(LogContext.Key.TAGS, tags);
 
+    LogMessageFormatter formatter = SimpleMessageFormatter.getDefaultFormatter(logData.getMetadata());
     MetadataProcessor metadata = MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata());
     assertThat(formatter.format(logData, metadata))
-        .isEqualTo("message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
+            .isEqualTo("message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
     assertThat(formatter.append(logData, metadata, new StringBuilder("PREFIX: ")).toString())
-        .isEqualTo("PREFIX: message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
+            .isEqualTo("PREFIX: message [CONTEXT string=\"Hello\" first=\"foo\" last=\"bar\" ]");
+  }
+
+  @Test
+  public void testCustomContextLogMessageFormatter() {
+    FakeLogData logData = FakeLogData.of("message");
+
+    FakeMetadata scope = new FakeMetadata();
+    scope.add(STRING_KEY, "Hello");
+    Tags tags = Tags.builder().addTag("last", "bar").addTag("first", "foo").build();
+    logData.addMetadata(LogContext.Key.TAGS, tags);
+
+    // Add metadata of custom format.
+    logData.addMetadata(LogContext.Key.CONTEXT_PREFIX, "{ ");
+    logData.addMetadata(LogContext.Key.CONTEXT_SUFFIX, " }");
+
+    LogMessageFormatter formatter = SimpleMessageFormatter.getDefaultFormatter(logData.getMetadata());
+    MetadataProcessor metadata = MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata());
+    assertThat(formatter.format(logData, metadata))
+        .isEqualTo("message { string=\"Hello\" first=\"foo\" last=\"bar\" }");
+    assertThat(formatter.append(logData, metadata, new StringBuilder("PREFIX: ")).toString())
+        .isEqualTo("PREFIX: message { string=\"Hello\" first=\"foo\" last=\"bar\" }");
   }
 
   // As above but also ignore the STRING_KEY metadata.
@@ -126,12 +205,12 @@ public class SimpleMessageFormatterTest {
 
   private static String format(LogData logData, Metadata scope) {
     MetadataProcessor metadata = MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata());
-    return SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
+    return SimpleMessageFormatter.getDefaultFormatter(logData.getMetadata()).format(logData, metadata);
   }
 
   private static String appendFormatted(LogData logData, Metadata scope) {
     MetadataProcessor metadata = MetadataProcessor.forScopeAndLogSite(scope, logData.getMetadata());
-    return SimpleMessageFormatter.getDefaultFormatter()
+    return SimpleMessageFormatter.getDefaultFormatter(logData.getMetadata())
         .append(logData, metadata, new StringBuilder())
         .toString();
   }
