@@ -20,6 +20,8 @@ import static com.google.common.flogger.util.Checks.checkArgument;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.MetadataKey;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -129,6 +131,7 @@ public abstract class MetadataHandler<C> {
    *
    * @param <C> the context type.
    */
+  @CheckReturnValue
   public static final class Builder<C> {
     // Since the context is ignored, this can safely be cast to ValueHandler<Object, C>
     private static final ValueHandler<Object, Object> IGNORE_VALUE =
@@ -167,6 +170,7 @@ public abstract class MetadataHandler<C> {
      * @param defaultHandler the default handler for unknown repeated keys/values.
      * @return the builder instance for chaining.
      */
+    @CanIgnoreReturnValue
     public Builder<C> setDefaultRepeatedHandler(
         RepeatedValueHandler<Object, ? super C> defaultHandler) {
       this.defaultRepeatedHandler = checkNotNull(defaultHandler, "handler");
@@ -181,6 +185,7 @@ public abstract class MetadataHandler<C> {
      * @param <T> the key/value type.
      * @return the builder instance for chaining.
      */
+    @CanIgnoreReturnValue
     public <T> Builder<C> addHandler(
         MetadataKey<T> key, ValueHandler<? super T, ? super C> handler) {
       checkNotNull(key, "key");
@@ -199,6 +204,7 @@ public abstract class MetadataHandler<C> {
      * @param <T> the key/value type.
      * @return the builder instance for chaining.
      */
+    @CanIgnoreReturnValue
     public <T> Builder<C> addRepeatedHandler(
         MetadataKey<? extends T> key, RepeatedValueHandler<T, ? super C> handler) {
       checkNotNull(key, "key");
@@ -216,6 +222,7 @@ public abstract class MetadataHandler<C> {
      * @param rest additional keys to ignore in the builder.
      * @return the builder instance for chaining.
      */
+    @CanIgnoreReturnValue
     public Builder<C> ignoring(MetadataKey<?> key, MetadataKey<?>... rest) {
       checkAndIgnore(key);
       for (MetadataKey<?> k : rest) {
@@ -230,6 +237,7 @@ public abstract class MetadataHandler<C> {
      * @param keys the keys to ignore in the builder.
      * @return the builder instance for chaining.
      */
+    @CanIgnoreReturnValue
     public Builder<C> ignoring(Iterable<MetadataKey<?>> keys) {
       for (MetadataKey<?> k : keys) {
         checkAndIgnore(k);
@@ -256,6 +264,7 @@ public abstract class MetadataHandler<C> {
      * @param rest additional keys to remove from the builder.
      * @return the builder instance for chaining.
      */
+    @CanIgnoreReturnValue
     public Builder<C> removeHandlers(MetadataKey<?> key, MetadataKey<?>... rest) {
       checkAndRemove(key);
       for (MetadataKey<?> k : rest) {

@@ -23,6 +23,7 @@ import com.google.common.flogger.parameter.DateTimeFormat;
 import com.google.common.flogger.parameter.Parameter;
 import com.google.common.flogger.parameter.ParameterVisitor;
 import com.google.common.flogger.parser.MessageBuilder;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Formattable;
@@ -53,6 +54,7 @@ public class BaseMessageFormatter extends MessageBuilder<StringBuilder>
    * @param out a buffer to append to.
    * @return the given buffer (for method chaining).
    */
+  @CanIgnoreReturnValue
   public static StringBuilder appendFormattedMessage(LogData data, StringBuilder out) {
     if (data.getTemplateContext() != null) {
       BaseMessageFormatter formatter =

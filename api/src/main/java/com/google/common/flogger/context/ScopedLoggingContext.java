@@ -21,6 +21,7 @@ import static com.google.common.flogger.util.Checks.checkState;
 
 import com.google.common.flogger.LoggingScope;
 import com.google.common.flogger.MetadataKey;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.Closeable;
@@ -132,6 +133,7 @@ public abstract class ScopedLoggingContext {
    * <p>This class is intended to be used only as part of a fluent statement, and retaining a
    * reference to a builder instance for any length of time is not recommended.
    */
+  @CheckReturnValue
   public abstract static class Builder {
     private Tags tags = null;
     private ContextMetadata.Builder metadata = null;
@@ -143,7 +145,7 @@ public abstract class ScopedLoggingContext {
      * Sets the tags to be used with the context. This method can be called at most once per
      * builder.
      */
-    @CheckReturnValue
+    @CanIgnoreReturnValue
     public final Builder withTags(Tags tags) {
       checkState(this.tags == null, "tags already set");
       checkNotNull(tags, "tags");
@@ -155,7 +157,7 @@ public abstract class ScopedLoggingContext {
      * Adds a single metadata key/value pair to the context. This method can be called multiple
      * times on a builder.
      */
-    @CheckReturnValue
+    @CanIgnoreReturnValue
     public final <T> Builder withMetadata(MetadataKey<T> key, T value) {
       if (metadata == null) {
         metadata = ContextMetadata.builder();
@@ -168,7 +170,7 @@ public abstract class ScopedLoggingContext {
      * Sets the log level map to be used with the context being built. This method can be called at
      * most once per builder.
      */
-    @CheckReturnValue
+    @CanIgnoreReturnValue
     public final Builder withLogLevelMap(LogLevelMap logLevelMap) {
       checkState(this.logLevelMap == null, "log level map already set");
       checkNotNull(logLevelMap, "log level map");

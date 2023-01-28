@@ -21,6 +21,8 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.Metadata;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +50,7 @@ public abstract class ContextMetadata extends Metadata {
    * needed by implementations of {@link ScopedLoggingContext} and should not be considered a stable
    * API.
    */
+  @CheckReturnValue
   public static final class Builder {
     private static final Entry<?>[] EMPTY_ARRAY = new Entry<?>[0];
 
@@ -59,6 +62,7 @@ public abstract class ContextMetadata extends Metadata {
     private Builder() {}
 
     /** Add a single metadata key/value pair to the builder. */
+    @CanIgnoreReturnValue
     public <T> Builder add(MetadataKey<T> key, T value) {
       // Entries are immutable and get moved into the metadata when it's built, so these get shared
       // and reduce the size of the metadata storage compared to storing adjacent key/value pairs.

@@ -28,12 +28,15 @@ import com.google.common.flogger.backend.TemplateContext;
 import com.google.common.flogger.parser.DefaultBraceStyleMessageParser;
 import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.parser.MessageParser;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.logging.Level;
 
 /**
  * A mutable fake {@link LogData} implementation to help test logging backends and other log
  * handling code.
  */
+@CheckReturnValue
 public final class FakeLogData implements LogData {
   public static final String FAKE_LOGGER_NAME = "com.google.LoggerName";
 
@@ -80,21 +83,25 @@ public final class FakeLogData implements LogData {
   }
 
   @SuppressWarnings("GoodTime") // should accept a java.time.Instant
+  @CanIgnoreReturnValue
   public FakeLogData setTimestampNanos(long timestampNanos) {
     this.timestampNanos = timestampNanos;
     return this;
   }
 
+  @CanIgnoreReturnValue
   public FakeLogData setLevel(Level level) {
     this.level = level;
     return this;
   }
 
+  @CanIgnoreReturnValue
   public FakeLogData setLogSite(LogSite logSite) {
     this.logSite = logSite;
     return this;
   }
 
+  @CanIgnoreReturnValue
   public <T> FakeLogData addMetadata(MetadataKey<T> key, Object value) {
     metadata.add(key, key.cast(value));
     return this;

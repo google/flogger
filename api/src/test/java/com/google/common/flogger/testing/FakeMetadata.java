@@ -20,6 +20,8 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.Metadata;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.ArrayList;
 import java.util.List;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
@@ -28,6 +30,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * A mutable fake {@link Metadata} implementation to help test logging backends and other log
  * handling code.
  */
+@CheckReturnValue
 public final class FakeMetadata extends Metadata {
 
   private static final class KeyValuePair<T> {
@@ -41,6 +44,7 @@ public final class FakeMetadata extends Metadata {
 
   private final List<KeyValuePair<?>> entries = new ArrayList<>();
 
+  @CanIgnoreReturnValue
   public <T> FakeMetadata add(MetadataKey<T> key, T value) {
     entries.add(new KeyValuePair<T>(key, value));
     return this;

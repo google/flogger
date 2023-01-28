@@ -218,6 +218,7 @@ public final class Tags {
       return addImpl(name, value);
     }
 
+    @CanIgnoreReturnValue
     private Builder addImpl(String name, @NullableDecl Object value) {
       keyValuePairs.add(new KeyValuePair(checkMetadataIdentifier(name), value));
       return this;

@@ -18,6 +18,8 @@ package com.google.common.flogger.context;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +41,7 @@ public final class LogLevelMap {
    * class/package names, use {@link LogLevelMap#create(java.util.Map,Level)} or {@link
    * LogLevelMap#create(java.util.Map)}.
    */
+  @CheckReturnValue
   public static final class Builder {
     private final Map<String, Level> map = new HashMap<String, Level>();
     private Level defaultLevel = Level.OFF;
@@ -52,6 +55,7 @@ public final class LogLevelMap {
     }
 
     /** Adds the given classes at the specified log level. */
+    @CanIgnoreReturnValue
     public Builder add(Level level, Class<?>... classes) {
       for (Class<?> cls : classes) {
         put(cls.getName(), level);
@@ -60,6 +64,7 @@ public final class LogLevelMap {
     }
 
     /** Adds the given packages at the specified log level. */
+    @CanIgnoreReturnValue
     public Builder add(Level level, Package... packages) {
       for (Package pkg : packages) {
         put(pkg.getName(), level);
@@ -68,6 +73,7 @@ public final class LogLevelMap {
     }
 
     /** Sets the default log level (use {@link Level#OFF} to disable. */
+    @CanIgnoreReturnValue
     public Builder setDefault(Level level) {
       checkNotNull(defaultLevel, "default log level must not be null");
       this.defaultLevel = level;
