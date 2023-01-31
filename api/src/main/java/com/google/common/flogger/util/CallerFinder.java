@@ -18,11 +18,9 @@ package com.google.common.flogger.util;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
-import com.google.errorprone.annotations.CheckReturnValue;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /** A helper class for determining callers of a specified class currently on the stack. */
-@CheckReturnValue
 public final class CallerFinder {
   private static final String[] STACK_GETTER_IMPLEMENTATIONS = {
     "com.google.common.flogger.util.StackWalkerStackGetter",

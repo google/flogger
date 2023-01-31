@@ -18,7 +18,6 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
-import com.google.errorprone.annotations.CheckReturnValue;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
@@ -38,7 +37,6 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * {@code StackTraceElement}, this log site will not be unique if multiple log statements are on the
  * the same, or if line number information was stripped from the class file.
  */
-@CheckReturnValue
 public abstract class LogSite implements LogSiteKey {
   /** A value used for line numbers when the true information is not available. */
   public static final int UNKNOWN_LINE = 0;

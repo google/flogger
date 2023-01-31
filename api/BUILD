@@ -119,6 +119,9 @@ java_library(
     name = "checks",
     srcs = CHECKS,
     javacopts = ["-source 7 -target 7"],
+    deps = [
+        "@google_bazel_common//third_party/java/error_prone:annotations",
+    ],
 )
 
 pom_file(
@@ -162,6 +165,7 @@ java_library(
     deps = [
         ":api",
         "@google_bazel_common//third_party/java/checker_framework_annotations",
+        "@google_bazel_common//third_party/java/error_prone:annotations",
     ],
 )
 

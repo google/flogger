@@ -20,7 +20,6 @@ import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.parser.MessageParser;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.logging.Level;
 
 /**
@@ -35,7 +34,6 @@ import java.util.logging.Level;
  * The choice to prevent direct extension of loggers was made deliberately to ensure that users of
  * a specific logger implementation always get the same behavior.
  */
-@CheckReturnValue
 public final class FluentLogger extends AbstractLogger<FluentLogger.Api> {
   /**
    * The non-wildcard, fully specified, logging API for this logger. Fluent logger implementations

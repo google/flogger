@@ -22,7 +22,6 @@ import static com.google.common.flogger.util.Checks.checkState;
 import com.google.common.flogger.LoggingScope;
 import com.google.common.flogger.MetadataKey;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.Closeable;
 import java.util.concurrent.Callable;
@@ -133,7 +132,6 @@ public abstract class ScopedLoggingContext {
    * <p>This class is intended to be used only as part of a fluent statement, and retaining a
    * reference to a builder instance for any length of time is not recommended.
    */
-  @CheckReturnValue
   public abstract static class Builder {
     private Tags tags = null;
     private ContextMetadata.Builder metadata = null;
@@ -186,7 +184,6 @@ public abstract class ScopedLoggingContext {
      * @throws InvalidLoggingScopeStateException if the context created during this method cannot be
      *     closed correctly (e.g. if a nested context has also been opened, but not closed).
      */
-    @CheckReturnValue
     public final Runnable wrap(final Runnable r) {
       return new Runnable() {
         @Override
@@ -213,7 +210,6 @@ public abstract class ScopedLoggingContext {
      * @throws InvalidLoggingScopeStateException if the context created during this method cannot be
      *     closed correctly (e.g. if a nested context has also been opened, but not closed).
      */
-    @CheckReturnValue
     public final <R> Callable<R> wrap(final Callable<R> c) {
       return new Callable<R>() {
         @Override
@@ -238,6 +234,7 @@ public abstract class ScopedLoggingContext {
     }
 
     /** Calls a {@link Callable} directly within a new context installed from this builder. */
+    @CanIgnoreReturnValue
     public final <R> R call(Callable<R> c) throws Exception {
       return wrap(c).call();
     }
@@ -246,6 +243,7 @@ public abstract class ScopedLoggingContext {
      * Calls a {@link Callable} directly within a new context installed from this builder, wrapping
      * any checked exceptions with a {@link RuntimeException}.
      */
+    @CanIgnoreReturnValue
     public final <R> R callUnchecked(Callable<R> c) {
       try {
         return call(c);
@@ -284,7 +282,6 @@ public abstract class ScopedLoggingContext {
      * required.
      */
     @MustBeClosed
-    @CheckReturnValue
     public abstract LoggingContextCloseable install();
 
     /**
@@ -320,7 +317,6 @@ public abstract class ScopedLoggingContext {
    * singleton value and need not be cached by callers. If logging contexts are not supported, this
    * method will return an empty context implementation which has no effect.
    */
-  @CheckReturnValue
   public static ScopedLoggingContext getInstance() {
     return ContextDataProvider.getInstance().getContextApiSingleton();
   }
@@ -349,7 +345,6 @@ public abstract class ScopedLoggingContext {
    *     .call(MyClass::doFoo);
    * }</pre>
    */
-  @CheckReturnValue
   public abstract Builder newContext();
 
   /**
@@ -365,7 +360,6 @@ public abstract class ScopedLoggingContext {
    * reason such as testability (injecting it, for example), consider using the static methods in
    * {@link ScopedLoggingContexts} instead to avoid the need to call {@link #getInstance}.
    */
-  @CheckReturnValue
   public abstract Builder newContext(ScopeType scopeType);
 
   /**
@@ -375,7 +369,6 @@ public abstract class ScopedLoggingContext {
    *     be removed in the next Flogger release.
    */
   @Deprecated
-  @CheckReturnValue
   public
   Builder newScope() {
     return newContext();
@@ -394,6 +387,7 @@ public abstract class ScopedLoggingContext {
    *
    * @return false if there is no current context, or scoped contexts are not supported.
    */
+  @CanIgnoreReturnValue
   public boolean addTags(Tags tags) {
     checkNotNull(tags, "tags");
     return false;
@@ -408,6 +402,7 @@ public abstract class ScopedLoggingContext {
    * non-deterministic ordering. It is recommended (where possible) to add metadata when building a
    * new context, rather than adding it to context visible to multiple threads.
    */
+  @CanIgnoreReturnValue
   public <T> boolean addMetadata(MetadataKey<T> key, T value) {
     checkNotNull(key, "key");
     checkNotNull(value, "value");
@@ -428,6 +423,7 @@ public abstract class ScopedLoggingContext {
    *
    * @return false if there is no current context, or scoped contexts are not supported.
    */
+  @CanIgnoreReturnValue
   public boolean applyLogLevelMap(LogLevelMap logLevelMap) {
     checkNotNull(logLevelMap, "log level map");
     return false;

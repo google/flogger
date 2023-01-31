@@ -19,7 +19,6 @@ package com.google.common.flogger.context;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,7 +40,6 @@ public final class LogLevelMap {
    * class/package names, use {@link LogLevelMap#create(java.util.Map,Level)} or {@link
    * LogLevelMap#create(java.util.Map)}.
    */
-  @CheckReturnValue
   public static final class Builder {
     private final Map<String, Level> map = new HashMap<String, Level>();
     private Level defaultLevel = Level.OFF;

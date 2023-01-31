@@ -24,7 +24,6 @@ import com.google.common.flogger.context.LogLevelMap;
 import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
-import com.google.errorprone.annotations.CheckReturnValue;
 import io.grpc.Context;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
@@ -45,13 +44,11 @@ final class GrpcScopedLoggingContext extends ScopedLoggingContext {
   }
 
   @Override
-  @CheckReturnValue
   public ScopedLoggingContext.Builder newContext() {
     return newBuilder(null);
   }
 
   @Override
-  @CheckReturnValue
   public ScopedLoggingContext.Builder newContext(ScopeType scopeType) {
     return newBuilder(scopeType);
   }

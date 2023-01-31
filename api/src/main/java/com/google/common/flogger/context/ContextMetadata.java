@@ -22,7 +22,6 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.Metadata;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,7 +49,6 @@ public abstract class ContextMetadata extends Metadata {
    * needed by implementations of {@link ScopedLoggingContext} and should not be considered a stable
    * API.
    */
-  @CheckReturnValue
   public static final class Builder {
     private static final Entry<?>[] EMPTY_ARRAY = new Entry<?>[0];
 

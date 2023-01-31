@@ -27,7 +27,6 @@ import com.google.common.flogger.backend.Platform;
 import com.google.common.flogger.backend.TemplateContext;
 import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.parser.MessageParser;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -52,7 +51,6 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * <p>
  * Logging contexts are not thread safe.
  */
-@CheckReturnValue
 public abstract class LogContext<
         LOGGER extends AbstractLogger<API>, API extends LoggingApi<API>>
     implements LoggingApi<API>, LogData {

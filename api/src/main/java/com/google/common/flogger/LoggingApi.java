@@ -18,7 +18,6 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.concurrent.TimeUnit;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
@@ -43,7 +42,6 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * sub-APIs must eventually return the original logging API.
  */
 // NOTE: new methods to this interface should be coordinated with google-java-format
-@CheckReturnValue
 public interface LoggingApi<API extends LoggingApi<API>> {
   /**
    * Associates a {@link Throwable} instance with the current log statement, to be interpreted as

@@ -29,14 +29,12 @@ import com.google.common.flogger.parser.DefaultBraceStyleMessageParser;
 import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.parser.MessageParser;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.logging.Level;
 
 /**
  * A mutable fake {@link LogData} implementation to help test logging backends and other log
  * handling code.
  */
-@CheckReturnValue
 public final class FakeLogData implements LogData {
   public static final String FAKE_LOGGER_NAME = "com.google.LoggerName";
 

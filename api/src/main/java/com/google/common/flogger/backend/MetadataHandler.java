@@ -21,7 +21,6 @@ import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.MetadataKey;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -131,7 +130,6 @@ public abstract class MetadataHandler<C> {
    *
    * @param <C> the context type.
    */
-  @CheckReturnValue
   public static final class Builder<C> {
     // Since the context is ignored, this can safely be cast to ValueHandler<Object, C>
     private static final ValueHandler<Object, Object> IGNORE_VALUE =

@@ -16,6 +16,8 @@
 
 package com.google.common.flogger.util;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
 /**
  * Flogger's own version of the Guava {@code Preconditions} class for simple, often used checks.
  */
@@ -25,6 +27,7 @@ public class Checks {
   // Warning: The methods in this class may not use String.format() to construct "fancy" error
   // messages (because that's not GWT compatible).
 
+  @CanIgnoreReturnValue
   public static <T> T checkNotNull(T value, String name) {
     if (value == null) {
       throw new NullPointerException(name + " must not be null");
@@ -45,6 +48,7 @@ public class Checks {
   }
 
   /** Checks if the given string is a valid metadata identifier. */
+  @CanIgnoreReturnValue
   public static String checkMetadataIdentifier(String s) {
     // Note that we avoid using regular expressions here, since we've not used it anywhere else
     // thus far in Flogger (avoid it make it more likely that Flogger can be transpiled).

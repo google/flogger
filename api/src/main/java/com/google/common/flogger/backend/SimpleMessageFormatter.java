@@ -19,6 +19,7 @@ package com.google.common.flogger.backend;
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.MetadataKey.KeyValueHandler;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -118,6 +119,7 @@ public final class SimpleMessageFormatter {
    * @param buffer destination buffer into which the log message and metadata will be appended.
    * @return the given destination buffer (for method chaining).
    */
+  @CanIgnoreReturnValue
   public static StringBuilder appendContext(
       MetadataProcessor metadataProcessor,
       MetadataHandler<KeyValueHandler> metadataHandler,

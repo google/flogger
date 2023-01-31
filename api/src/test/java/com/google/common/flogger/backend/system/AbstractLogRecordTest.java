@@ -111,7 +111,7 @@ public final class AbstractLogRecordTest {
     assertThat(record.appendFormattedMessageTo(new StringBuilder()).toString())
         .isEqualTo("Appended: Hello World");
     // Read LogData and format to a String which is cached.
-    record.getMessage();
+    String unused = record.getMessage();
     mutable.insert(0, "IGNORED");
     assertThat(record.appendFormattedMessageTo(new StringBuilder()).toString())
         .isEqualTo("Copied: Hello World");

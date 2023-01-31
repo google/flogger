@@ -18,7 +18,6 @@ package com.google.common.flogger;
 
 import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.parser.MessageParser;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.logging.Level;
 
 /**
@@ -29,7 +28,6 @@ import java.util.logging.Level;
  * @param <LOGGER> The logger implementation from which this context is produced.
  * @param <API> The logging api supported by this context.
  */
-@CheckReturnValue
 public abstract class GoogleLogContext<
         LOGGER extends AbstractLogger<API>, API extends GoogleLoggingApi<API>>
     extends LogContext<LOGGER, API> implements GoogleLoggingApi<API> {

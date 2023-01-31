@@ -23,13 +23,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Subject;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Arrays;
 import java.util.List;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /** A <a href="https://github.com/google/truth">Truth</a> subject for {@link LogData}. */
-@CheckReturnValue
 public final class LogDataSubject extends Subject {
   private static final Subject.Factory<LogDataSubject, LogData> LOG_DATA_SUBJECT_FACTORY =
       LogDataSubject::new;

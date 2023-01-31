@@ -26,6 +26,7 @@ import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.MetadataProcessor;
 import com.google.common.flogger.backend.SimpleMessageFormatter;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.logging.Formatter;
@@ -160,7 +161,7 @@ public abstract class AbstractLogRecord extends LogRecord {
     // IMPORTANT: We call getMessage() to cache the internal formatted message if someone indicates
     // they want to change the parameters. This is to avoid a situation in which parameters are set,
     // but the underlying message is still null. Do this first to switch internal states.
-    getMessage();
+    String unused = getMessage();
     // Now handle setting parameters as normal.
     if (parameters == null) {
       parameters = NO_PARAMETERS;
@@ -200,6 +201,7 @@ public abstract class AbstractLogRecord extends LogRecord {
    * the default implementation of {@link Formatter#formatMessage(LogRecord)}, and the result is not
    * cached.
    */
+  @CanIgnoreReturnValue
   public final StringBuilder appendFormattedMessageTo(StringBuilder buffer) {
     String cachedMessage = super.getMessage();
     if (cachedMessage == null) {

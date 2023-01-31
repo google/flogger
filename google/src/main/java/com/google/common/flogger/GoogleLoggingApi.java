@@ -16,8 +16,6 @@
 
 package com.google.common.flogger;
 
-import com.google.errorprone.annotations.CheckReturnValue;
-
 /**
  * Google specific extensions to the fluent logging API.
  *
@@ -30,7 +28,6 @@ import com.google.errorprone.annotations.CheckReturnValue;
  * @param <API> The api returned during method chaining (possibly an extension of this interface).
  */
 // NOTE: new methods to this interface should be coordinated with google-java-format
-@CheckReturnValue
 public interface GoogleLoggingApi<API extends GoogleLoggingApi<API>> extends LoggingApi<API> {
   /**
    * An implementation of {@link GoogleLoggingApi} which does nothing and discards all parameters.

@@ -17,7 +17,7 @@
 package com.google.common.flogger.context;
 
 import com.google.common.flogger.MetadataKey;
-import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
 /**
  * Static methods equivalent to the instance methods on {@link ScopedLoggingContext} but which
@@ -38,7 +38,6 @@ public final class ScopedLoggingContexts {
    *     .call(MyClass::doFoo);
    * }</pre>
    */
-  @CheckReturnValue
   public static ScopedLoggingContext.Builder newContext() {
     return ScopedLoggingContext.getInstance().newContext();
   }
@@ -56,6 +55,7 @@ public final class ScopedLoggingContexts {
    *
    * @return false if there is no current context, or scoped contexts are not supported.
    */
+  @CanIgnoreReturnValue
   public static boolean addTags(Tags tags) {
     return ScopedLoggingContext.getInstance().addTags(tags);
   }
@@ -69,6 +69,7 @@ public final class ScopedLoggingContexts {
    * non-deterministic ordering. It is recommended (where possible) to add metadata when building a
    * new context, rather than adding it to context visible to multiple threads.
    */
+  @CanIgnoreReturnValue
   public static <T> boolean addMetadata(MetadataKey<T> key, T value) {
     return ScopedLoggingContext.getInstance().addMetadata(key, value);
   }
@@ -87,6 +88,7 @@ public final class ScopedLoggingContexts {
    *
    * @return false if there is no current context, or scoped contexts are not supported.
    */
+  @CanIgnoreReturnValue
   public static <T> boolean applyLogLevelMap(LogLevelMap logLevelMap) {
     return ScopedLoggingContext.getInstance().applyLogLevelMap(logLevelMap);
   }

@@ -17,6 +17,7 @@
 package com.google.common.flogger.backend;
 
 import com.google.common.flogger.parser.ParseException;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
@@ -470,6 +471,7 @@ public final class FormatOptions {
    *
    * @param out The output buffer to which the options are appended.
    */
+  @CanIgnoreReturnValue
   public StringBuilder appendPrintfOptions(StringBuilder out) {
     if (!isDefault()) {
       // Knock out the upper-case flag because that does not correspond to an options character.

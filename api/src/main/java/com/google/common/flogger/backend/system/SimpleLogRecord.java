@@ -67,7 +67,7 @@ public final class SimpleLogRecord extends AbstractLogRecord {
     // (i.e. here). This is wasteful in cases where this message is never needed (e.g. structured
     // logging) but necessary when using many of the common JDK handlers (e.g. StreamHandler,
     // FileHandler etc.) and it's impossible to know which handlers are being used.
-    getMessage();
+    String unused = getMessage();
   }
 
   private SimpleLogRecord(RuntimeException error, LogData data, Metadata scope) {

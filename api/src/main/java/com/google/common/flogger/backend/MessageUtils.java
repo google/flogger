@@ -21,6 +21,7 @@ import static com.google.common.flogger.backend.FormatOptions.FLAG_SHOW_ALT_FORM
 import static com.google.common.flogger.backend.FormatOptions.FLAG_UPPER_CASE;
 
 import com.google.common.flogger.LogSite;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -52,6 +53,7 @@ public final class MessageUtils {
    * @param out the destination buffer.
    * @return whether the log-site was appended.
    */
+  @CanIgnoreReturnValue
   public static boolean appendLogSite(LogSite logSite, StringBuilder out) {
     if (logSite == LogSite.INVALID) {
       return false;

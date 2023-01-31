@@ -24,7 +24,6 @@ import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.LoggingException;
 import com.google.common.flogger.backend.MessageUtils;
 import com.google.common.flogger.util.RecursionDepth;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Level;
@@ -35,7 +34,6 @@ import java.util.logging.Level;
  *
  * @param <API> the logging API provided by this logger.
  */
-@CheckReturnValue
 public abstract class AbstractLogger<API extends LoggingApi<API>> {
   /**
    * An upper bound on the depth of reentrant logging allowed by Flogger. Logger backends may choose

@@ -19,7 +19,6 @@ package com.google.common.flogger;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 import static java.lang.Math.max;
 
-import com.google.errorprone.annotations.CheckReturnValue;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
@@ -39,7 +38,6 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * com.google.common.flogger.LogSites#logSiteFrom(StackTraceElement)
  * LogSites.logSiteFrom(myStackTaceElement)}.
  */
-@CheckReturnValue
 final class StackBasedLogSite extends LogSite {
   // StackTraceElement is unmodifiable once created.
   private final StackTraceElement stackElement;
