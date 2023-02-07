@@ -73,41 +73,50 @@ public final class StaticMethodCaller {
 
     int hashIndex = property.indexOf('#');
     String className = hashIndex == -1 ? property : property.substring(0, hashIndex);
-    // TODO(cgdecker): Eventually we should eleminate method checks and only use constructors
-    String methodName = hashIndex == -1 ? "getInstance" : property.substring(hashIndex + 1);
-
-    String attemptedMethod = className + '#' + methodName + "()";
+    Class<?> clazz;
     try {
-      Class<?> clazz = Class.forName(className);
+      clazz = Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      // Expected if an optional aspect is not being used (no error).
+      return null;
+    }
+
+    // TODO(cgdecker): Eventually we should eleminate method checks and only use constructors.
+    if (hashIndex != -1) {
+      String methodName = property.substring(hashIndex + 1);
+      boolean shouldAlsoTestConstructor = false;
       try {
         Method method = clazz.getMethod(methodName);
         // If the method exists, try to invoke it and don't fall back to the constructor if it
         // fails. The fallback is only for the case where the method in question has been removed.
         return type.cast(method.invoke(null));
       } catch (NoSuchMethodException e) {
-          // If the user explicitly specified a getInstance method via "ClassName#getInstance" and
-          // that getInstance method doesn't exist, fall back to constructor invocation. This allows
-          // system properties that were set for service types Flogger provides to continue to work
-          // even though we intentionally removed their getInstance() methods.
-        if (hashIndex == -1 || !methodName.equals("getInstance")) {
-          // Otherwise, error and return
-          error("method '%s' does not exist: %s\n", property, e);
-          return null;
+        // If the user explicitly specified a getInstance method via "ClassName#getInstance" and
+        // that getInstance method doesn't exist, fall back to constructor invocation. This allows
+        // system properties that were set for service types Flogger provides to continue to work
+        // even though we intentionally removed their getInstance() methods.
+        if (!methodName.equals("getInstance")) {
+          error("method '%s()' does not exist: %s", property, e);
         }
+        shouldAlsoTestConstructor = true;
+      } catch (ClassCastException e) {
+        error("cannot cast result of calling '%s()' to '%s': %s", property, type.getName(), e);
+      } catch (Exception e) {
+        // Catches SecurityException *and* ReflexiveOperationException.
+        error("cannot call static method '%s()': %s", property, e);
       }
+      if (!shouldAlsoTestConstructor) {
+        return null;
+      }
+    }
 
-      // The method didn't exist, try the constructor
-      attemptedMethod = "new " + className + "()";
+    try {
       return type.cast(clazz.getConstructor().newInstance());
-    } catch (ClassNotFoundException e) {
-      // Expected if an optional aspect is not being used (no error).
     } catch (ClassCastException e) {
-      error("cannot cast result of calling '%s' to '%s': %s\n", attemptedMethod, type.getName(), e);
+      error("cannot cast result of calling 'new %s()' to '%s': %s", className, type.getName(), e);
     } catch (Exception e) {
-      // Catches SecurityException *and* ReflexiveOperationException (which doesn't exist in 1.6).
-      error(
-          "cannot call expected no-argument constructor or static method '%s': %s\n",
-          attemptedMethod, e);
+      // Catches SecurityException *and* ReflexiveOperationException.
+      error("cannot call expected no-argument constructor on '%s': %s", className, e);
     }
     return null;
   }
