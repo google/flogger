@@ -263,7 +263,7 @@ public abstract class ScopedLoggingContext {
      * <pre>{@code
      * try (LoggingContextCloseable ctx = ScopedLoggingContext.getInstance()
      *     .newContext().withTags(Tags.of("my_tag", someValue).install()) {
-     *   // Any logging by code called from within this context will contain the additional metadata.
+     *   // Logging by code called from within this context will contain the additional metadata.
      *   logger.atInfo().log("Log message should contain tag value...");
      * }
      * }</pre>
