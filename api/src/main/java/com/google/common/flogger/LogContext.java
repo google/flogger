@@ -525,16 +525,22 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
       // Without a log site we ignore any log-site specific behaviour.
       if (logSiteKey != null) {
         // Don't "return true" early from this code since we also need to handle stack size.
+        // Only get the stats instance when we need it, but cache it if we do. This avoids getting
+        // an instance for every log statement when the vast majority don't need it.
+        LogSiteStats stats = null;
         Integer rateLimitCount = metadata.findValue(Key.LOG_EVERY_N);
-        RateLimitPeriod rateLimitPeriod = metadata.findValue(Key.LOG_AT_MOST_EVERY);
-        LogSiteStats stats = LogSiteStats.getStatsForKey(logSiteKey, metadata);
-        if (rateLimitCount != null && !stats.incrementAndCheckInvocationCount(rateLimitCount)) {
-          return false;
+        if (rateLimitCount != null) {
+          stats = ensureStats(stats, logSiteKey, metadata);
+          if (!stats.incrementAndCheckInvocationCount(rateLimitCount)) {
+            return false;
+          }
         }
-
-        if (rateLimitPeriod != null
-            && !stats.checkLastTimestamp(getTimestampNanos(), rateLimitPeriod)) {
-          return false;
+        RateLimitPeriod rateLimitPeriod = metadata.findValue(Key.LOG_AT_MOST_EVERY);
+        if (rateLimitPeriod != null) {
+          stats = ensureStats(stats, logSiteKey, metadata);
+          if (!stats.checkLastTimestamp(getTimestampNanos(), rateLimitPeriod)) {
+            return false;
+          }
         }
       }
 
@@ -566,6 +572,16 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     }
     // By default, no restrictions apply so we should log.
     return true;
+  }
+
+  // Helper to get the stats instance on demand while reusing an instance if already obtained.
+  // Usage:
+  //   // Possible null stats here...
+  //   stats = ensureStats(stats, logSiteKey, metadata);
+  //   // Non-null stats here (assigned to variable for next time)
+  private static LogSiteStats ensureStats(
+      @NullableDecl LogSiteStats stats, LogSiteKey logSiteKey, Metadata metadata) {
+    return stats != null ? stats : LogSiteStats.getStatsForKey(logSiteKey, metadata);
   }
 
   /**
