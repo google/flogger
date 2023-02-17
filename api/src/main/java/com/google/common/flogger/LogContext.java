@@ -37,22 +37,21 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * The base context for a logging statement, which implements the base logging API.
- * <p>
- * This class is an implementation of the base {@link LoggingApi} interface and acts as a holder for
- * any state applied to the log statement during the fluent call sequence. The lifecycle of a
+ *
+ * <p>This class is an implementation of the base {@link LoggingApi} interface and acts as a holder
+ * for any state applied to the log statement during the fluent call sequence. The lifecycle of a
  * logging context is very short; it is created by a logger, usually in response to a call to the
  * {@link AbstractLogger#at(Level)} method, and normally lasts only as long as the log statement.
- * <p>
- * This class should not be visible to normal users of the logging API and it is only needed when
+ *
+ * <p>This class should not be visible to normal users of the logging API and it is only needed when
  * extending the API to add more functionality. In order to extend the logging API and add methods
  * to the fluent call chain, the {@code LoggingApi} interface should be extended to add any new
  * methods, and this class should be extended to implement them. A new logger class will then be
  * needed to return the extended context.
- * <p>
- * Logging contexts are not thread safe.
+ *
+ * <p>Logging contexts are not thread safe.
  */
-public abstract class LogContext<
-        LOGGER extends AbstractLogger<API>, API extends LoggingApi<API>>
+public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends LoggingApi<API>>
     implements LoggingApi<API>, LogData {
 
   /**
@@ -84,57 +83,61 @@ public abstract class LogContext<
         MetadataKey.single("ratelimit_period", RateLimitPeriod.class);
 
     /**
-     * The key associated with a sequence of log site "grouping keys". These serve to specialize
-     * the log site key to group the behaviour of stateful operations like rate limiting. This is
-     * used by the {@code per()} methods and is only public so backends can reference the key to
-     * control formatting.
+     * The key associated with a sequence of log site "grouping keys". These serve to specialize the
+     * log site key to group the behaviour of stateful operations like rate limiting. This is used
+     * by the {@code per()} methods and is only public so backends can reference the key to control
+     * formatting.
      */
     public static final MetadataKey<Object> LOG_SITE_GROUPING_KEY =
-      new MetadataKey<Object>("group_by", Object.class, true) {
-        @Override
-        public void emitRepeated(Iterator<Object> keys, KeyValueHandler out) {
-          if (keys.hasNext()) {
-            Object first = keys.next();
-            if (!keys.hasNext()) {
-              out.handle(getLabel(), first);
-            } else {
-              // In the very unlikely case there's more than one aggregation key, emit a list.
-              StringBuilder buf = new StringBuilder();
-              buf.append('[').append(first);
-              do {
-                buf.append(',').append(keys.next());
-              } while (keys.hasNext());
-              out.handle(getLabel(), buf.append(']').toString());
+        new MetadataKey<Object>("group_by", Object.class, true) {
+          @Override
+          public void emitRepeated(Iterator<Object> keys, KeyValueHandler out) {
+            if (keys.hasNext()) {
+              Object first = keys.next();
+              if (!keys.hasNext()) {
+                out.handle(getLabel(), first);
+              } else {
+                // In the very unlikely case there's more than one aggregation key, emit a list.
+                StringBuilder buf = new StringBuilder();
+                buf.append('[').append(first);
+                do {
+                  buf.append(',').append(keys.next());
+                } while (keys.hasNext());
+                out.handle(getLabel(), buf.append(']').toString());
+              }
             }
           }
-        }
-      };
+        };
 
     /**
      * The key associated with a {@code Boolean} value used to specify that the log statement must
      * be emitted.
-     * <p>
-     * Forcing a log statement ensures that the {@code LoggerBackend} is passed the {@code LogData}
-     * for this log statement regardless of the backend's log level or any other filtering or rate
-     * limiting which might normally occur. If a log statement is forced, this key will be set
-     * immediately on creation of the logging context and will be visible to both fluent methods
+     *
+     * <p>Forcing a log statement ensures that the {@code LoggerBackend} is passed the {@code
+     * LogData} for this log statement regardless of the backend's log level or any other filtering
+     * or rate limiting which might normally occur. If a log statement is forced, this key will be
+     * set immediately on creation of the logging context and will be visible to both fluent methods
      * and post-processing.
-     * <p>
-     * Filtering and rate-limiting methods must check for this value and should treat forced log
+     *
+     * <p>Filtering and rate-limiting methods must check for this value and should treat forced log
      * statements as not having had any filtering or rate limiting applied. For example, if the
      * following log statement was forced:
+     *
      * <pre>{@code
      * logger.atInfo().withCause(e).atMostEvery(1, MINUTES).log("Message...");
      * }</pre>
+     *
      * it should behave as if the rate-limiting methods were never called, such as:
+     *
      * <pre>{@code
      * logger.atInfo().withCause(e).log("Message...");
      * }</pre>
+     *
      * As well as no longer including any rate-limiting metadata for the forced log statement, this
      * also has the effect of never interfering with the rate-limiting of this log statement for
      * other callers.
-     * <p>
-     * The decision of whether to force a log statement is expected to be made based upon debug
+     *
+     * <p>The decision of whether to force a log statement is expected to be made based upon debug
      * values provded by the logger which come from a scope greater than the log statement itself.
      * Thus it makes no sense to provide a public method to set this value programmatically for a
      * log statement.
@@ -183,13 +186,13 @@ public abstract class LogContext<
     /**
      * The default number of key/value pairs we initially allocate space for when someone adds
      * metadata to this context.
-     * <p>
-     * Note: As of 10/12 the VM allocates small object arrays very linearly with respect to the
+     *
+     * <p>Note: As of 10/12 the VM allocates small object arrays very linearly with respect to the
      * number of elements (an array has a 12 byte header with 4 bytes/element for object
-     * references). The allocation size is always rounded up to the next 8 bytes which means we
-     * can just pick a small value for the initial size and grow from there without too much waste.
-     * <p>
-     * For 4 key/value pairs, we will need 8 elements in the array, which will take up 48 bytes
+     * references). The allocation size is always rounded up to the next 8 bytes which means we can
+     * just pick a small value for the initial size and grow from there without too much waste.
+     *
+     * <p>For 4 key/value pairs, we will need 8 elements in the array, which will take up 48 bytes
      * {@code (12 + (8 * 4) = 44}, which when rounded up is 48.
      */
     private static final int INITIAL_KEY_VALUE_CAPACITY = 4;
@@ -240,8 +243,8 @@ public abstract class LogContext<
     }
 
     /**
-     * Adds the key/value pair to the metadata (growing the internal array as necessary). If the
-     * key cannot be repeated, and there is already a value for the key in the metadata, then the
+     * Adds the key/value pair to the metadata (growing the internal array as necessary). If the key
+     * cannot be repeated, and there is already a value for the key in the metadata, then the
      * existing value is replaced, otherwise the value is added at the end of the metadata.
      */
     <T> void addValue(MetadataKey<T> key, T value) {
@@ -334,10 +337,10 @@ public abstract class LogContext<
 
   /**
    * Creates a logging context with the specified level and timestamp. This constructor is provided
-   * only for testing when timestamps need to be injected. In general, subclasses would only need
-   * to call this constructor when testing additional API methods which require timestamps (e.g.
-   * additional rate limiting functionality). Most unit tests for logger subclasses should not
-   * test the value of the timestamp at all, since this is already well tested elsewhere.
+   * only for testing when timestamps need to be injected. In general, subclasses would only need to
+   * call this constructor when testing additional API methods which require timestamps (e.g.
+   * additional rate limiting functionality). Most unit tests for logger subclasses should not test
+   * the value of the timestamp at all, since this is already well tested elsewhere.
    *
    * @param level the log level for this log statement.
    * @param isForced whether to force this log statement (see {@link #wasForced()} for details).
@@ -372,9 +375,7 @@ public abstract class LogContext<
    */
   protected abstract API noOp();
 
-  /**
-   * Returns the message parser used for all log statements made through this logger.
-   */
+  /** Returns the message parser used for all log statements made through this logger. */
   protected abstract MessageParser getMessageParser();
 
   // ---- LogData API ----
@@ -437,11 +438,11 @@ public abstract class LogContext<
 
   /**
    * Returns any additional metadata for this log statement.
-   * <p>
-   * When called outside of the logging backend, this method may return different values
-   * at different times (ie, it may initially return a shared static "empty" metadata object and
-   * later return a different implementation). As such it is not safe to cache the instance
-   * returned by this method or to attempt to cast it to any particular implementation.
+   *
+   * <p>When called outside of the logging backend, this method may return different values at
+   * different times (ie, it may initially return a shared static "empty" metadata object and later
+   * return a different implementation). As such it is not safe to cache the instance returned by
+   * this method or to attempt to cast it to any particular implementation.
    */
   @Override
   public final Metadata getMetadata() {
@@ -451,9 +452,9 @@ public abstract class LogContext<
   // ---- Mutable Metadata ----
 
   /**
-   * Adds the given key/value pair to this logging context. If the key cannot be repeated, and
-   * there is already a value for the key in the metadata, then the existing value is replaced,
-   * otherwise the value is added at the end of the metadata.
+   * Adds the given key/value pair to this logging context. If the key cannot be repeated, and there
+   * is already a value for the key in the metadata, then the existing value is replaced, otherwise
+   * the value is added at the end of the metadata.
    *
    * @param key the metadata key (see {@link LogData}).
    * @param value the metadata value.
@@ -569,19 +570,21 @@ public abstract class LogContext<
 
   /**
    * Pre-processes log metadata and determines whether we should make the pending logging call.
-   * <p>
-   * Note that this call is made inside each of the individual log methods (rather than in
-   * {@code logImpl()}) because it is better to decide whether we are actually going to do the
-   * logging before we pay the price of creating a varargs array and doing things like auto-boxing
-   * of arguments.
+   *
+   * <p>Note that this call is made inside each of the individual log methods (rather than in {@code
+   * logImpl()}) because it is better to decide whether we are actually going to do the logging
+   * before we pay the price of creating a varargs array and doing things like auto-boxing of
+   * arguments.
    */
   private boolean shouldLog() {
     // The log site may have already been injected via "withInjectedLogSite()" or similar.
     if (logSite == null) {
       // From the point at which we call inferLogSite() we can skip 1 additional method (the
       // shouldLog() method itself) when looking up the stack to find the log() method.
-      logSite = checkNotNull(Platform.getCallerFinder().findLogSite(LogContext.class, 1),
-          "logger backend must not return a null LogSite");
+      logSite =
+          checkNotNull(
+              Platform.getCallerFinder().findLogSite(LogContext.class, 1),
+              "logger backend must not return a null LogSite");
     }
     LogSiteKey logSiteKey = null;
     if (logSite != LogSite.INVALID) {
