@@ -46,5 +46,6 @@ public class PackageSanityTest extends AbstractPackageSanityTests {
     setDefault(MetadataKey.class, new MetadataKey<>("dummy", String.class, false));
     setDefault(Metadata.class, new FakeMetadata());
     ignoreClasses(Predicates.in(IGNORE_CLASSES));
+    publicApiOnly();
   }
 }

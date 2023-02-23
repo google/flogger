@@ -20,7 +20,7 @@ import static com.google.common.flogger.util.CallerFinder.getStackForCallerOf;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import com.google.common.flogger.LogSiteStats.RateLimitPeriod;
+import com.google.common.flogger.DurationRateLimiter.RateLimitPeriod;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.Metadata;
 import com.google.common.flogger.backend.Platform;
@@ -524,23 +524,14 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     if (metadata != null) {
       // Without a log site we ignore any log-site specific behaviour.
       if (logSiteKey != null) {
-        // Don't "return true" early from this code since we also need to handle stack size.
-        // Only get the stats instance when we need it, but cache it if we do. This avoids getting
-        // an instance for every log statement when the vast majority don't need it.
-        LogSiteStats stats = null;
-        Integer rateLimitCount = metadata.findValue(Key.LOG_EVERY_N);
-        if (rateLimitCount != null) {
-          stats = ensureStats(stats, logSiteKey, metadata);
-          if (!stats.incrementAndCheckInvocationCount(rateLimitCount)) {
-            return false;
-          }
+        // Note: The current behaviour for handling multiple rate limiters if not ideal, and there's
+        // an implicit order here. Ideally all rate limiting would occur in any order, but this is
+        // actually subtle and needs more work (so for now the old behaviour is preserved).
+        if (!CountingRateLimiter.shouldLog(metadata, logSiteKey)) {
+          return false;
         }
-        RateLimitPeriod rateLimitPeriod = metadata.findValue(Key.LOG_AT_MOST_EVERY);
-        if (rateLimitPeriod != null) {
-          stats = ensureStats(stats, logSiteKey, metadata);
-          if (!stats.checkLastTimestamp(getTimestampNanos(), rateLimitPeriod)) {
-            return false;
-          }
+        if (!DurationRateLimiter.shouldLogForTimestamp(metadata, logSiteKey, getTimestampNanos())) {
+          return false;
         }
       }
 
@@ -572,16 +563,6 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     }
     // By default, no restrictions apply so we should log.
     return true;
-  }
-
-  // Helper to get the stats instance on demand while reusing an instance if already obtained.
-  // Usage:
-  //   // Possible null stats here...
-  //   stats = ensureStats(stats, logSiteKey, metadata);
-  //   // Non-null stats here (assigned to variable for next time)
-  private static LogSiteStats ensureStats(
-      @NullableDecl LogSiteStats stats, LogSiteKey logSiteKey, Metadata metadata) {
-    return stats != null ? stats : LogSiteStats.getStatsForKey(logSiteKey, metadata);
   }
 
   /**
@@ -783,7 +764,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     // Rate limiting with a zero length period is a no-op, but if the time unit is nanoseconds then
     // the value is rounded up inside the rate limit object.
     if (n > 0) {
-      addMetadata(Key.LOG_AT_MOST_EVERY, LogSiteStats.newRateLimitPeriod(n, unit));
+      addMetadata(Key.LOG_AT_MOST_EVERY, DurationRateLimiter.newRateLimitPeriod(n, unit));
     }
     return api();
   }

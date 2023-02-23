@@ -16,6 +16,7 @@
 
 package com.google.common.flogger;
 
+import static com.google.common.flogger.LogContext.Key.LOG_AT_MOST_EVERY;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.backend.LogData;
@@ -25,25 +26,46 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Statistics for individual log sites for determining when rate limited log statements should be
- * emitted. This class is mutable, but thread safe.
+ * Rate limiter to support {@code atMostEvery(N, units)} functionality. This class is mutable, but
+ * thread safe.
  */
-final class LogSiteStats {
+final class DurationRateLimiter {
+  private static final LogSiteMap<DurationRateLimiter> map =
+      new LogSiteMap<DurationRateLimiter>() {
+        @Override
+        protected DurationRateLimiter initialValue() {
+          return new DurationRateLimiter();
+        }
+      };
+
   /** Creates a period for rate limiting for the specified duration. */
   static RateLimitPeriod newRateLimitPeriod(int n, TimeUnit unit) {
     return new RateLimitPeriod(n, unit);
   }
 
   /**
-   * Immutable metadata for rate limiting based on a fixed count. This corresponds to the
-   * LOG_AT_MOST_EVERY metadata key in {@link LogData}. Unlike the metadata for {@code every(N)},
-   * we need to use a wrapper class here to preserve the time unit information.
+   * Returns whether the log site should log based on the value of the {@code LOG_AT_MOST_EVERY}
+   * metadata value and the current log site timestamp.
    */
-  // TODO: Consider making this a public class to allow backends to handle it explicitly.
+  static boolean shouldLogForTimestamp(
+      Metadata metadata, LogSiteKey logSiteKey, long timestampNanos) {
+    // Fast path is "there's no metadata so return true" and this must not allocate.
+    RateLimitPeriod rateLimitPeriod = metadata.findValue(LOG_AT_MOST_EVERY);
+    if (rateLimitPeriod == null) {
+      return true;
+    }
+    return map.get(logSiteKey, metadata).checkLastTimestamp(timestampNanos, rateLimitPeriod);
+  }
+
+  /**
+   * Immutable metadata for rate limiting based on a fixed count. This corresponds to the
+   * LOG_AT_MOST_EVERY metadata key in {@link LogData}. Unlike the metadata for {@code every(N)}, we
+   * need to use a wrapper class here to preserve the time unit information.
+   */
   static final class RateLimitPeriod {
     private final int n;
     private final TimeUnit unit;
-    // Count of the number of log statements skipped in the last period. See during post processing.
+    // Count of the number of log statements skipped in the last period. Set during post processing.
     private int skipCount = -1;
 
     private RateLimitPeriod(int n, TimeUnit unit) {
@@ -70,12 +92,9 @@ final class LogSiteStats {
     @Override
     public String toString() {
       // TODO: Make this less ugly and internationalization friendly.
-      StringBuilder out = new StringBuilder()
-          .append(n)
-          .append(' ')
-          .append(unit);
+      StringBuilder out = new StringBuilder().append(n).append(' ').append(unit);
       if (skipCount > 0) {
-          out.append(" [skipped: ").append(skipCount).append(']');
+        out.append(" [skipped: ").append(skipCount).append(']');
       }
       return out.toString();
     }
@@ -96,35 +115,15 @@ final class LogSiteStats {
     }
   }
 
-  private static final LogSiteMap<LogSiteStats> map = new LogSiteMap<LogSiteStats>() {
-    @Override
-    protected LogSiteStats initialValue() {
-      return new LogSiteStats();
-    }
-  };
-
-  static LogSiteStats getStatsForKey(LogSiteKey logSiteKey, Metadata metadata) {
-    return map.get(logSiteKey, metadata);
-  }
-
-  private final AtomicLong invocationCount = new AtomicLong();
   private final AtomicLong lastTimestampNanos = new AtomicLong();
   private final AtomicInteger skippedLogStatements = new AtomicInteger();
-
-  /**
-   * Increments the invocation count and returns true if it was a multiple of the specified rate
-   * limit count; implying that the log statement should be emitted. This is invoked during
-   * post-processing if a rate limiting count was set via {@link LoggingApi#every(int)}.
-   */
-  boolean incrementAndCheckInvocationCount(int rateLimitCount) {
-    return (invocationCount.getAndIncrement() % rateLimitCount) == 0;
-  }
 
   /**
    * Checks whether the current time stamp is after the rate limiting period and if so, updates the
    * time stamp and returns true. This is invoked during post-processing if a rate limiting duration
    * was set via {@link LoggingApi#atMostEvery(int, TimeUnit)}.
    */
+  // Visible for testing.
   boolean checkLastTimestamp(long timestampNanos, RateLimitPeriod period) {
     long lastNanos = lastTimestampNanos.get();
     // Avoid a race condition where two threads log at the same time. This is safe as lastNanos

@@ -18,13 +18,21 @@ package com.google.common.flogger.testing;
 
 import com.google.common.flogger.LogSite;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** A simplified LogSite implementation used for testing. */
 public final class FakeLogSite extends LogSite {
+  private static final AtomicInteger uid = new AtomicInteger();
+
   /** Creates a fake log site (with plausible behavior) from the given parameters. */
   public static LogSite create(
       String className, String methodName, int lineNumber, String sourcePath) {
     return new FakeLogSite(className, methodName, lineNumber, sourcePath);
+  }
+
+  /** Creates a unique fake log site for use as a key when testing shared static maps. */
+  public static LogSite unique() {
+    return create("ClassName", "method_" + uid.incrementAndGet(), 123, "ClassName.java");
   }
 
   private final String className;

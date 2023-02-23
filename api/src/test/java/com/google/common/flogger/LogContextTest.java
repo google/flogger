@@ -30,6 +30,7 @@ import static org.junit.Assert.fail;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+import com.google.common.flogger.DurationRateLimiter.RateLimitPeriod;
 import com.google.common.flogger.LogContext.Key;
 import com.google.common.flogger.context.Tags;
 import com.google.common.flogger.testing.FakeLogSite;
@@ -58,8 +59,8 @@ public class LogContextTest {
   private static final MetadataKey<String> REPEATED_KEY = MetadataKey.repeated("str", String.class);
   private static final MetadataKey<Boolean> FLAG_KEY = MetadataKey.repeated("flag", Boolean.class);
 
-  private static final LogSiteStats.RateLimitPeriod ONCE_PER_SECOND =
-      LogSiteStats.newRateLimitPeriod(1, SECONDS);
+  private static final RateLimitPeriod ONCE_PER_SECOND =
+      DurationRateLimiter.newRateLimitPeriod(1, SECONDS);
 
   @Test
   public void testIsEnabled() {
@@ -204,10 +205,8 @@ public class LogContextTest {
     }
 
     assertThat(backend.getLoggedCount()).isEqualTo(3);
-    backend
-        .assertLogged(0)
-        .metadata()
-        .containsUniqueEntry(Key.LOG_AT_MOST_EVERY, LogSiteStats.newRateLimitPeriod(2, SECONDS));
+    RateLimitPeriod rateLimit = DurationRateLimiter.newRateLimitPeriod(2, SECONDS);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, rateLimit);
     backend.assertLogged(0).hasArguments(0);
     backend.assertLogged(1).hasArguments(4);
     backend.assertLogged(2).hasArguments(8);
