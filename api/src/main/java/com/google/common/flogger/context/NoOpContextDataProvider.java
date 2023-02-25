@@ -99,6 +99,11 @@ final class NoOpContextDataProvider extends ContextDataProvider {
 
     @Override
     public void close() {}
+
+    @Override
+    boolean isNoOp() {
+      return true;
+    }
   }
 
   private final ScopedLoggingContext noOpContext = new NoOpScopedLoggingContext();
