@@ -89,7 +89,7 @@ public final class ScopedLoggingContexts {
    * @return false if there is no current context, or scoped contexts are not supported.
    */
   @CanIgnoreReturnValue
-  public static <T> boolean applyLogLevelMap(LogLevelMap logLevelMap) {
+  public static boolean applyLogLevelMap(LogLevelMap logLevelMap) {
     return ScopedLoggingContext.getInstance().applyLogLevelMap(logLevelMap);
   }
 }
