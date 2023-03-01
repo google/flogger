@@ -16,7 +16,6 @@
 
 package com.google.common.flogger.context;
 
-
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.StackSize;
@@ -99,6 +98,11 @@ final class NoOpContextDataProvider extends ContextDataProvider {
 
     @Override
     public void close() {}
+
+    @Override
+    boolean isNoOp() {
+      return true;
+    }
   }
 
   private final ScopedLoggingContext noOpContext = new NoOpScopedLoggingContext();
