@@ -54,12 +54,20 @@ public interface LoggingApi<API extends LoggingApi<API>> {
   API withCause(@NullableDecl Throwable cause);
 
   /**
-   * Modifies the current log statement to be emitted only one-in-N times that it is invoked. The
-   * specified count must be greater than zero and it is expected, but not required, that it is
-   * constant. The first invocation of any rate-limited log statement will always be emitted.
+   * Modifies the current log statement to be emitted at most one-in-N times. The specified count
+   * must be greater than zero and it is expected, but not required, that it is constant. The first
+   * invocation of any rate-limited log statement will always be emitted.
+   * 
+   * <h3>Notes</h3>
+   *
+   * If <em>multiple rate limiters</em> are used for a single log statement, that log statement will
+   * only be emitted once all rate limiters have reached their threshold, and when a log statement
+   * is emitted all the rate limiters are reset. In particular for {@code every(N)} this means that
+   * logs need not always be emitted at multiples of {@code N} if other rate limiters are active,
+   * though it will always be at least {@code N}.
    * <p>
-   * Note also that if {@code every()} and {@link #atMostEvery(int, TimeUnit)} are invoked for the
-   * same log statement, then the log statement will be emitted when both criteria are satisfied.
+   * When rate limiting is active, a {@code "skipped"} count is added to log statements to indicate
+   * how many logs were disallowed since the last log statement was emitted.
    * <p>
    * If this method is called multiple times for a single log statement, the last invocation will
    * take precedence.
@@ -110,8 +118,13 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *
    * <h3>Notes</h3>
    *
-   * Note that if {@code atMostEvery()} and {@link #every(int)} are invoked for the same log
-   * statement, then the log statement will be emitted when both criteria are satisfied.
+   * If <em>multiple rate limiters</em> are used for a single log statement, that log statement will
+   * only be emitted once all rate limiters have reached their threshold, and when a log statement
+   * is emitted all the rate limiters are reset. So even if the rate limit duration has expired, it
+   * does not mean that logging will occur.
+   * <p>
+   * When rate limiting is active, a {@code "skipped"} count is added to log statements to indicate
+   * how many logs were disallowed since the last log statement was emitted.
    * <p>
    * If this method is called multiple times for a single log statement, the last invocation will
    * take precedence.

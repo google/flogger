@@ -190,6 +190,32 @@ public class LogContextTest {
   }
 
   @Test
+  public void testEveryN() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    long startNanos = MILLISECONDS.toNanos(System.currentTimeMillis());
+    // Logging occurs for counts: 0, 5, 10 (timestamp is not important).
+    for (int millis = 0, count = 0; millis <= 1000; millis += 100) {
+      long timestampNanos = startNanos + MILLISECONDS.toNanos(millis);
+      logger.at(INFO, timestampNanos).every(5).log("Count=%d", count++);
+    }
+
+    assertThat(backend.getLoggedCount()).isEqualTo(3);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_EVERY_N, 5);
+    // Check the first log we captured was the first one emitted.
+    backend.assertLogged(0).timestampNanos().isEqualTo(startNanos);
+
+    // Check the expected count and skipped-count for each log.
+    backend.assertLogged(0).hasArguments(0);
+    backend.assertLogged(0).metadata().keys().doesNotContain(Key.SKIPPED_LOG_COUNT);
+    backend.assertLogged(1).hasArguments(5);
+    backend.assertLogged(1).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 4);
+    backend.assertLogged(2).hasArguments(10);
+    backend.assertLogged(2).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 4);
+  }
+
+  @Test
   public void testAtMostEvery() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     TestLogger logger = TestLogger.create(backend);
@@ -207,9 +233,57 @@ public class LogContextTest {
     assertThat(backend.getLoggedCount()).isEqualTo(3);
     RateLimitPeriod rateLimit = DurationRateLimiter.newRateLimitPeriod(2, SECONDS);
     backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, rateLimit);
+    // Check the first log we captured was the first one emitted.
+    backend.assertLogged(0).timestampNanos().isEqualTo(startNanos);
+
+    // Check the expected count and skipped-count for each log.
     backend.assertLogged(0).hasArguments(0);
+    backend.assertLogged(0).metadata().keys().doesNotContain(Key.SKIPPED_LOG_COUNT);
     backend.assertLogged(1).hasArguments(4);
+    backend.assertLogged(1).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 3);
     backend.assertLogged(2).hasArguments(8);
+    backend.assertLogged(2).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 3);
+  }
+
+  @Test
+  public void testMultipleRateLimiters_higherLoggingRate() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    // 10 logs per second over 6 seconds.
+    long startNanos = MILLISECONDS.toNanos(System.currentTimeMillis());
+    for (int millis = 0, count = 0; millis <= 6000; millis += 100) {
+      long timestampNanos = startNanos + MILLISECONDS.toNanos(millis);
+      // More than N logs occur per rate limit period, so logging should occur every 2 seconds.
+      logger.at(INFO, timestampNanos).every(15).atMostEvery(2, SECONDS).log("Count=%d", count++);
+    }
+    assertThat(backend.getLoggedCount()).isEqualTo(4);
+    backend.assertLogged(0).hasArguments(0);
+    backend.assertLogged(1).hasArguments(20);
+    backend.assertLogged(2).hasArguments(40);
+    backend.assertLogged(3).hasArguments(60);
+    backend.assertLogged(3).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 19);
+  }
+
+  @Test
+  public void testMultipleRateLimiters_lowerLoggingRate() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    // 10 logs per second over 6 seconds.
+    long startNanos = MILLISECONDS.toNanos(System.currentTimeMillis());
+    for (int millis = 0, count = 0; millis <= 6000; millis += 100) {
+      long timestampNanos = startNanos + MILLISECONDS.toNanos(millis);
+      // Fever than N logs occur in the rate limit period, so logging should occur every 15 logs.
+      logger.at(INFO, timestampNanos).every(15).atMostEvery(1, SECONDS).log("Count=%d", count++);
+    }
+    assertThat(backend.getLoggedCount()).isEqualTo(5);
+    backend.assertLogged(0).hasArguments(0);
+    backend.assertLogged(1).hasArguments(15);
+    backend.assertLogged(2).hasArguments(30);
+    backend.assertLogged(3).hasArguments(45);
+    backend.assertLogged(4).hasArguments(60);
+    backend.assertLogged(4).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 14);
   }
 
   // Non-private to allow static import to keep test code concise.

@@ -17,19 +17,27 @@
 package com.google.common.flogger;
 
 import static com.google.common.flogger.LogContext.Key.LOG_AT_MOST_EVERY;
+import static com.google.common.flogger.RateLimitStatus.DISALLOW;
+import static com.google.common.flogger.util.Checks.checkArgument;
 import static com.google.common.flogger.util.Checks.checkNotNull;
+import static java.lang.Math.max;
 
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.Metadata;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
- * Rate limiter to support {@code atMostEvery(N, units)} functionality. This class is mutable, but
- * thread safe.
+ * Rate limiter to support {@code atMostEvery(N, units)} functionality.
+ *
+ * <p>Instances of this class are created for each unique {@link LogSiteKey} for which rate limiting
+ * via the {@code LOG_AT_MOST_EVERY} metadata key is required. This class implements {@code
+ * RateLimitStatus} as a mechanism for resetting the rate limiter state.
+ *
+ * <p>Instances of this class are thread safe.
  */
-final class DurationRateLimiter {
+final class DurationRateLimiter extends RateLimitStatus {
   private static final LogSiteMap<DurationRateLimiter> map =
       new LogSiteMap<DurationRateLimiter>() {
         @Override
@@ -38,8 +46,12 @@ final class DurationRateLimiter {
         }
       };
 
-  /** Creates a period for rate limiting for the specified duration. */
+  /**
+   * Creates a period for rate limiting for the specified duration. This is invoked by the {@link
+   * LogContext#atMostEvery(int, TimeUnit)} method to create a metadata value.
+   */
   static RateLimitPeriod newRateLimitPeriod(int n, TimeUnit unit) {
+    // We could cache commonly used values here if we wanted.
     return new RateLimitPeriod(n, unit);
   }
 
@@ -47,12 +59,12 @@ final class DurationRateLimiter {
    * Returns whether the log site should log based on the value of the {@code LOG_AT_MOST_EVERY}
    * metadata value and the current log site timestamp.
    */
-  static boolean shouldLogForTimestamp(
-      Metadata metadata, LogSiteKey logSiteKey, long timestampNanos) {
-    // Fast path is "there's no metadata so return true" and this must not allocate.
+  @NullableDecl
+  static RateLimitStatus check(Metadata metadata, LogSiteKey logSiteKey, long timestampNanos) {
     RateLimitPeriod rateLimitPeriod = metadata.findValue(LOG_AT_MOST_EVERY);
     if (rateLimitPeriod == null) {
-      return true;
+      // Without rate limiter specific metadata, this limiter has no effect.
+      return null;
     }
     return map.get(logSiteKey, metadata).checkLastTimestamp(timestampNanos, rateLimitPeriod);
   }
@@ -65,8 +77,6 @@ final class DurationRateLimiter {
   static final class RateLimitPeriod {
     private final int n;
     private final TimeUnit unit;
-    // Count of the number of log statements skipped in the last period. Set during post processing.
-    private int skipCount = -1;
 
     private RateLimitPeriod(int n, TimeUnit unit) {
       // This code will work with a zero length time period, but it's nonsensical to try.
@@ -85,23 +95,14 @@ final class DurationRateLimiter {
       return unit.toNanos(n);
     }
 
-    private void setSkipCount(int skipCount) {
-      this.skipCount = skipCount;
-    }
-
     @Override
     public String toString() {
-      // TODO: Make this less ugly and internationalization friendly.
-      StringBuilder out = new StringBuilder().append(n).append(' ').append(unit);
-      if (skipCount > 0) {
-        out.append(" [skipped: ").append(skipCount).append(']');
-      }
-      return out.toString();
+      return n + " " + unit;
     }
 
     @Override
     public int hashCode() {
-      // Rough and ready. We don't expected this be be needed much at all.
+      // Rough and ready. We don't expect this be be needed much at all.
       return (n * 37) ^ unit.hashCode();
     }
 
@@ -115,8 +116,10 @@ final class DurationRateLimiter {
     }
   }
 
-  private final AtomicLong lastTimestampNanos = new AtomicLong();
-  private final AtomicInteger skippedLogStatements = new AtomicInteger();
+  private final AtomicLong lastTimestampNanos = new AtomicLong(-1L);
+
+  // Visible for testing.
+  DurationRateLimiter() {}
 
   /**
    * Checks whether the current time stamp is after the rate limiting period and if so, updates the
@@ -124,21 +127,35 @@ final class DurationRateLimiter {
    * was set via {@link LoggingApi#atMostEvery(int, TimeUnit)}.
    */
   // Visible for testing.
-  boolean checkLastTimestamp(long timestampNanos, RateLimitPeriod period) {
+  RateLimitStatus checkLastTimestamp(long timestampNanos, RateLimitPeriod period) {
+    checkArgument(timestampNanos >= 0, "timestamp cannot be negative");
+    // If this is negative, we are in the pending state and will return "allow" until we are reset.
+    // The value held here is updated to be the most recent negated timestamp, and is negated again
+    // (making it positive and setting us into the rate limiting state) when we are reset.
     long lastNanos = lastTimestampNanos.get();
-    // Avoid a race condition where two threads log at the same time. This is safe as lastNanos
-    // can never be equal to timestampNanos (because the period is never zero), so if multiple
-    // threads read the same value for lastNanos, only one thread can succeed in setting a new
-    // value. For ludicrous durations which overflow the deadline we ensure it never triggers.
-    long deadlineNanos = lastNanos + period.toNanos();
-    if ((deadlineNanos >= 0)
-        && (timestampNanos >= deadlineNanos || lastNanos == 0)
-        && lastTimestampNanos.compareAndSet(lastNanos, timestampNanos)) {
-      period.setSkipCount(skippedLogStatements.getAndSet(0));
-      return true;
-    } else {
-      skippedLogStatements.incrementAndGet();
-      return false;
+    if (lastNanos >= 0) {
+      long deadlineNanos = lastNanos + period.toNanos();
+      // Check for negative deadline to avoid overflow for ridiculous durations. Assume overflow
+      // always means "no logging".
+      if (deadlineNanos < 0 || timestampNanos < deadlineNanos) {
+        return DISALLOW;
+      }
     }
+    // When logging is triggered, negate the timestamp to move us into the "pending" state and
+    // return our reset status.
+    // We don't want to race with the reset function (which may have already set a new timestamp).
+    lastTimestampNanos.compareAndSet(lastNanos, -timestampNanos);
+    return this;
+  }
+
+  // Reset function called to move the limiter out of the "pending" state. We do this by negating
+  // the timestamp (which was already negated when we entered the pending state, so we restore it
+  // to a positive value which moves us back into the "limiting" state).
+  @Override
+  public void reset() {
+    // Only one thread at a time can reset a rate limiter, so this can be unconditional. We should
+    // only be able to get here if the timestamp was set to a negative value above. However use
+    // max() to make sure we always move out of the pending state.
+    lastTimestampNanos.set(max(-lastTimestampNanos.get(), 0));
   }
 }

@@ -17,6 +17,7 @@
 package com.google.common.flogger;
 
 import static com.google.common.flogger.LogContext.Key.LOG_AT_MOST_EVERY;
+import static com.google.common.flogger.RateLimitStatus.DISALLOW;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -30,74 +31,93 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class DurationRateLimiterTest {
-  @Test
-  public void testMetadataKey() {
-    FakeMetadata metadata =
-        new FakeMetadata()
-            .add(LOG_AT_MOST_EVERY, DurationRateLimiter.newRateLimitPeriod(1, SECONDS));
-    LogSite logSite = FakeLogSite.unique();
+  private static final long FAKE_TIMESTAMP = SECONDS.toNanos(1234);
 
-    // The first log is always emitted (and sets the deadline).
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, logSite, 1_000_000_000L))
-        .isTrue();
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, logSite, 1_500_000_000L))
-        .isFalse();
-    // Not supplying the metadata disables rate limiting.
-    assertThat(
-            DurationRateLimiter.shouldLogForTimestamp(new FakeMetadata(), logSite, 1_500_000_000L))
-        .isTrue();
-    // The next log is emitted after 1 second.
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, logSite, 1_999_999_999L))
-        .isFalse();
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, logSite, 2_000_000_000L))
-        .isTrue();
+  @Test
+  public void testCheck_noMetadataReturnsNull() {
+    // Not supplying the metadata key ignores rate limiting by returning null.
+    assertThat(DurationRateLimiter.check(new FakeMetadata(), FakeLogSite.unique(), FAKE_TIMESTAMP))
+        .isNull();
   }
 
   @Test
-  public void testDistinctLogSites() {
-    FakeMetadata metadata =
-        new FakeMetadata()
-            .add(LOG_AT_MOST_EVERY, DurationRateLimiter.newRateLimitPeriod(1, SECONDS));
+  public void testCheck_rateLimitsAsExpected() {
+    RateLimitPeriod oncePerSecond = DurationRateLimiter.newRateLimitPeriod(1, SECONDS);
+    FakeMetadata metadata = new FakeMetadata().add(LOG_AT_MOST_EVERY, oncePerSecond);
+    LogSite logSite = FakeLogSite.unique();
+
+    for (int n = 0; n < 100; n++) {
+      // Increment by 1/10 of a second per log. We should then log once per 10 logs.
+      long timestamp = FAKE_TIMESTAMP + (n * MILLISECONDS.toNanos(100));
+      int skipCount =
+          RateLimitStatus.checkStatus(
+              DurationRateLimiter.check(metadata, logSite, timestamp), logSite, metadata);
+      boolean shouldLog = skipCount != -1;
+      assertThat(shouldLog).isEqualTo(n % 10 == 0);
+    }
+  }
+
+  @Test
+  public void testCheck_distinctLogSites() {
+    RateLimitPeriod oncePerSecond = DurationRateLimiter.newRateLimitPeriod(1, SECONDS);
+    FakeMetadata metadata = new FakeMetadata().add(LOG_AT_MOST_EVERY, oncePerSecond);
     LogSite fooLog = FakeLogSite.unique();
     LogSite barLog = FakeLogSite.unique();
 
-    // The first log is always emitted (and sets the deadline).
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, fooLog, 1_000_000_000L))
-        .isTrue();
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, barLog, 5_000_000_000L))
-        .isTrue();
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, fooLog, 1_500_000_000L))
-        .isFalse();
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, barLog, 5_500_000_000L))
-        .isFalse();
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, fooLog, 2_000_000_000L))
-        .isTrue();
-    assertThat(DurationRateLimiter.shouldLogForTimestamp(metadata, barLog, 6_000_000_000L))
-        .isTrue();
+    long timestamp = FAKE_TIMESTAMP;
+    RateLimitStatus allowFoo = DurationRateLimiter.check(metadata, fooLog, timestamp);
+    RateLimitStatus allowBar = DurationRateLimiter.check(metadata, barLog, timestamp);
+    assertThat(allowFoo).isNotEqualTo(allowBar);
+    assertThat(DurationRateLimiter.check(metadata, fooLog, timestamp)).isSameInstanceAs(allowFoo);
+    assertThat(DurationRateLimiter.check(metadata, barLog, timestamp)).isSameInstanceAs(allowBar);
+
+    // "foo" is reset so it moves into its rate-limiting state, but "bar" stays pending.
+    allowFoo.reset();
+    timestamp += MILLISECONDS.toNanos(100);
+    assertThat(DurationRateLimiter.check(metadata, fooLog, timestamp)).isSameInstanceAs(DISALLOW);
+    assertThat(DurationRateLimiter.check(metadata, barLog, timestamp)).isSameInstanceAs(allowBar);
+
+    // We reset "bar" after an additional 100ms has passed. Both limiters are rate-limiting.
+    allowBar.reset();
+    timestamp += MILLISECONDS.toNanos(100);
+    assertThat(DurationRateLimiter.check(metadata, fooLog, timestamp)).isSameInstanceAs(DISALLOW);
+    assertThat(DurationRateLimiter.check(metadata, barLog, timestamp)).isSameInstanceAs(DISALLOW);
+
+    // After 800ms, it has been 1 second since "foo" was reset, but only 900ms since "bar" was
+    // reset, so "foo" becomes pending and "bar" stays rate-limiting.
+    timestamp += MILLISECONDS.toNanos(800);
+    assertThat(DurationRateLimiter.check(metadata, fooLog, timestamp)).isSameInstanceAs(allowFoo);
+    assertThat(DurationRateLimiter.check(metadata, barLog, timestamp)).isSameInstanceAs(DISALLOW);
+
+    // After another 100ms, both limiters are now pending again.
+    timestamp += MILLISECONDS.toNanos(100);
+    assertThat(DurationRateLimiter.check(metadata, fooLog, timestamp)).isSameInstanceAs(allowFoo);
+    assertThat(DurationRateLimiter.check(metadata, barLog, timestamp)).isSameInstanceAs(allowBar);
   }
 
   @Test
   public void testCheckLastTimestamp() {
-
     DurationRateLimiter limiter = new DurationRateLimiter();
     RateLimitPeriod period = DurationRateLimiter.newRateLimitPeriod(1, SECONDS);
     // Arbitrary start time (but within the first period to ensure we still log the first call).
-    long startNanos = 123456000L;
+    long timestamp = FAKE_TIMESTAMP;
 
     // Always log for the first call, but not again in the same period.
-    assertThat(limiter.checkLastTimestamp(startNanos, period)).isTrue();
-    assertThat(period.toString()).isEqualTo("1 SECONDS");
-    assertThat(limiter.checkLastTimestamp(startNanos + MILLISECONDS.toNanos(500), period))
-        .isFalse();
-
-    // Return true exactly when next period begins.
-    long nextStartNanos = startNanos + SECONDS.toNanos(1);
-    assertThat(limiter.checkLastTimestamp(nextStartNanos - 1, period)).isFalse();
-    assertThat(limiter.checkLastTimestamp(nextStartNanos, period)).isTrue();
-    assertThat(period.toString()).isEqualTo("1 SECONDS [skipped: 2]");
-
-    // Only return true once, even for duplicate calls.
-    assertThat(limiter.checkLastTimestamp(nextStartNanos, period)).isFalse();
+    RateLimitStatus allowStatus = limiter.checkLastTimestamp(timestamp, period);
+    assertThat(allowStatus).isNotEqualTo(DISALLOW);
+    // Within the rate limit period we still return "allow" (because we have not been reset).
+    timestamp += MILLISECONDS.toNanos(500);
+    assertThat(limiter.checkLastTimestamp(timestamp, period)).isSameInstanceAs(allowStatus);
+    // This sets the new log time to the last seen timestamp.
+    allowStatus.reset();
+    // Within 1 SECONDS, we disallow logging.
+    timestamp += MILLISECONDS.toNanos(500);
+    assertThat(limiter.checkLastTimestamp(timestamp, period)).isSameInstanceAs(DISALLOW);
+    timestamp += MILLISECONDS.toNanos(499);
+    assertThat(limiter.checkLastTimestamp(timestamp, period)).isSameInstanceAs(DISALLOW);
+    // And at exactly 1 SECOND later, we allow logging again.
+    timestamp += MILLISECONDS.toNanos(1);
+    assertThat(limiter.checkLastTimestamp(timestamp, period)).isSameInstanceAs(allowStatus);
   }
 
   @Test

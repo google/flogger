@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertAbout;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.truth.FailureMetadata;
+import com.google.common.truth.LongSubject;
 import com.google.common.truth.Subject;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +51,11 @@ public final class LogDataSubject extends Subject {
   /** Asserts about the metadata of this log entry. */
   public MetadataSubject metadata() {
     return check("getMetadata()").about(MetadataSubject.metadata()).that(actual.getMetadata());
+  }
+
+  /** Asserts about the nanosecond timestamp of this log entry. */
+  public LongSubject timestampNanos() {
+    return check("getTimestampNanos()").that(actual.getTimestampNanos());
   }
 
   /**

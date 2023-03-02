@@ -83,6 +83,13 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
         MetadataKey.single("ratelimit_period", RateLimitPeriod.class);
 
     /**
+     * The key associated with a count of rate limited logs. This is only public so backends can
+     * reference the key to control formatting.
+     */
+    public static final MetadataKey<Integer> SKIPPED_LOG_COUNT =
+        MetadataKey.single("skipped", Integer.class);
+
+    /**
      * The key associated with a sequence of log site "grouping keys". These serve to specialize the
      * log site key to group the behaviour of stateful operations like rate limiting. This is used
      * by the {@code per()} methods and is only public so backends can reference the key to control
@@ -319,6 +326,8 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   private MutableMetadata metadata = null;
   /** The log site information for this log statement (set immediately prior to post-processing). */
   private LogSite logSite = null;
+  /** Rate limit status (only set if rate limiting occurs). */
+  private RateLimitStatus rateLimitStatus = null;
   /** The template context if formatting is required (set only after post-processing). */
   private TemplateContext templateContext = null;
   /** The log arguments (set only after post-processing). */
@@ -481,15 +490,42 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   // ---- Post processing ----
 
   /**
-   * A callback that can be overridden to implement post processing of logging context prior to
-   * invoking the backend.
+   * A callback which can be overridden to implement post processing of logging contexts prior to
+   * passing them to the backend.
+   * 
+   * <h2>Basic Responsibilities</h2>
+   * 
+   * <p>This method is responsible for:
+   * <ol>
+   * <li>Performing any rate limiting operations specific to the extended API.
+   * <li>Updating per log-site information (e.g. for debug metrics).
+   * <li>Adding any additional metadata to this context.
+   * <li>Returning whether logging should be attempted.
+   * </ol>
+   * 
+   * <p>Implementations of this method must always call {@code super.postProcess()} first with the
+   * given log site key:
    *
-   * <p>If a fluent method invoked during the log statement requires access to persistent state
-   * during post-processing, {@code logSiteKey} can be used to look it up. If this log statement
-   * cannot be identified uniquely, then {@code logSiteKey} will be {@code null}, and this method
-   * must behave exactly as if the corresponding fluent method had not been invoked.
+   * <pre>{@code protected boolean postProcess(@NullableDecl LogSiteKey logSiteKey) {
+   *   boolean shouldLog = super.postProcess(logSiteKey);
+   *   // Handle rate limiting if present.
+   *   // Add additional metadata etc.
+   *   return shouldLog;
+   * }}</pre>
    *
-   * <p>Thus on a system in which log site information is unavailable:
+   * <h2>Log Site Keys</h2>
+   * 
+   * <p>If per log-site information is needed during post-processing, it should be stored using a
+   * {@link LogSiteMap}. This will correctly handle "specialized" log-site keys and remove the risk
+   * of memory leaks due to retaining unused log site data indefinitely.
+   * 
+   * <p>Note that the given {@code logSiteKey} can be more specific than the {@link LogSite} of a
+   * log statement (i.e. a single log statement can have multiple distinct versions of its state).
+   * See {@link #per(Enum)} for more information.
+   * 
+   * <p>If a log statement cannot be identified uniquely, then {@code logSiteKey} will be {@code
+   * null}, and this method must behave exactly as if the corresponding fluent method had not been
+   * invoked. On a system in which log site information is <em>unavailable</em>:
    *
    * <pre>{@code logger.atInfo().every(100).withCause(e).log("Some message"); }</pre>
    *
@@ -497,40 +533,54 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
    *
    * <pre>{@code logger.atInfo().withCause(e).log("Some message"); }</pre>
    *
-   * <p>Implementations of this method must always call {@code super.postProcess()} first with the
-   * given log site key, such as:
-   *
-   * <pre>{@code protected boolean postProcess(@NullableDecl LogSiteKey logSiteKey) {
-   *   if (!super.postProcess(logSiteKey)) {
-   *     return false;
-   *   }
-   *   ...
-   *   return shouldLog;
-   * }}</pre>
-   *
-   * <p>If a method in the logging chain can determine that logging should definitely be disabled
-   * then it is generally better to return the NoOp API implementation at that point rather than
-   * waiting until here to cancel the operation, although care must be taken to check whether the
-   * log statement has been "forced" or not.
-   *
+   * <h2>Rate Limiting and Skipped Logs</h2>
+   * 
+   * <p>When handling rate limiting, {@link #updateRateLimiterStatus(RateLimitStatus)} should be
+   * called for each active rate limiter. This ensures that even if logging does not occur, the
+   * number of "skipped" log statements is recorded correctly and emitted for the next allowed log.
+   * 
+   * <p>If {@code postProcess()} returns {@code false} without updating the rate limit status, the
+   * log statement may not be counted as skipped. In some situations this is desired, but either way
+   * the extended logging API should make it clear to the user (via documentation) what will happen.
+   * However in most cases {@code postProcess()} is only expected to return {@code false} due to
+   * rate limiting.
+   * 
+   * <p>If rate limiters are used there are still situations in which {@code postProcess()} can
+   * return {@code true}, but logging will not occur. This is due to race conditions around the
+   * resetting of rate limiter state. A {@code postProcess()} method can "early exit" as soon as
+   * {@code shouldLog} is false, but should assume logging will occur while it remains {@code true}.
+   * 
+   * <p>If a method in the logging chain determines that logging should definitely not occur, it may
+   * choose to return the {@code NoOp} logging API at that point. However this will bypass any
+   * post-processing, and no rate limiter state will be updated. This is sometimes desirable, but
+   * the API documentation should make it clear to the user as to which behaviour occurs.
+   * 
+   * For example, level selector methods (such as {@code atInfo()}) return the {@code NoOp} API for
+   * "disabled" log statements, and these have no effect on rate limiter state, and will not update
+   * the "skipped" count. This is fine because controlling logging via log level selection is not
+   * conceptually a form of "rate limiting".
+   * 
    * <p>The default implementation of this method enforces the rate limits as set by {@link
-   * #every(int)} or {@link #atMostEvery(int, TimeUnit)}.
+   * #every(int)} and {@link #atMostEvery(int, TimeUnit)}.
    *
    * @param logSiteKey used to lookup persistent, per log statement, state.
-   * @return true if the logging backend should be invoked to output the current log statement.
+   * @return true if logging should be attempted (usually based on rate limiter state).
    */
   protected boolean postProcess(@NullableDecl LogSiteKey logSiteKey) {
     // Without metadata there's nothing to post-process.
     if (metadata != null) {
       // Without a log site we ignore any log-site specific behaviour.
       if (logSiteKey != null) {
-        // Note: The current behaviour for handling multiple rate limiters if not ideal, and there's
-        // an implicit order here. Ideally all rate limiting would occur in any order, but this is
-        // actually subtle and needs more work (so for now the old behaviour is preserved).
-        if (!CountingRateLimiter.shouldLog(metadata, logSiteKey)) {
-          return false;
-        }
-        if (!DurationRateLimiter.shouldLogForTimestamp(metadata, logSiteKey, getTimestampNanos())) {
+        // Since the base class postProcess() should be invoked before subclass logic, we can set
+        // the initial status here. Subclasses can combine this with other rate limiter statuses by
+        // calling updateRateLimiterStatus() before we get back into shouldLog() .
+        rateLimitStatus =
+            RateLimitStatus.combine(
+                CountingRateLimiter.check(metadata, logSiteKey),
+                DurationRateLimiter.check(metadata, logSiteKey, timestampNanos));
+        // Early exit as soon as we know the log statement is disallowed. A subclass may still do
+        // post processing but should never re-enable the log.
+        if (rateLimitStatus == RateLimitStatus.DISALLOW) {
           return false;
         }
       }
@@ -538,7 +588,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
       // This does not affect whether logging will occur, only what additional data it contains.
       StackSize stackSize = metadata.findValue(Key.CONTEXT_STACK_SIZE);
       if (stackSize != null) {
-        // we add this information to the stack trace exception so it doesn't need to go here.
+        // We add this information to the stack trace exception so it doesn't need to go here.
         removeMetadata(Key.CONTEXT_STACK_SIZE);
         // IMPORTANT: Skipping at least 1 stack frame below is essential for correctness, since
         // postProcess() can be overridden, so the stack could look like:
@@ -563,6 +613,32 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     }
     // By default, no restrictions apply so we should log.
     return true;
+  }
+
+  /**
+   * Callback to allow custom log contexts to apply additional rate limiting behaviour. This should
+   * be called from within an overriden {@code postProcess()} method. Typically this is invoked
+   * after calling {@code super.postProcess(logSiteKey)}, such as:
+   * 
+   * <pre>{@code protected boolean postProcess(@NullableDecl LogSiteKey logSiteKey) {
+   *   boolean shouldLog = super.postProcess(logSiteKey);
+   *   // Even if `shouldLog` is false, we still call the rate limiter to update its state.
+   *   shouldLog &= updateRateLimiterStatus(CustomRateLimiter.check(...));
+   *   if (shouldLog) {
+   *     // Maybe add additional metadata here...
+   *   }
+   *   return shouldLog;
+   * }}</pre>
+   * 
+   * <p>See {@link RateLimitStatus} for more information on how to implement custom rate limiting in
+   * Flogger.
+   * 
+   * @param status a rate limiting status, or {@code null} if the rate limiter was not active.
+   * @return whether logging will occur based on the current combined state of active rate limiters.
+   */
+  protected final boolean updateRateLimiterStatus(@NullableDecl RateLimitStatus status) {
+    rateLimitStatus = RateLimitStatus.combine(rateLimitStatus, status);
+    return rateLimitStatus != RateLimitStatus.DISALLOW;
   }
 
   /**
@@ -591,7 +667,21 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
         logSiteKey = specializeLogSiteKeyFromMetadata(logSiteKey, metadata);
       }
     }
-    return postProcess(logSiteKey);
+    boolean shouldLog = postProcess(logSiteKey);
+    if (rateLimitStatus != null) {
+      // We check rate limit status even if it is "DISALLOW" to update the skipped logs count.
+      int skippedLogs = RateLimitStatus.checkStatus(rateLimitStatus, logSiteKey, metadata);
+      if (shouldLog && skippedLogs > 0) {
+        metadata.addValue(Key.SKIPPED_LOG_COUNT, skippedLogs);
+      }
+      // checkStatus() returns -1 in two cases:
+      // 1. We passed it the DISALLOW status.
+      // 2. We passed it an "allow" status, but multiple threads were racing to try and reset the
+      //    rate limiters, and this thread lost.
+      // Either way we should suppress logging.
+      shouldLog &= (skippedLogs >= 0);
+    }
+    return shouldLog;
   }
 
   // WARNING: If we ever start to use combined log-site and scoped context metadata here via
