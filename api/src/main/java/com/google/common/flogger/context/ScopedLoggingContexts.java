@@ -43,10 +43,24 @@ public final class ScopedLoggingContexts {
   }
 
   /**
-   * Adds tags to the current set of log tags for the current context. Tags are merged together and
-   * existing tags cannot be modified. This is deliberate since two pieces of code may not know
-   * about each other and could accidentally use the same tag name; in that situation it's important
-   * that both tag values are preserved.
+   * Adds tags by modifying the current context (if one exists).
+   *
+   * <p>Warning: It is always better to create a new context via {@link #newContext()} rather than
+   * attempting to modify an existing context. In order of preference you should:
+   *
+   * <ol>
+   *   <li>Call or wrap a new context with metadata added to it.
+   *   <li>{@link ScopedLoggingContext.Builder#install install()} a new context and close it when
+   *       you it exits (e.g. if you are using callbacks to listen to state changes in a task).
+   *       However it is vital that the returned {@link ScopedLoggingContext.LogContextCloseable} is
+   *       always closed.
+   *   <li>Call this method and check that it succeeded (e.g. logging a warning if it fails).
+   * </ol>
+   *
+   * <p>The given tags are merged with those of the modifed context but existing tags will not be
+   * overwritten or removed. This is deliberate since two pieces of code may not know about each
+   * other and could accidentally use the same tag name; in that situation it's important that both
+   * tag values are preserved.
    *
    * <p>Furthermore, the types of data allowed for tag values are strictly controlled. This is also
    * very deliberate since these tags must be efficiently added to every log statement and so it's
@@ -63,6 +77,18 @@ public final class ScopedLoggingContexts {
   /**
    * Adds a single metadata key/value pair to the current context.
    *
+   * <p>Warning: It is always better to create a new context via {@link #newContext()} rather than
+   * attempting to modify an existing context. In order of preference you should:
+   *
+   * <ol>
+   *   <li>Call or wrap a new context with metadata added to it.
+   *   <li>{@link ScopedLoggingContext.Builder#install install()} a new context and close it when
+   *       you it exits (e.g. if you are using callbacks to listen to state changes in a task).
+   *       However it is vital that the returned {@link ScopedLoggingContext.LogContextCloseable} is
+   *       always closed.
+   *   <li>Call this method and check that it succeeded (e.g. logging a warning if it fails).
+   * </ol>
+   *
    * <p>Unlike {@link Tags}, which have a well defined value ordering, independent of the order in
    * which values were added, context metadata preserves the order of addition. As such, it is not
    * advised to add values for the same metadata key from multiple threads, since that may create
@@ -75,9 +101,22 @@ public final class ScopedLoggingContexts {
   }
 
   /**
-   * Applies the given log level map to the current context. Log level settings are merged with any
-   * existing setting from the current (or parent) contexts such that logging will be enabled for a
-   * log statement if:
+   * Applies the given log level map to the current context.
+   *
+   * <p>Warning: It is always better to create a new context via {@link #newContext()} rather than
+   * attempting to modify an existing context. In order of preference you should:
+   *
+   * <ol>
+   *   <li>Call or wrap a new context with metadata added to it.
+   *   <li>{@link ScopedLoggingContext.Builder#install install()} a new context and close it when
+   *       you it exits (e.g. if you are using callbacks to listen to state changes in a task).
+   *       However it is vital that the returned {@link ScopedLoggingContext.LogContextCloseable} is
+   *       always closed.
+   *   <li>Call this method and check that it succeeded (e.g. logging a warning if it fails).
+   * </ol>
+   *
+   * Log level settings are merged with any existing setting from the current (or parent) contexts
+   * such that logging will be enabled for a log statement if:
    *
    * <ul>
    *   <li>It was enabled by the given map.
