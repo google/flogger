@@ -16,7 +16,11 @@
 
 package com.google.common.flogger.context;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
+import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.MetadataKey;
+import com.google.common.flogger.StackSize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
 /**
@@ -25,6 +29,23 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
  * ScopedLoggingContext#getInstance}.
  */
 public final class ScopedLoggingContexts {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static boolean warnOnFailure(boolean wasSuccessful) {
+    if (!wasSuccessful && !ScopedLoggingContext.getInstance().isNoOp()) {
+      logger
+          .atWarning()
+          .atMostEvery(5, MINUTES)
+          .withStackTrace(StackSize.SMALL)
+          .log(
+              "***** An attempt to add metadata to the current logging context failed. *****\n"
+                  + "Calls to static methods in 'ScopedLoggingContexts' may fail when there is no"
+                  + " existing context available.\n"
+                  + "To ensure metadata is available to log statements, create a new context via"
+                  + " 'ScopedLoggingContexts.newContext()' and add metadata to it explicitly.\n");
+    }
+    return wasSuccessful;
+  }
 
   private ScopedLoggingContexts() {}
 
@@ -71,7 +92,7 @@ public final class ScopedLoggingContexts {
    */
   @CanIgnoreReturnValue
   public static boolean addTags(Tags tags) {
-    return ScopedLoggingContext.getInstance().addTags(tags);
+    return warnOnFailure(ScopedLoggingContext.getInstance().addTags(tags));
   }
 
   /**
@@ -97,7 +118,7 @@ public final class ScopedLoggingContexts {
    */
   @CanIgnoreReturnValue
   public static <T> boolean addMetadata(MetadataKey<T> key, T value) {
-    return ScopedLoggingContext.getInstance().addMetadata(key, value);
+    return warnOnFailure(ScopedLoggingContext.getInstance().addMetadata(key, value));
   }
 
   /**
@@ -129,6 +150,6 @@ public final class ScopedLoggingContexts {
    */
   @CanIgnoreReturnValue
   public static boolean applyLogLevelMap(LogLevelMap logLevelMap) {
-    return ScopedLoggingContext.getInstance().applyLogLevelMap(logLevelMap);
+    return warnOnFailure(ScopedLoggingContext.getInstance().applyLogLevelMap(logLevelMap));
   }
 }

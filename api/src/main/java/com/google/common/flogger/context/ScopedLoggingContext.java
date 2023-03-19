@@ -463,4 +463,9 @@ public abstract class ScopedLoggingContext {
       super(message);
     }
   }
+
+  /** Package private checker to help avoid unhelpful debug logs. */
+  boolean isNoOp() {
+    return false;
+  }
 }
