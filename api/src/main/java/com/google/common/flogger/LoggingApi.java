@@ -57,7 +57,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * Modifies the current log statement to be emitted at most one-in-N times. The specified count
    * must be greater than zero and it is expected, but not required, that it is constant. The first
    * invocation of any rate-limited log statement will always be emitted.
-   * 
+   *
    * <h3>Notes</h3>
    *
    * If <em>multiple rate limiters</em> are used for a single log statement, that log statement will
@@ -134,6 +134,61 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * @throws IllegalArgumentException if {@code n} is negative.
    */
   API atMostEvery(int n, TimeUnit unit);
+
+  /**
+   * Aggregates stateful logging with respect to a given {@code key}.
+   *
+   * <p>Normally log statements with conditional behaviour (e.g. rate limiting) use the same state
+   * for each invocation (e.g. counters or timestamps). This method allows an additional qualifier
+   * to be given which allows for different conditional state for each unique qualifier.
+   *
+   * <p>This only makes a difference for log statements which use persistent state to control
+   * conditional behaviour (e.g. {@code atMostEvery()} or {@code every()}).
+   *
+   * <p>This is the most general form of log aggregation and allows any keys to be used, but it
+   * requires the caller to have chosen a bucketing strategy. Where it is possible to refactor code
+   * to avoid passing keys from an unbounded space into the {@code per(...)} method (e.g. by
+   * mapping cases to an {@code Enum}), this is usually preferable.
+   *
+   * When using this method, a bucketing strategy is needed to reduce the risk of leaking memory.
+   * Consider the alternate API:
+   *
+   * <pre>{@code
+   * // Rate limit per unique error message ("No such file", "File corrupted" etc.).
+   * logger.atWarning().per(error.getMessage()).atMostEvery(30, SECONDS).log(...);
+   * }</pre>
+   *
+   * <p>A method such as the one above would need to store some record of all the unique messages it
+   * has seen in order to perform aggregation. This means that the API would suffer a potentially
+   * unbounded memory leak if a timestamp were included in the message (since all values would now
+   * be unique and need to be retained).
+   *
+   * <p>To fix (or at least mitigate) this issue, a {@link LogPerBucketingStrategy} is passed to
+   * provide a mapping from "unbounded key space" (e.g. arbitrary strings) to a bounded set of
+   * "bucketed" values. In the case of error messages, you might implement a bucketing strategy to
+   * classify error messages based on the type of error.
+   *
+   * <p>This method is most useful in helping to avoid cases where a rare event might never be
+   * logged due to rate limiting. For example, the following code will cause log statements with
+   * different types of {@code errorMessage}s to be rate-limited independently of each other.
+   *
+   * <pre>{@code
+   * // Rate limit for each type of error (FileNotFoundException, CorruptedFileException etc.).
+   * logger.atInfo().per(error, byClass()).atMostEvery(30, SECONDS).log(...);
+   * }</pre>
+   *
+   * <p>If a user knows that the given {@code key} values really do form a strictly bounded set,
+   * the {@link LogPerBucketingStrategy#knownBounded()} strategy can be used, but it should always
+   * be documented as to why this is safe.
+   *
+   * <p>The {@code key} passed to this method should always be a variable (passing a constant value
+   * has no effect). If a {@code null} key is passed, this call has no effect (e.g. rate limiting
+   * will apply normally, without respect to any specific scope).
+   *
+   * <p>If multiple aggregation keys are added to a single log statement, then they all take effect
+   * and logging is aggregated by the unique combination of keys passed to all "per" methods.
+   */
+  <T> API per(@NullableDecl T key, LogPerBucketingStrategy<? super T> strategy);
 
   /**
    * Aggregates stateful logging with respect to the given enum value.
@@ -758,6 +813,11 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     public final <T> API with(MetadataKey<Boolean> key) {
       // Do this inline rather than calling with(key, true) to keep no-op minimal.
       checkNotNull(key, "metadata key");
+      return noOp();
+    }
+
+    @Override
+    public <T> API per(@NullableDecl T key, LogPerBucketingStrategy<? super T> strategy) {
       return noOp();
     }
 

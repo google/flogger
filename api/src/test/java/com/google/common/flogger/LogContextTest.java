@@ -19,6 +19,7 @@ package com.google.common.flogger;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.flogger.LogContextTest.LogType.BAR;
 import static com.google.common.flogger.LogContextTest.LogType.FOO;
+import static com.google.common.flogger.LogPerBucketingStrategy.byClass;
 import static com.google.common.flogger.LogSites.logSite;
 import static com.google.common.truth.Correspondence.transforming;
 import static com.google.common.truth.Truth.assertThat;
@@ -286,6 +287,46 @@ public class LogContextTest {
     backend.assertLogged(4).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 14);
   }
 
+  @Test
+  public void testPer_withStrategy() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    // Logs for both types should appear (even though the 2nd log is within the rate limit period).
+    // NOTE: It is important this is tested on a single log statement.
+    long nowNanos = MILLISECONDS.toNanos(System.currentTimeMillis());
+    for (Throwable err :
+        Arrays.asList(
+            new IllegalArgumentException(),
+            new NullPointerException(),
+            new NullPointerException(),
+            new IllegalArgumentException())) {
+      logger
+          .at(INFO, nowNanos)
+          .atMostEvery(1, SECONDS)
+          .per(err, byClass())
+          .log("Err: %s", err.getMessage());
+      nowNanos += MILLISECONDS.toNanos(100);
+    }
+
+    assertThat(backend.getLoggedCount()).isEqualTo(2);
+
+    // Rate limit period and the aggregation key from "per"
+    backend.assertLogged(0).metadata().hasSize(2);
+    backend
+        .assertLogged(0)
+        .metadata()
+        .containsUniqueEntry(Key.LOG_SITE_GROUPING_KEY, IllegalArgumentException.class);
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
+
+    backend.assertLogged(1).metadata().hasSize(2);
+    backend
+        .assertLogged(1)
+        .metadata()
+        .containsUniqueEntry(Key.LOG_SITE_GROUPING_KEY, NullPointerException.class);
+    backend.assertLogged(1).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
+  }
+
   // Non-private to allow static import to keep test code concise.
   enum LogType {
     FOO,
@@ -316,7 +357,7 @@ public class LogContextTest {
     backend.assertLogged(1).hasArguments(BAR);
     backend.assertLogged(1).metadata().hasSize(2);
     backend.assertLogged(1).metadata().containsUniqueEntry(Key.LOG_SITE_GROUPING_KEY, BAR);
-    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
+    backend.assertLogged(1).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
   }
 
   @Test
@@ -349,9 +390,8 @@ public class LogContextTest {
 
     backend.assertLogged(1).metadata().hasSize(2);
     backend.assertLogged(1).metadata().containsUniqueEntry(Key.LOG_SITE_GROUPING_KEY, barScope);
-    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
+    backend.assertLogged(1).metadata().containsUniqueEntry(Key.LOG_AT_MOST_EVERY, ONCE_PER_SECOND);
   }
-
 
   @Test
   public void testWasForced_level() {
@@ -460,9 +500,9 @@ public class LogContextTest {
     backend.assertLastLogged().hasArguments();
   }
 
-  @SuppressWarnings("FormatString")
+  @SuppressWarnings({"FormatString", "OrphanedFormatString"})
   @Test
-  public void testLiteralArgument() {
+  public void testLiteralArgument_doesNotEscapePercent() {
     FakeLoggerBackend backend = new FakeLoggerBackend();
     FluentLogger logger = new FluentLogger(backend);
     logger.atInfo().log("Hello %s World");
@@ -885,16 +925,20 @@ public class LogContextTest {
 
   @Test
   public void testLogSiteSpecializationKey() {
-    Key.LOG_SITE_GROUPING_KEY.emitRepeated(Iterators.<Object>forArray("foo"), (k, v) -> {
-      assertThat(k).isEqualTo("group_by");
-      assertThat(v).isEqualTo("foo");
-    });
+    Key.LOG_SITE_GROUPING_KEY.emitRepeated(
+        Iterators.<Object>forArray("foo"),
+        (k, v) -> {
+          assertThat(k).isEqualTo("group_by");
+          assertThat(v).isEqualTo("foo");
+        });
 
     // We don't care too much about the case with multiple keys since it's so rare, but it should
     // be vaguely sensible.
-    Key.LOG_SITE_GROUPING_KEY.emitRepeated(Iterators.<Object>forArray("foo", "bar"), (k, v) -> {
-      assertThat(k).isEqualTo("group_by");
-      assertThat(v).isEqualTo("[foo,bar]");
-    });
+    Key.LOG_SITE_GROUPING_KEY.emitRepeated(
+        Iterators.<Object>forArray("foo", "bar"),
+        (k, v) -> {
+          assertThat(k).isEqualTo("group_by");
+          assertThat(v).isEqualTo("[foo,bar]");
+        });
   }
 }
