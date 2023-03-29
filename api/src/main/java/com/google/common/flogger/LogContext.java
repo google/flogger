@@ -76,6 +76,13 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
         MetadataKey.single("ratelimit_count", Integer.class);
 
     /**
+     * The key associated with a rate limiting counter for "1-in-N" randomly sampled rate limiting.
+     * The value is set by {@link LoggingApi#onAverageEvery(int)}.
+     */
+    public static final MetadataKey<Integer> LOG_SAMPLE_EVERY_N =
+        MetadataKey.single("sampling_count", Integer.class);
+
+    /**
      * The key associated with a rate limiting period for "at most once every N" rate limiting. The
      * value is set by {@link LoggingApi#atMostEvery(int, TimeUnit)}.
      */
@@ -496,11 +503,12 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
    * <h2>Basic Responsibilities</h2>
    *
    * <p>This method is responsible for:
+   *
    * <ol>
-   * <li>Performing any rate limiting operations specific to the extended API.
-   * <li>Updating per log-site information (e.g. for debug metrics).
-   * <li>Adding any additional metadata to this context.
-   * <li>Returning whether logging should be attempted.
+   *   <li>Performing any rate limiting operations specific to the extended API.
+   *   <li>Updating per log-site information (e.g. for debug metrics).
+   *   <li>Adding any additional metadata to this context.
+   *   <li>Returning whether logging should be attempted.
    * </ol>
    *
    * <p>Implementations of this method must always call {@code super.postProcess()} first with the
@@ -555,10 +563,10 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
    * post-processing, and no rate limiter state will be updated. This is sometimes desirable, but
    * the API documentation should make it clear to the user as to which behaviour occurs.
    *
-   * For example, level selector methods (such as {@code atInfo()}) return the {@code NoOp} API for
-   * "disabled" log statements, and these have no effect on rate limiter state, and will not update
-   * the "skipped" count. This is fine because controlling logging via log level selection is not
-   * conceptually a form of "rate limiting".
+   * <p>For example, level selector methods (such as {@code atInfo()}) return the {@code NoOp} API
+   * for "disabled" log statements, and these have no effect on rate limiter state, and will not
+   * update the "skipped" count. This is fine because controlling logging via log level selection is
+   * not conceptually a form of "rate limiting".
    *
    * <p>The default implementation of this method enforces the rate limits as set by {@link
    * #every(int)} and {@link #atMostEvery(int, TimeUnit)}.
@@ -573,14 +581,15 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
       if (logSiteKey != null) {
         // Since the base class postProcess() should be invoked before subclass logic, we can set
         // the initial status here. Subclasses can combine this with other rate limiter statuses by
-        // calling updateRateLimiterStatus() before we get back into shouldLog() .
-        rateLimitStatus =
-            RateLimitStatus.combine(
-                CountingRateLimiter.check(metadata, logSiteKey),
-                DurationRateLimiter.check(metadata, logSiteKey, timestampNanos));
+        // calling updateRateLimiterStatus() before we get back into shouldLog().
+        RateLimitStatus status = DurationRateLimiter.check(metadata, logSiteKey, timestampNanos);
+        status = RateLimitStatus.combine(status, CountingRateLimiter.check(metadata, logSiteKey));
+        status = RateLimitStatus.combine(status, SamplingRateLimiter.check(metadata, logSiteKey));
+        this.rateLimitStatus = status;
+
         // Early exit as soon as we know the log statement is disallowed. A subclass may still do
         // post processing but should never re-enable the log.
-        if (rateLimitStatus == RateLimitStatus.DISALLOW) {
+        if (status == RateLimitStatus.DISALLOW) {
           return false;
         }
       }
@@ -834,16 +843,25 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
 
   @Override
   public final API every(int n) {
+    return everyImpl(Key.LOG_EVERY_N, n, "rate limit");
+  }
+
+  @Override
+  public final API onAverageEvery(int n) {
+    return everyImpl(Key.LOG_SAMPLE_EVERY_N, n, "sampling");
+  }
+
+  private API everyImpl(MetadataKey<Integer> key, int n, String label) {
     // See wasForced() for discussion as to why this occurs before argument checking.
     if (wasForced()) {
       return api();
     }
     if (n <= 0) {
-      throw new IllegalArgumentException("rate limit count must be positive");
+      throw new IllegalArgumentException(label + " count must be positive");
     }
     // 1-in-1 rate limiting is a no-op.
     if (n > 1) {
-      addMetadata(Key.LOG_EVERY_N, n);
+      addMetadata(key, n);
     }
     return api();
   }

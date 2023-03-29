@@ -55,8 +55,9 @@ public interface LoggingApi<API extends LoggingApi<API>> {
 
   /**
    * Modifies the current log statement to be emitted at most one-in-N times. The specified count
-   * must be greater than zero and it is expected, but not required, that it is constant. The first
-   * invocation of any rate-limited log statement will always be emitted.
+   * must be greater than zero and it is expected, but not required, that it is constant. In the
+   * absence of any other rate limiting, this method always allows the first invocation of any log
+   * statement to be emitted.
    *
    * <h3>Notes</h3>
    *
@@ -78,9 +79,35 @@ public interface LoggingApi<API extends LoggingApi<API>> {
   API every(int n);
 
   /**
+   * Modifies the current log statement to be emitted with likelihood 1 in {@code n}. For example,
+   * inserting {@code onAverageEvery(20)} into a call chain results in approximately 5% as many
+   * messages being emitted as before. Unlike the other rate-limiting options, there is no
+   * guarantee about when the first such message will be emitted, though it becomes highly likely as
+   * the number of calls reaches several times {@code n}.
+   *
+   * <h3>Notes</h3>
+   *
+   * If <em>multiple rate limiters</em> are used for a single log statement, that log statement will
+   * only be emitted once all rate limiters have reached their threshold, and when a log statement
+   * is emitted all the rate limiters are reset. In particular for {@code onAverageEvery(N)} this
+   * means that logs may occurs less frequently than one-in-N if other rate limiters are active.
+   * <p>
+   * When rate limiting is active, a {@code "skipped"} count is added to log statements to indicate
+   * how many logs were disallowed since the last log statement was emitted.
+   * <p>
+   * If this method is called multiple times for a single log statement, the last invocation will
+   * take precedence.
+   *
+   * @param n the factor by which to reduce logging frequency; a value of {@code 1} has no effect.
+   * @throws IllegalArgumentException if {@code n} is not positive.
+   */
+  API onAverageEvery(int n);
+
+  /**
    * Modifies the current log statement to be emitted at most once per specified time period. The
    * specified duration must not be negative, and it is expected, but not required, that it is
-   * constant. The first invocation of any rate-limited log statement will always be emitted.
+   * constant.  In the absence of any other rate limiting, this method always allows the first
+   * invocation of any log statement to be emitted.
    * <p>
    * Note that for performance reasons {@code atMostEvery()} is explicitly <em>not</em> intended to
    * perform "proper" rate limiting to produce a limited average rate over many samples.
@@ -109,7 +136,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * <h3>Granularity</h3>
    *
    * Because the implementation of this feature relies on a nanosecond timestamp provided by the
-   * backend, the actual granularity of the underlying clock used may vary. Thus it is possible to
+   * backend, the actual granularity of the underlying clock used may vary, and it is possible to
    * specify a time period smaller than the smallest visible time increment. If this occurs, then
    * the effective rate limit applied to the log statement will be the smallest available time
    * increment. For example, if the system clock granularity is 1 millisecond, and a
@@ -838,6 +865,11 @@ public interface LoggingApi<API extends LoggingApi<API>> {
 
     @Override
     public final API every(int n) {
+      return noOp();
+    }
+
+    @Override
+    public final API onAverageEvery(int n) {
       return noOp();
     }
 

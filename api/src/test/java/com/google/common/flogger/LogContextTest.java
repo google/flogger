@@ -31,6 +31,7 @@ import static org.junit.Assert.fail;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Range;
 import com.google.common.flogger.DurationRateLimiter.RateLimitPeriod;
 import com.google.common.flogger.LogContext.Key;
 import com.google.common.flogger.context.Tags;
@@ -214,6 +215,40 @@ public class LogContextTest {
     backend.assertLogged(1).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 4);
     backend.assertLogged(2).hasArguments(10);
     backend.assertLogged(2).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, 4);
+  }
+
+  @Test
+  public void testOnAverageEveryN() {
+    FakeLoggerBackend backend = new FakeLoggerBackend();
+    TestLogger logger = TestLogger.create(backend);
+
+    long startNanos = MILLISECONDS.toNanos(System.currentTimeMillis());
+    // Logging occurs randomly 1-in-5 times over 1000 log statements.
+    for (int millis = 0, count = 0; millis <= 1000; millis += 1) {
+      long timestampNanos = startNanos + MILLISECONDS.toNanos(millis);
+      logger.at(INFO, timestampNanos).onAverageEvery(5).log("Count=%d", count++);
+    }
+
+    // Satisically impossible that we randomly get +/- 100 over 1000 logs.
+    assertThat(backend.getLoggedCount()).isIn(Range.closed(100, 300));
+    backend.assertLogged(0).metadata().containsUniqueEntry(Key.LOG_SAMPLE_EVERY_N, 5);
+
+    // Check the expected count and skipped-count for each log based on the timestamp.
+    int lastLogIndex = -1;
+    for (int n = 0; n < backend.getLoggedCount(); n++) {
+      // The timestamp increases by 1 millisecond each time so we can get the log index from it.
+      long deltaNanos = backend.getLogged(n).getTimestampNanos() - startNanos;
+      int logIndex = (int) (deltaNanos / MILLISECONDS.toNanos(1));
+      backend.assertLogged(n).hasArguments(logIndex);
+      // This works even if lastLogIndex == -1.
+      int skipped = (logIndex - lastLogIndex) - 1;
+      if (skipped == 0) {
+        backend.assertLogged(n).metadata().keys().doesNotContain(Key.SKIPPED_LOG_COUNT);
+      } else {
+        backend.assertLogged(n).metadata().containsUniqueEntry(Key.SKIPPED_LOG_COUNT, skipped);
+      }
+      lastLogIndex = logIndex;
+    }
   }
 
   @Test
