@@ -350,7 +350,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * @throws NullPointerException if the given key is null
    * @see MetadataKey
    */
-  <T> API with(MetadataKey<Boolean> key);
+  API with(MetadataKey<Boolean> key);
 
   /**
    * Sets the log site for the current log statement. Explicit log site injection is very rarely
@@ -837,7 +837,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     }
 
     @Override
-    public final <T> API with(MetadataKey<Boolean> key) {
+    public final API with(MetadataKey<Boolean> key) {
       // Do this inline rather than calling with(key, true) to keep no-op minimal.
       checkNotNull(key, "metadata key");
       return noOp();

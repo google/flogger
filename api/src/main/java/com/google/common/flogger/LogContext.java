@@ -807,7 +807,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   }
 
   @Override
-  public final <T> API with(MetadataKey<Boolean> key) {
+  public final API with(MetadataKey<Boolean> key) {
     return with(key, Boolean.TRUE);
   }
 
