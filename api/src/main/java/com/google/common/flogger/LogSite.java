@@ -201,9 +201,10 @@ public abstract class LogSite implements LogSiteKey {
       if (obj instanceof InjectedLogSite) {
         InjectedLogSite other = (InjectedLogSite) obj;
         // Probably not worth optimizing for "this == obj" because all strings should be interned.
-        return internalClassName.equals(other.internalClassName)
-            && methodName.equals(other.methodName)
-            && encodedLineNumber == other.encodedLineNumber;
+        return methodName.equals(other.methodName)
+            && encodedLineNumber == other.encodedLineNumber
+            // Check classname last because it isn't cached
+            && getClassName().equals(other.getClassName());
       }
       return false;
     }
@@ -216,7 +217,7 @@ public abstract class LogSite implements LogSiteKey {
         // current value. In most cases the hashcode is never needed, but in others it may be used
         // multiple times in different data structures.
         int temp = 157;
-        temp = 31 * temp + internalClassName.hashCode();
+        // Don't include classname since it isn't cached. Other fields should be unique enough.
         temp = 31 * temp + methodName.hashCode();
         temp = 31 * temp + encodedLineNumber;
         hashcode = temp;
