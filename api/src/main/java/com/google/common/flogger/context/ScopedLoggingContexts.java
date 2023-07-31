@@ -33,16 +33,12 @@ public final class ScopedLoggingContexts {
 
   private static boolean warnOnFailure(boolean wasSuccessful) {
     if (!wasSuccessful && !ScopedLoggingContext.getInstance().isNoOp()) {
-      logger
-          .atWarning()
-          .atMostEvery(5, MINUTES)
-          .withStackTrace(StackSize.SMALL)
-          .log(
-              "***** An attempt to add metadata to the current logging context failed. *****\n"
-                  + "Calls to static methods in 'ScopedLoggingContexts' may fail when there is no"
-                  + " existing context available.\n"
-                  + "To ensure metadata is available to log statements, create a new context via"
-                  + " 'ScopedLoggingContexts.newContext()' and add metadata to it explicitly.\n");
+      logger.atWarning().atMostEvery(5, MINUTES).withStackTrace(StackSize.SMALL).log(
+          "***** An attempt to add metadata to the current logging context failed. *****\n"
+              + "Calls to static methods in 'ScopedLoggingContexts' may fail when there is no"
+              + " existing context available.\n"
+              + "To ensure metadata is available to log statements, create a new context via"
+              + " 'ScopedLoggingContexts.newContext()' and add metadata to it explicitly.\n");
     }
     return wasSuccessful;
   }
@@ -51,7 +47,7 @@ public final class ScopedLoggingContexts {
 
   /**
    * Creates a new {@link ScopedLoggingContext.Builder} to which additional logging metadata can be
-   * attached before being installed or used to wrap some existing code.
+   * attached, before being installed or used to wrap some existing code.
    *
    * <pre>{@code
    * Foo result = ScopedLoggingContexts.newContext()
@@ -61,6 +57,25 @@ public final class ScopedLoggingContexts {
    */
   public static ScopedLoggingContext.Builder newContext() {
     return ScopedLoggingContext.getInstance().newContext();
+  }
+
+  /**
+   * Creates a new {@link ScopedLoggingContext.Builder} bound to the given {@link ScopeType}, to
+   * which additional logging metadata can be attached, before being installed or used to wrap some
+   * existing code.
+   *
+   * <p>Specifying a scope type means that any tasks run within this context will have a different
+   * scope attached, ensuring that stateful logging (e.g. rate limiting) will be handled separately
+   * for each invocation. This can help ensure that even rare situations will appear in logs.
+   *
+   * <pre>{@code
+   * ScopedLoggingContexts.newContext(ScopeType.REQUEST)
+   *     .withTags(Tags.of("request_id", request.getId))
+   *     .run(() -> handleRequest(request));
+   * }</pre>
+   */
+  public static ScopedLoggingContext.Builder newContext(ScopeType scopeType) {
+    return ScopedLoggingContext.getInstance().newContext(scopeType);
   }
 
   /**
