@@ -96,15 +96,16 @@ public abstract class ScopedLoggingContext {
      * the type already exists in the list, the original (potentially {@code null}) list reference
      * is returned.
      */
-    @NullableDecl public static ScopeList addScope(
-        @NullableDecl ScopeList list, @NullableDecl ScopeType type) {
+    @NullableDecl
+    public static ScopeList addScope(@NullableDecl ScopeList list, @NullableDecl ScopeType type) {
       return (type != null && lookup(list, type) == null)
           ? new ScopeList(type, type.newScope(), list)
           : list;
     }
 
     /** Finds a scope instance for the given type in a possibly null scope list. */
-    @NullableDecl public static LoggingScope lookup(@NullableDecl ScopeList list, ScopeType type) {
+    @NullableDecl
+    public static LoggingScope lookup(@NullableDecl ScopeList list, ScopeType type) {
       while (list != null) {
         if (type.equals(list.key)) {
           return list.scope;
@@ -141,22 +142,26 @@ public abstract class ScopedLoggingContext {
 
     /**
      * Sets the tags to be used with the context. This method can be called at most once per
-     * builder.
+     * builder. Calling with a null value does nothing.
      */
     @CanIgnoreReturnValue
-    public final Builder withTags(Tags tags) {
+    public final Builder withTags(@NullableDecl Tags tags) {
       checkState(this.tags == null, "tags already set");
-      checkNotNull(tags, "tags");
-      this.tags = tags;
+      if (tags != null) {
+        this.tags = tags;
+      }
       return this;
     }
 
     /**
      * Adds a single metadata key/value pair to the context. This method can be called multiple
-     * times on a builder.
+     * times on a builder. Calling with a null value does nothing.
      */
     @CanIgnoreReturnValue
-    public final <T> Builder withMetadata(MetadataKey<T> key, T value) {
+    public final <T> Builder withMetadata(MetadataKey<T> key, @NullableDecl T value) {
+      if (value == null) {
+        return this;
+      }
       if (metadata == null) {
         metadata = ContextMetadata.builder();
       }
@@ -166,13 +171,14 @@ public abstract class ScopedLoggingContext {
 
     /**
      * Sets the log level map to be used with the context being built. This method can be called at
-     * most once per builder.
+     * most once per builder. Calling with a null value does nothing.
      */
     @CanIgnoreReturnValue
-    public final Builder withLogLevelMap(LogLevelMap logLevelMap) {
+    public final Builder withLogLevelMap(@NullableDecl LogLevelMap logLevelMap) {
       checkState(this.logLevelMap == null, "log level map already set");
-      checkNotNull(logLevelMap, "log level map");
-      this.logLevelMap = logLevelMap;
+      if (logLevelMap != null) {
+        this.logLevelMap = logLevelMap;
+      }
       return this;
     }
 

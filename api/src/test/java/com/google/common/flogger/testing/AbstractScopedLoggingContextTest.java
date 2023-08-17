@@ -129,6 +129,21 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
+  public void testNewContext_withNullTags_ignored() {
+    assertThat(getTagMap()).isEmpty();
+    context
+        .newContext()
+        .withTags(null)
+        .run(
+            () -> {
+              assertThat(getTagMap()).isEmpty();
+              markTestAsDone();
+            });
+    assertThat(getTagMap()).isEmpty();
+    checkDone();
+  }
+
+  @Test
   public void testNewContext_withMetadata() {
     assertThat(getMetadata()).hasSize(0);
     context
@@ -145,6 +160,21 @@ public abstract class AbstractScopedLoggingContextTest {
   }
 
   @Test
+  public void testNewContext_withNullMetadata_ignored() {
+    assertThat(getMetadata()).hasSize(0);
+    context
+        .newContext()
+        .withMetadata(FOO_KEY, null)
+        .run(
+            () -> {
+              assertThat(getMetadata()).hasSize(0);
+              markTestAsDone();
+            });
+    assertThat(getMetadata()).hasSize(0);
+    checkDone();
+  }
+
+  @Test
   public void testNewContext_withLogLevelMap() {
     assertLogging("foo.bar.Bar", Level.FINE).isFalse();
     LogLevelMap levelMap = LogLevelMap.create(ImmutableMap.of("foo.bar", Level.FINE), Level.FINE);
@@ -154,6 +184,21 @@ public abstract class AbstractScopedLoggingContextTest {
         .run(
             () -> {
               assertLogging("foo.bar.Bar", Level.FINE).isTrue();
+              markTestAsDone();
+            });
+    assertLogging("foo.bar.Bar", Level.FINE).isFalse();
+    checkDone();
+  }
+
+  @Test
+  public void testNewContext_withNullLogLevelMap_ignored() {
+    assertLogging("foo.bar.Bar", Level.FINE).isFalse();
+    context
+        .newContext()
+        .withLogLevelMap(null)
+        .run(
+            () -> {
+              assertLogging("foo.bar.Bar", Level.FINE).isFalse();
               markTestAsDone();
             });
     assertLogging("foo.bar.Bar", Level.FINE).isFalse();
