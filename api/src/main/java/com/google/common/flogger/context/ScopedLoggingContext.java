@@ -137,25 +137,25 @@ public abstract class ScopedLoggingContext {
     private Tags tags = null;
     private ContextMetadata.Builder metadata = null;
     private LogLevelMap logLevelMap = null;
+    private boolean hasLogLevelMap = false;
 
     protected Builder() {}
 
     /**
      * Sets the tags to be used with the context. This method can be called at most once per
-     * builder. Calling with a null value does nothing.
+     * builder.
      */
     @CanIgnoreReturnValue
-    public final Builder withTags(@NullableDecl Tags tags) {
+    public final Builder withTags(Tags tags) {
       checkState(this.tags == null, "tags already set");
-      if (tags != null) {
-        this.tags = tags;
-      }
+      checkNotNull(tags, "tags");
+      this.tags = tags;
       return this;
     }
 
     /**
      * Adds a single metadata key/value pair to the context. This method can be called multiple
-     * times on a builder. Calling with a null value does nothing.
+     * times on a builder. Calling with a null value does not add metadata.
      */
     @CanIgnoreReturnValue
     public final <T> Builder withMetadata(MetadataKey<T> key, @NullableDecl T value) {
@@ -171,14 +171,13 @@ public abstract class ScopedLoggingContext {
 
     /**
      * Sets the log level map to be used with the context being built. This method can be called at
-     * most once per builder. Calling with a null value does nothing.
+     * most once per builder. Calling with a null value does not set a log level map.
      */
     @CanIgnoreReturnValue
     public final Builder withLogLevelMap(@NullableDecl LogLevelMap logLevelMap) {
-      checkState(this.logLevelMap == null, "log level map already set");
-      if (logLevelMap != null) {
-        this.logLevelMap = logLevelMap;
-      }
+      checkState(!hasLogLevelMap, "log level map already set");
+      hasLogLevelMap = true;
+      this.logLevelMap = logLevelMap;
       return this;
     }
 
