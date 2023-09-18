@@ -47,23 +47,15 @@ public final class MessageUtils {
   static final Locale FORMAT_LOCALE = Locale.ROOT;
 
   /**
-   * Appends log-site information in the default format, including a trailing space.
+   * Appends log-site information in the default format.
    *
-   * @param logSite the log site to be appended (ingored if {@link LogSite#INVALID}).
+   * @param logSite the log site to be appended (ignored if {@link LogSite#INVALID}).
    * @param out the destination buffer.
    * @return whether the log-site was appended.
    */
   @CanIgnoreReturnValue
   public static boolean appendLogSite(LogSite logSite, StringBuilder out) {
-    if (logSite == LogSite.INVALID) {
-      return false;
-    }
-    out.append(logSite.getClassName())
-        .append('.')
-        .append(logSite.getMethodName())
-        .append(':')
-        .append(logSite.getLineNumber());
-    return true;
+    return LogSiteFormatters.DEFAULT.appendLogSite(logSite, out);
   }
 
   /**
