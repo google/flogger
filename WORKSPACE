@@ -20,11 +20,12 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # and commit with the old value then Travis should report the expected value
 # in the most recent failure in
 # https://travis-ci.org/github/google/flogger/builds
+BAZEL_COMMON_VERSION = "a482a3abeaa12b48e78c012ab44407da9c97a400"
 http_archive(
     name = "google_bazel_common",
-    sha256 = "8ba02686ad2c9972ab31539bcbda7674d0b46f2ceb71aee417d2cf46d445ad4f",
-    strip_prefix = "bazel-common-c805fdbef7a7927606a2a48e08683952f58a2b71",
-    urls = ["https://github.com/google/bazel-common/archive/c805fdbef7a7927606a2a48e08683952f58a2b71.zip"],
+    sha256 = "06b26b6f0239182f39bf879c8668daa8c15c6b58c35c5da694d0df7dfd596fd2",
+    strip_prefix = "bazel-common-%s" % BAZEL_COMMON_VERSION,
+    url = "https://github.com/google/bazel-common/archive/%s.zip" % BAZEL_COMMON_VERSION,
 )
 
 load("@google_bazel_common//:workspace_defs.bzl", "google_common_workspace_rules")
