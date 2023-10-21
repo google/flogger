@@ -22,6 +22,7 @@ import static com.google.common.flogger.util.Checks.checkState;
 
 import com.google.common.flogger.backend.Platform;
 import java.util.Iterator;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * Key for logging semi-structured metadata values.
@@ -42,7 +43,7 @@ import java.util.Iterator;
  *       be re-parsed by logs related tools).
  * </ul>
  *
- * <p>If you just want to log an general "key value pair" in a small number of log statements, it is
+ * <p>If you just want to log a general "key value pair" in a small number of log statements, it is
  * still better to just do something like {@code log("key=%s", value)}.
  *
  * <p>Metadata keys are expected to be singleton constants, and should never be allocated at the log
@@ -57,7 +58,7 @@ import java.util.Iterator;
  *
  * <p>Custom subclasses of {@code MetadataKey} which override either of the protected {@link #emit}
  * methods should take care to avoid calling any code which might trigger logging since this could
- * lead to unexpected recusrion, especially if the key is being logged as part of a {@code
+ * lead to unexpected recursion, especially if the key is being logged as part of a {@code
  * ScopedLoggingContext}. While there is protection against unbounded reentrant logging in Flogger,
  * it is still best practice to avoid it where possible.
  *
@@ -94,7 +95,7 @@ public class MetadataKey<T> {
    */
   public interface KeyValueHandler {
     /** Handle a single key/value pair of contextual metadata for a log statement. */
-    void handle(String key, Object value);
+    void handle(String key, @NullableDecl Object value);
   }
 
   /**
@@ -225,7 +226,7 @@ public class MetadataKey<T> {
    *   <li>Calling any code which could log using the same {@code MetadataKey} instance (unless you
    *       implement protection against reentrant calling in this method).
    *   <li>Calling code which might block (e.g. performing file I/O or acquiring locks).
-   *   <li>Allocating non-trivial amounds of memory (e.g. recording values in an unbounded data
+   *   <li>Allocating non-trivial amounts of memory (e.g. recording values in an unbounded data
    *       structure).
    * </ul>
    *
