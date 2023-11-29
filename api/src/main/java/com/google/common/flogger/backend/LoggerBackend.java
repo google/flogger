@@ -21,8 +21,6 @@ import java.util.logging.Level;
 /**
  * Interface for all logger backends.
  *
- * <p>
- *
  * <h2>Implementation Notes:</h2>
  *
  * Often each {@link com.google.common.flogger.AbstractLogger} instance will be instantiated with a
