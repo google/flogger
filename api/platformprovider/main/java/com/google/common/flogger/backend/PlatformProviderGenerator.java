@@ -23,14 +23,13 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.ANEWARRAY;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.F_SAME1;
-import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
-import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_6;
 
@@ -44,7 +43,6 @@ import java.util.zip.ZipEntry;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
 /**
  * Class that generates a PlatformProvider class for creating instances of Platform, for use in
@@ -62,7 +60,7 @@ import org.objectweb.asm.Type;
 public final class PlatformProviderGenerator {
   private static final String[] PLATFORM_CLASSES =
       new String[] {
-        "Lcom/google/common/flogger/backend/system/DefaultPlatform;",
+        "com/google/common/flogger/backend/system/DefaultPlatform",
       };
 
   public static void main(String[] args) throws IOException {
@@ -126,14 +124,10 @@ public final class PlatformProviderGenerator {
     //
     //   try {
     //     ...
-    //   } catch (NoClassDefFoundError | IllegalAccessException | InstantiationException
-    //       | InvocationTargetException | NoSuchMethodException e) {
+    //   } catch (NoClassDefFoundError | IllegalAccessException | NoSuchMethodException e) {
     //     ...
     //   }
     //
-    // Note that the exception types need to be listed explicitly (rather than using
-    // java.lang.ReflectiveOperationException) because that parent exception type isn't available
-    // on Android until API level 19.
     Label startLabel = new Label();
     Label endLabel = new Label();
     Label handlerLabel = new Label();
@@ -142,38 +136,16 @@ public final class PlatformProviderGenerator {
     methodVisitor.visitTryCatchBlock(
         startLabel, endLabel, handlerLabel, "java/lang/IllegalAccessException");
     methodVisitor.visitTryCatchBlock(
-        startLabel, endLabel, handlerLabel, "java/lang/InstantiationException");
-    methodVisitor.visitTryCatchBlock(
-        startLabel, endLabel, handlerLabel, "java/lang/reflect/InvocationTargetException");
-    methodVisitor.visitTryCatchBlock(
         startLabel, endLabel, handlerLabel, "java/lang/NoSuchMethodException");
     methodVisitor.visitLabel(startLabel);
 
-    // Generate the actual reflective constructor call inside the try block:
+    // Generate the actual constructor call inside the try block:
     //
-    //   return (Platform) PlatformClass.class.getDeclaredConstructor().newInstance();
+    //   return new PlatformClass()
     //
-    // Note that the constructor call happens reflectively to make sure that the platform class
-    // isn't loaded until actually executing this instruction. That is important because an
-    // earlier class load could happen outside of the try/catch block where we are explicitly
-    // handling the case of the class not being present.
-    methodVisitor.visitLdcInsn(Type.getType(platformType));
-    methodVisitor.visitInsn(ICONST_0);
-    methodVisitor.visitTypeInsn(ANEWARRAY, "java/lang/Class");
-    methodVisitor.visitMethodInsn(
-        INVOKEVIRTUAL,
-        "java/lang/Class",
-        "getDeclaredConstructor",
-        "([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;",
-        false);
-    methodVisitor.visitInsn(ICONST_0);
-    methodVisitor.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-    methodVisitor.visitMethodInsn(
-        INVOKEVIRTUAL,
-        "java/lang/reflect/Constructor",
-        "newInstance",
-        "([Ljava/lang/Object;)Ljava/lang/Object;",
-        false);
+    methodVisitor.visitTypeInsn(NEW, platformType);
+    methodVisitor.visitInsn(DUP);
+    methodVisitor.visitMethodInsn(INVOKESPECIAL, platformType, "<init>", "()V", false);
     methodVisitor.visitTypeInsn(CHECKCAST, "com/google/common/flogger/backend/Platform");
     methodVisitor.visitLabel(endLabel);
     methodVisitor.visitInsn(ARETURN);
