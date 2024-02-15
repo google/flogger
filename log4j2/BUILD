@@ -53,6 +53,7 @@ gen_java_tests(
         "//api:testing",
         "//google:flogger",
         "//grpc:grpc_context",
+        "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/log4j2",
         "@google_bazel_common//third_party/java/truth",
