@@ -15,9 +15,6 @@ jobs:
       matrix:
         java: [8, 11, 15]
     runs-on: ubuntu-latest
-    env:
-      # Used by bazelisk: https://github.com/bazelbuild/bazelisk
-      USE_BAZEL_VERSION: '3.7.1'
     steps:
       # Cancel any previous runs for the same branch that are still running.
       - name: 'Cancel previous runs'
