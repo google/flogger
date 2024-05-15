@@ -17,6 +17,7 @@
 package com.google.common.flogger.backend;
 
 import com.google.common.flogger.LogSite;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import java.util.logging.Level;
 
 /**
@@ -46,6 +47,7 @@ public interface LogData {
    * Returns the logger name (which is usually a canonicalized class name) or {@code null} if not
    * given.
    */
+  @NullableDecl
   String getLoggerName();
 
   /**
@@ -98,6 +100,7 @@ public interface LogData {
    * require formatting (in which case the message to be logged can be determined by calling
    * {@link #getLiteralArgument()}).
    */
+  @NullableDecl
   TemplateContext getTemplateContext();
 
   /**

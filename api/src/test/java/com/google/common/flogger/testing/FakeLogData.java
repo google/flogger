@@ -29,6 +29,7 @@ import com.google.common.flogger.parser.DefaultBraceStyleMessageParser;
 import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.parser.MessageParser;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import java.util.logging.Level;
 
 /**
@@ -143,6 +144,7 @@ public final class FakeLogData implements LogData {
   }
 
   @Override
+  @NullableDecl
   public TemplateContext getTemplateContext() {
     return context;
   }

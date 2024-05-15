@@ -426,6 +426,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   }
 
   @Override
+  @NullableDecl
   public final TemplateContext getTemplateContext() {
     return templateContext;
   }
