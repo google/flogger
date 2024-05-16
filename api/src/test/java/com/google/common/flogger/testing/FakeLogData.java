@@ -30,6 +30,7 @@ import com.google.common.flogger.parser.DefaultPrintfMessageParser;
 import com.google.common.flogger.parser.MessageParser;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.logging.Level;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * A mutable fake {@link LogData} implementation to help test logging backends and other log
@@ -143,6 +144,7 @@ public final class FakeLogData implements LogData {
   }
 
   @Override
+  @NullableDecl
   public TemplateContext getTemplateContext() {
     return context;
   }
