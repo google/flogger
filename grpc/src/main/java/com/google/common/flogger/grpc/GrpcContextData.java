@@ -24,12 +24,12 @@ import com.google.common.flogger.context.ScopedLoggingContext.ScopeList;
 import com.google.common.flogger.context.Tags;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /** A mutable thread-safe holder for context scoped logging information. */
 final class GrpcContextData {
 
-  static Tags getTagsFor(@NullableDecl GrpcContextData context) {
+  static Tags getTagsFor(@Nullable GrpcContextData context) {
     if (context != null) {
       Tags tags = context.tagRef.get();
       if (tags != null) {
@@ -39,7 +39,7 @@ final class GrpcContextData {
     return Tags.empty();
   }
 
-  static ContextMetadata getMetadataFor(@NullableDecl GrpcContextData context) {
+  static ContextMetadata getMetadataFor(@Nullable GrpcContextData context) {
     if (context != null) {
       ContextMetadata metadata = context.metadataRef.get();
       if (metadata != null) {
@@ -50,7 +50,7 @@ final class GrpcContextData {
   }
 
   static boolean shouldForceLoggingFor(
-      @NullableDecl GrpcContextData context, String loggerName, Level level) {
+      @Nullable GrpcContextData context, String loggerName, Level level) {
     if (context != null) {
       LogLevelMap map = context.logLevelMapRef.get();
       if (map != null) {
@@ -60,26 +60,25 @@ final class GrpcContextData {
     return false;
   }
 
-  @NullableDecl
-  static LoggingScope lookupScopeFor(@NullableDecl GrpcContextData contextData, ScopeType type) {
+  static @Nullable LoggingScope lookupScopeFor(
+      @Nullable GrpcContextData contextData, ScopeType type) {
     return contextData != null ? ScopeList.lookup(contextData.scopes, type) : null;
   }
 
   private abstract static class ScopedReference<T> {
     private final AtomicReference<T> value;
 
-    ScopedReference(@NullableDecl T initialValue) {
+    ScopedReference(@Nullable T initialValue) {
       this.value = new AtomicReference<>(initialValue);
     }
 
-    @NullableDecl
-    final T get() {
+    final @Nullable T get() {
       return value.get();
     }
 
     // Note: If we could use Java 1.8 runtime libraries, this would just be "accumulateAndGet()",
     // but gRPC is Java 1.7 compatible: https://github.com/grpc/grpc-java/blob/master/README.md
-    final void mergeFrom(@NullableDecl T delta) {
+    final void mergeFrom(@Nullable T delta) {
       if (delta != null) {
         T current;
         do {
@@ -91,7 +90,7 @@ final class GrpcContextData {
     abstract T merge(T current, T delta);
   }
 
-  @NullableDecl private final ScopeList scopes;
+  private final @Nullable ScopeList scopes;
   private final ScopedReference<Tags> tagRef;
   private final ScopedReference<ContextMetadata> metadataRef;
   private final ScopedReference<LogLevelMap> logLevelMapRef;
@@ -99,8 +98,8 @@ final class GrpcContextData {
   private final GrpcContextDataProvider provider;
 
   GrpcContextData(
-      @NullableDecl GrpcContextData parent,
-      @NullableDecl ScopeType scopeType,
+      @Nullable GrpcContextData parent,
+      @Nullable ScopeType scopeType,
       GrpcContextDataProvider provider) {
     this.scopes = ScopeList.addScope(parent != null ? parent.scopes : null, scopeType);
     this.tagRef =
@@ -127,15 +126,15 @@ final class GrpcContextData {
     this.provider = provider;
   }
 
-  void addTags(@NullableDecl Tags tags) {
+  void addTags(@Nullable Tags tags) {
     tagRef.mergeFrom(tags);
   }
 
-  void addMetadata(@NullableDecl ContextMetadata metadata) {
+  void addMetadata(@Nullable ContextMetadata metadata) {
     metadataRef.mergeFrom(metadata);
   }
 
-  void applyLogLevelMap(@NullableDecl LogLevelMap logLevelMap) {
+  void applyLogLevelMap(@Nullable LogLevelMap logLevelMap) {
     if (logLevelMap != null) {
       // Set the global flag to trigger testing of the log level map from now on (we only apply a
       // log level map to an active context or one that's about to become active).

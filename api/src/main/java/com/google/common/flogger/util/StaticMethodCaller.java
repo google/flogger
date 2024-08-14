@@ -17,7 +17,7 @@
 package com.google.common.flogger.util;
 
 import java.lang.reflect.Method;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper to call a no-arg constructor or static getter to obtain an instance of a specified type.
@@ -63,9 +63,8 @@ public final class StaticMethodCaller {
    *       public no-arg constructor if not present.
    * </ol>
    */
-  @NullableDecl
-  public static <T> T getInstanceFromSystemProperty(
-      String propertyName, @NullableDecl String defaultValue, Class<T> type) {
+  public static <T> @Nullable T getInstanceFromSystemProperty(
+      String propertyName, @Nullable String defaultValue, Class<T> type) {
     String property = readProperty(propertyName, defaultValue);
     if (property == null) {
       return null;
@@ -112,7 +111,7 @@ public final class StaticMethodCaller {
     return null;
   }
 
-  private static String readProperty(String propertyName, @NullableDecl String defaultValue) {
+  private static String readProperty(String propertyName, @Nullable String defaultValue) {
     Checks.checkNotNull(propertyName, "property name");
     try {
       return System.getProperty(propertyName, defaultValue);

@@ -22,7 +22,7 @@ import static com.google.common.flogger.RateLimitStatus.DISALLOW;
 import com.google.common.flogger.backend.Metadata;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Rate limiter to support {@code onAverageEvery(N)} functionality.
@@ -42,8 +42,7 @@ final class SamplingRateLimiter extends RateLimitStatus {
         }
       };
 
-  @NullableDecl
-  static RateLimitStatus check(Metadata metadata, LogSiteKey logSiteKey) {
+  static @Nullable RateLimitStatus check(Metadata metadata, LogSiteKey logSiteKey) {
     Integer rateLimitCount = metadata.findValue(LOG_SAMPLE_EVERY_N);
     if (rateLimitCount == null || rateLimitCount <= 0) {
       // Without valid rate limiter specific metadata, this limiter has no effect.

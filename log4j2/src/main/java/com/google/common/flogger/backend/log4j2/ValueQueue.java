@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A simple FIFO queue linked-list implementation designed to store multiple metadata values in a
@@ -55,7 +55,7 @@ final class ValueQueue implements Iterable<Object> {
     return valueQueue;
   }
 
-  static Object maybeWrap(Object value, @NullableDecl Object existingValue) {
+  static Object maybeWrap(Object value, @Nullable Object existingValue) {
     checkNotNull(value, "value");
     if (existingValue == null) {
       return value;

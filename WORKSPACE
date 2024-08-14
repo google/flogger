@@ -17,13 +17,13 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # If this needs updating the hash value in the "strip_prefix" and "urls" lines
 # should be the hash of the latest Github commit for bazel-common. The "sha256"
 # value should be the SHA-256 of the downloaded zip file, but if you just try
-# and commit with the old value then Travis should report the expected value
-# in the most recent failure in
-# https://travis-ci.org/github/google/flogger/builds
-BAZEL_COMMON_VERSION = "65f295afec03cce3807df5b06ef42bf8e46df4e4"
+# and commit with the old value then GitHub Actions should report the expected
+# value in the most recent failure in
+# https://github.com/google/flogger/actions?query=is%3Afailure
+BAZEL_COMMON_VERSION = "985e8ef206f8beab133646b091605b77423a6598"
 http_archive(
     name = "google_bazel_common",
-    sha256 = "9e966f57182e76ba2f5a692ec410e32e5c77808220fd94f99071caac5310a019",
+    sha256 = "7190e40930005476a8928e3d7516b89ab8ad0eedd657fe65e6d3ad2d30aba780",
     strip_prefix = "bazel-common-%s" % BAZEL_COMMON_VERSION,
     url = "https://github.com/google/bazel-common/archive/%s.zip" % BAZEL_COMMON_VERSION,
 )

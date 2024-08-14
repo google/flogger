@@ -19,7 +19,7 @@ package com.google.common.flogger;
 import com.google.common.flogger.backend.Metadata;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Status for rate limiting operations, usable by rate limiters and available to subclasses of
@@ -198,9 +198,8 @@ public abstract class RateLimitStatus {
    * allocations occur. It also ensures that (assuming well written rate limiters) there are no
    * allocations for log statements using a single rate limiter.
    */
-  @NullableDecl
-  static RateLimitStatus combine(
-      @NullableDecl final RateLimitStatus a, @NullableDecl final RateLimitStatus b) {
+  static @Nullable RateLimitStatus combine(
+      final @Nullable RateLimitStatus a, final @Nullable RateLimitStatus b) {
     // In the vast majority of cases this code will be run once per log statement, and at least one
     // of 'a' or 'b' will be null. So optimize early exiting for that case.
     if (a == null) {

@@ -23,7 +23,7 @@ import com.google.common.flogger.backend.Metadata;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.ArrayList;
 import java.util.List;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A mutable fake {@link Metadata} implementation to help test logging backends and other log
@@ -60,8 +60,7 @@ public final class FakeMetadata extends Metadata {
   }
 
   @Override
-  @NullableDecl
-  public <T> T findValue(MetadataKey<T> key) {
+  public <T> @Nullable T findValue(MetadataKey<T> key) {
     for (KeyValuePair<?> e : entries) {
       if (e.key.equals(key)) {
         return key.cast(e.value);

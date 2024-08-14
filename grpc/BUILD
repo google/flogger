@@ -20,9 +20,9 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//api",
-        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
         "@google_bazel_common//third_party/java/grpc:context",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
     ],
 )
 

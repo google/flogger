@@ -48,8 +48,8 @@ java_library(
         ":platform_provider",
         ":stack_getter_common",
         ":stack_getter_impl",
-        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
     ],
 )
 
@@ -164,8 +164,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         ":api",
-        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
     ],
 )
 
@@ -200,9 +200,9 @@ java_library(
         ":api",
         ":checks",
         ":system_backend",  # For AbstractLogRecord needed for FakeLogRecord
-        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/error_prone:annotations",
         "@google_bazel_common//third_party/java/guava",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/truth",
     ],
@@ -282,8 +282,8 @@ gen_java_tests(
         ":system_backend",
         ":testing",
         "@google_bazel_common//third_party/java/auto:service",
-        "@google_bazel_common//third_party/java/checker_framework_annotations",
         "@google_bazel_common//third_party/java/guava",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/mockito",
         "@google_bazel_common//third_party/java/truth",

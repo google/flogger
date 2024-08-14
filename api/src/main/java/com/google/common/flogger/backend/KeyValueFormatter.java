@@ -20,7 +20,7 @@ import com.google.common.flogger.MetadataKey.KeyValueHandler;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Formats key/value pairs as a human readable string on the end of log statements. The format is:
@@ -110,7 +110,7 @@ public final class KeyValueFormatter implements KeyValueHandler {
   }
 
   @Override
-  public void handle(String label, @NullableDecl Object value) {
+  public void handle(String label, @Nullable Object value) {
     if (haveSeenValues) {
       out.append(' ');
     } else {

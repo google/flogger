@@ -16,7 +16,7 @@
 
 package com.google.common.flogger;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A synthetic exception which can be attached to log statements when additional stack trace
@@ -28,15 +28,15 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 public final class LogSiteStackTrace extends Exception {
   /**
    * Creates a synthetic exception to hold a call-stack generated for the log statement itself.
-   * <p>
-   * This exception is never expected to actually get thrown or caught at any point.
+   *
+   * <p>This exception is never expected to actually get thrown or caught at any point.
    *
    * @param cause the optional cause (set via withCause() in the log statement).
    * @param stackSize the requested size of the synthetic stack trace (actual trace can be shorter).
    * @param syntheticStackTrace the synthetic stack trace starting at the log statement.
    */
   LogSiteStackTrace(
-      @NullableDecl Throwable cause, StackSize stackSize, StackTraceElement[] syntheticStackTrace) {
+      @Nullable Throwable cause, StackSize stackSize, StackTraceElement[] syntheticStackTrace) {
     super(stackSize.toString(), cause);
     // This takes a defensive copy, but there's no way around that. Note that we cannot override
     // getStackTrace() to avoid a defensive copy because that breaks stack trace formatting

@@ -25,7 +25,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.Closeable;
 import java.util.concurrent.Callable;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A user facing API for creating and modifying scoped logging contexts in applications.
@@ -96,16 +96,14 @@ public abstract class ScopedLoggingContext {
      * the type already exists in the list, the original (potentially {@code null}) list reference
      * is returned.
      */
-    @NullableDecl
-    public static ScopeList addScope(@NullableDecl ScopeList list, @NullableDecl ScopeType type) {
+    public static @Nullable ScopeList addScope(@Nullable ScopeList list, @Nullable ScopeType type) {
       return (type != null && lookup(list, type) == null)
           ? new ScopeList(type, type.newScope(), list)
           : list;
     }
 
     /** Finds a scope instance for the given type in a possibly null scope list. */
-    @NullableDecl
-    public static LoggingScope lookup(@NullableDecl ScopeList list, ScopeType type) {
+    public static @Nullable LoggingScope lookup(@Nullable ScopeList list, ScopeType type) {
       while (list != null) {
         if (type.equals(list.key)) {
           return list.scope;
@@ -117,9 +115,9 @@ public abstract class ScopedLoggingContext {
 
     private final ScopeType key;
     private final LoggingScope scope;
-    @NullableDecl private final ScopeList next;
+    private final @Nullable ScopeList next;
 
-    public ScopeList(ScopeType key, LoggingScope scope, @NullableDecl ScopeList next) {
+    public ScopeList(ScopeType key, LoggingScope scope, @Nullable ScopeList next) {
       this.key = checkNotNull(key, "scope type");
       this.scope = checkNotNull(scope, "scope");
       this.next = next;
@@ -158,7 +156,7 @@ public abstract class ScopedLoggingContext {
      * times on a builder. Calling with a null value does not add metadata.
      */
     @CanIgnoreReturnValue
-    public final <T> Builder withMetadata(MetadataKey<T> key, @NullableDecl T value) {
+    public final <T> Builder withMetadata(MetadataKey<T> key, @Nullable T value) {
       if (value == null) {
         return this;
       }
@@ -174,7 +172,7 @@ public abstract class ScopedLoggingContext {
      * most once per builder. Calling with a null value does not set a log level map.
      */
     @CanIgnoreReturnValue
-    public final Builder withLogLevelMap(@NullableDecl LogLevelMap logLevelMap) {
+    public final Builder withLogLevelMap(@Nullable LogLevelMap logLevelMap) {
       checkState(!hasLogLevelMap, "log level map already set");
       hasLogLevelMap = true;
       this.logLevelMap = logLevelMap;
@@ -293,8 +291,7 @@ public abstract class ScopedLoggingContext {
      * Returns the configured tags, or null. This method may do work and results should be cached by
      * context implementations.
      */
-    @NullableDecl
-    protected final Tags getTags() {
+    protected final @Nullable Tags getTags() {
       return tags;
     }
 
@@ -302,8 +299,7 @@ public abstract class ScopedLoggingContext {
      * Returns the configured context metadata, or null. This method may do work and results should
      * be cached by context implementations.
      */
-    @NullableDecl
-    protected final ContextMetadata getMetadata() {
+    protected final @Nullable ContextMetadata getMetadata() {
       return metadata != null ? metadata.build() : null;
     }
 
@@ -311,8 +307,7 @@ public abstract class ScopedLoggingContext {
      * Returns the configured log level map, or null. This method may do work and results should be
      * cached by context implementations.
      */
-    @NullableDecl
-    protected final LogLevelMap getLogLevelMap() {
+    protected final @Nullable LogLevelMap getLogLevelMap() {
       return logLevelMap;
     }
   }

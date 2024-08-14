@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The base context for a logging statement, which implements the base logging API.
@@ -250,8 +250,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     }
 
     @Override
-    @NullableDecl
-    public <T> T findValue(MetadataKey<T> key) {
+    public <T> @Nullable T findValue(MetadataKey<T> key) {
       int index = indexOf(key);
       return index != -1 ? key.cast(keyValuePairs[(2 * index) + 1]) : null;
     }
@@ -426,8 +425,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   }
 
   @Override
-  @NullableDecl
-  public final TemplateContext getTemplateContext() {
+  public final @Nullable TemplateContext getTemplateContext() {
     return templateContext;
   }
 
@@ -515,7 +513,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
    * <p>Implementations of this method must always call {@code super.postProcess()} first with the
    * given log site key:
    *
-   * <pre>{@code protected boolean postProcess(@NullableDecl LogSiteKey logSiteKey) {
+   * <pre>{@code protected boolean postProcess(@Nullable LogSiteKey logSiteKey) {
    *   boolean shouldLog = super.postProcess(logSiteKey);
    *   // Handle rate limiting if present.
    *   // Add additional metadata etc.
@@ -575,7 +573,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
    * @param logSiteKey used to lookup persistent, per log statement, state.
    * @return true if logging should be attempted (usually based on rate limiter state).
    */
-  protected boolean postProcess(@NullableDecl LogSiteKey logSiteKey) {
+  protected boolean postProcess(@Nullable LogSiteKey logSiteKey) {
     // Without metadata there's nothing to post-process.
     if (metadata != null) {
       // Without a log site we ignore any log-site specific behaviour.
@@ -630,7 +628,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
    * be called from within an overriden {@code postProcess()} method. Typically this is invoked
    * after calling {@code super.postProcess(logSiteKey)}, such as:
    *
-   * <pre>{@code protected boolean postProcess(@NullableDecl LogSiteKey logSiteKey) {
+   * <pre>{@code protected boolean postProcess(@Nullable LogSiteKey logSiteKey) {
    *   boolean shouldLog = super.postProcess(logSiteKey);
    *   // Even if `shouldLog` is false, we still call the rate limiter to update its state.
    *   shouldLog &= updateRateLimiterStatus(CustomRateLimiter.check(...));
@@ -646,7 +644,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
    * @param status a rate limiting status, or {@code null} if the rate limiter was not active.
    * @return whether logging will occur based on the current combined state of active rate limiters.
    */
-  protected final boolean updateRateLimiterStatus(@NullableDecl RateLimitStatus status) {
+  protected final boolean updateRateLimiterStatus(@Nullable RateLimitStatus status) {
     rateLimitStatus = RateLimitStatus.combine(rateLimitStatus, status);
     return rateLimitStatus != RateLimitStatus.DISALLOW;
   }
@@ -777,7 +775,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
       String internalClassName,
       String methodName,
       int encodedLineNumber,
-      @NullableDecl String sourceFileName) {
+      @Nullable String sourceFileName) {
     return withInjectedLogSite(
         LogSite.injectedLogSite(internalClassName, methodName, encodedLineNumber, sourceFileName));
   }
@@ -794,7 +792,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   }
 
   @Override
-  public final <T> API with(MetadataKey<T> key, @NullableDecl T value) {
+  public final <T> API with(MetadataKey<T> key, @Nullable T value) {
     // Null keys are always bad (even if the value is also null). This is one of the few places
     // where the logger API will throw a runtime exception (and as such it's important to ensure
     // the NoOp implementation also does the check). The reasoning for this is that the metadata
@@ -813,7 +811,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   }
 
   @Override
-  public <T> API per(@NullableDecl T key, LogPerBucketingStrategy<? super T> strategy) {
+  public <T> API per(@Nullable T key, LogPerBucketingStrategy<? super T> strategy) {
     // Skip calling the bucketer for null so implementations don't need to check.
     return key != null ? with(Key.LOG_SITE_GROUPING_KEY, strategy.apply(key)) : api();
   }
@@ -905,14 +903,14 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1) {
+  public final void log(String message, @Nullable Object p1) {
     if (shouldLog()) {
       logImpl(message, p1);
     }
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, @NullableDecl Object p2) {
+  public final void log(String message, @Nullable Object p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
@@ -920,7 +918,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
 
   @Override
   public final void log(
-      String message, @NullableDecl Object p1, @NullableDecl Object p2, @NullableDecl Object p3) {
+      String message, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3) {
     if (shouldLog()) {
       logImpl(message, p1, p2, p3);
     }
@@ -929,10 +927,10 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final void log(
       String message,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4) {
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4) {
     if (shouldLog()) {
       logImpl(message, p1, p2, p3, p4);
     }
@@ -941,11 +939,11 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5) {
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5) {
     if (shouldLog()) {
       logImpl(msg, p1, p2, p3, p4, p5);
     }
@@ -954,12 +952,12 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6) {
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6) {
     if (shouldLog()) {
       logImpl(msg, p1, p2, p3, p4, p5, p6);
     }
@@ -968,13 +966,13 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7) {
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7) {
     if (shouldLog()) {
       logImpl(msg, p1, p2, p3, p4, p5, p6, p7);
     }
@@ -983,14 +981,14 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7,
-      @NullableDecl Object p8) {
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7,
+      @Nullable Object p8) {
     if (shouldLog()) {
       logImpl(msg, p1, p2, p3, p4, p5, p6, p7, p8);
     }
@@ -999,15 +997,15 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7,
-      @NullableDecl Object p8,
-      @NullableDecl Object p9) {
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7,
+      @Nullable Object p8,
+      @Nullable Object p9) {
     if (shouldLog()) {
       logImpl(msg, p1, p2, p3, p4, p5, p6, p7, p8, p9);
     }
@@ -1016,16 +1014,16 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7,
-      @NullableDecl Object p8,
-      @NullableDecl Object p9,
-      @NullableDecl Object p10) {
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7,
+      @Nullable Object p8,
+      @Nullable Object p9,
+      @Nullable Object p10) {
     if (shouldLog()) {
       logImpl(msg, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
     }
@@ -1034,16 +1032,16 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7,
-      @NullableDecl Object p8,
-      @NullableDecl Object p9,
-      @NullableDecl Object p10,
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7,
+      @Nullable Object p8,
+      @Nullable Object p9,
+      @Nullable Object p10,
       Object... rest) {
     if (shouldLog()) {
       // Manually create a new varargs array and copy the parameters in.
@@ -1099,112 +1097,112 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, boolean p2) {
+  public final void log(String message, @Nullable Object p1, boolean p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, char p2) {
+  public final void log(String message, @Nullable Object p1, char p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, byte p2) {
+  public final void log(String message, @Nullable Object p1, byte p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, short p2) {
+  public final void log(String message, @Nullable Object p1, short p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, int p2) {
+  public final void log(String message, @Nullable Object p1, int p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, long p2) {
+  public final void log(String message, @Nullable Object p1, long p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, float p2) {
+  public final void log(String message, @Nullable Object p1, float p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, @NullableDecl Object p1, double p2) {
+  public final void log(String message, @Nullable Object p1, double p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, boolean p1, @NullableDecl Object p2) {
+  public final void log(String message, boolean p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, char p1, @NullableDecl Object p2) {
+  public final void log(String message, char p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, byte p1, @NullableDecl Object p2) {
+  public final void log(String message, byte p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, short p1, @NullableDecl Object p2) {
+  public final void log(String message, short p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, int p1, @NullableDecl Object p2) {
+  public final void log(String message, int p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, long p1, @NullableDecl Object p2) {
+  public final void log(String message, long p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, float p1, @NullableDecl Object p2) {
+  public final void log(String message, float p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
   }
 
   @Override
-  public final void log(String message, double p1, @NullableDecl Object p2) {
+  public final void log(String message, double p1, @Nullable Object p2) {
     if (shouldLog()) {
       logImpl(message, p1, p2);
     }
@@ -1659,7 +1657,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   }
 
   @Override
-  public final void logVarargs(String message, @NullableDecl Object[] params) {
+  public final void logVarargs(String message, @Nullable Object[] params) {
     if (shouldLog()) {
       // Copy the varargs array (because we didn't create it and this is quite a rare case).
       logImpl(message, Arrays.copyOf(params, params.length));

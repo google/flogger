@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable tags which can be attached to log statements via platform specific injection
@@ -126,9 +126,9 @@ public final class Tags {
   // Note: This is just a "dumb" holder and doesn't have equals/hashcode defined.
   private static final class KeyValuePair {
     private final String key;
-    @NullableDecl private final Object value;
+    private final @Nullable Object value;
 
-    private KeyValuePair(String key, @NullableDecl Object value) {
+    private KeyValuePair(String key, @Nullable Object value) {
       this.key = key;
       this.value = value;
     }
@@ -219,7 +219,7 @@ public final class Tags {
     }
 
     @CanIgnoreReturnValue
-    private Builder addImpl(String name, @NullableDecl Object value) {
+    private Builder addImpl(String name, @Nullable Object value) {
       keyValuePairs.add(new KeyValuePair(checkMetadataIdentifier(name), value));
       return this;
     }
@@ -321,7 +321,7 @@ public final class Tags {
   }
 
   @Override
-  public boolean equals(@NullableDecl Object obj) {
+  public boolean equals(@Nullable Object obj) {
     return (obj instanceof Tags) && ((Tags) obj).map.equals(map);
   }
 

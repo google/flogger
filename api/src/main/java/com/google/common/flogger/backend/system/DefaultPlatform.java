@@ -24,7 +24,7 @@ import com.google.common.flogger.context.ContextDataProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The default fluent logger platform for a server-side Java environment.
@@ -123,8 +123,7 @@ public class DefaultPlatform extends Platform {
    *   <li>If neither is present, returns {@code null}.
    * </ol>
    */
-  @NullableDecl
-  private static <S> S loadService(Class<S> serviceType, String systemProperty) {
+  private static <S> @Nullable S loadService(Class<S> serviceType, String systemProperty) {
     // TODO(cgdecker): Throw an exception if configuration is present but invalid?
     // - If the system property is set but using it to get the service fails.
     // - If the system property is not set and more than one service is loaded by ServiceLoader

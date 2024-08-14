@@ -19,7 +19,7 @@ package com.google.common.flogger;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import java.util.concurrent.TimeUnit;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The basic logging API. An implementation of this API (or an extension of it) will be
@@ -47,11 +47,11 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * Associates a {@link Throwable} instance with the current log statement, to be interpreted as
    * the cause of this statement. Typically this method will be used from within catch blocks to log
    * the caught exception or error. If the cause is {@code null} then this method has no effect.
-   * <p>
-   * If this method is called multiple times for a single log statement, the last invocation will
+   *
+   * <p>If this method is called multiple times for a single log statement, the last invocation will
    * take precedence.
    */
-  API withCause(@NullableDecl Throwable cause);
+  API withCause(@Nullable Throwable cause);
 
   /**
    * Modifies the current log statement to be emitted at most one-in-N times. The specified count
@@ -174,10 +174,10 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *
    * <p>This is the most general form of log aggregation and allows any keys to be used, but it
    * requires the caller to have chosen a bucketing strategy. Where it is possible to refactor code
-   * to avoid passing keys from an unbounded space into the {@code per(...)} method (e.g. by
-   * mapping cases to an {@code Enum}), this is usually preferable.
+   * to avoid passing keys from an unbounded space into the {@code per(...)} method (e.g. by mapping
+   * cases to an {@code Enum}), this is usually preferable.
    *
-   * When using this method, a bucketing strategy is needed to reduce the risk of leaking memory.
+   * <p>When using this method, a bucketing strategy is needed to reduce the risk of leaking memory.
    * Consider the alternate API:
    *
    * <pre>{@code
@@ -204,9 +204,9 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * logger.atInfo().per(error, byClass()).atMostEvery(30, SECONDS).log(...);
    * }</pre>
    *
-   * <p>If a user knows that the given {@code key} values really do form a strictly bounded set,
-   * the {@link LogPerBucketingStrategy#knownBounded()} strategy can be used, but it should always
-   * be documented as to why this is safe.
+   * <p>If a user knows that the given {@code key} values really do form a strictly bounded set, the
+   * {@link LogPerBucketingStrategy#knownBounded()} strategy can be used, but it should always be
+   * documented as to why this is safe.
    *
    * <p>The {@code key} passed to this method should always be a variable (passing a constant value
    * has no effect). If a {@code null} key is passed, this call has no effect (e.g. rate limiting
@@ -215,7 +215,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * <p>If multiple aggregation keys are added to a single log statement, then they all take effect
    * and logging is aggregated by the unique combination of keys passed to all "per" methods.
    */
-  <T> API per(@NullableDecl T key, LogPerBucketingStrategy<? super T> strategy);
+  <T> API per(@Nullable T key, LogPerBucketingStrategy<? super T> strategy);
 
   /**
    * Aggregates stateful logging with respect to the given enum value.
@@ -243,7 +243,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * <p>If multiple aggregation keys are added to a single log statement, then they all take effect
    * and logging is aggregated by the unique combination of keys passed to all "per" methods.
    */
-  API per(@NullableDecl Enum<?> key);
+  API per(@Nullable Enum<?> key);
 
   /**
    * Aggregates stateful logging with respect to a scoped context determined by the given scope
@@ -308,6 +308,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *
    * <p>This method is not a replacement for general parameter passing in the {@link #log()} method
    * and should be reserved for keys/values with specific semantics. Examples include:
+   *
    * <ul>
    *   <li>Keys that are recognised by specific logger backends (typically to control logging
    *       behaviour in some way).
@@ -325,11 +326,11 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *
    * @param key the metadata key (expected to be a static constant)
    * @param value a value to be associated with the key in this log statement. Null values are
-   *        allowed, but the effect is always a no-op
+   *     allowed, but the effect is always a no-op
    * @throws NullPointerException if the given key is null
    * @see MetadataKey
    */
-  <T> API with(MetadataKey<T> key, @NullableDecl T value);
+  <T> API with(MetadataKey<T> key, @Nullable T value);
 
   /**
    * Sets a boolean metadata key constant to {@code true} for this log statement in a structured way
@@ -403,19 +404,19 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *
    * @param logSite Log site which uniquely identifies any per-log statement resources.
    */
-  API withInjectedLogSite(@NullableDecl LogSite logSite);
+  API withInjectedLogSite(@Nullable LogSite logSite);
 
   /**
-   * Internal method not for public use. This method is only intended for use by the logger
-   * agent and related classes and should never be invoked manually.
+   * Internal method not for public use. This method is only intended for use by the logger agent
+   * and related classes and should never be invoked manually.
    *
    * @param internalClassName Slash separated class name obtained from the class constant pool.
    * @param methodName Method name obtained from the class constant pool.
    * @param encodedLineNumber line number and per-line log statement index encoded as a single
-   *     32-bit value. The low 16-bits is the line number (0 to 0xFFFF inclusive) and the high
-   *     16 bits is a log statement index to distinguish multiple statements on the same line
-   *     (this becomes important if line numbers are stripped from the class file and everything
-   *     appears to be on the same line).
+   *     32-bit value. The low 16-bits is the line number (0 to 0xFFFF inclusive) and the high 16
+   *     bits is a log statement index to distinguish multiple statements on the same line (this
+   *     becomes important if line numbers are stripped from the class file and everything appears
+   *     to be on the same line).
    * @param sourceFileName Optional base name of the source file (this value is strictly for
    *     debugging and does not contribute to either equals() or hashCode() behavior).
    */
@@ -423,7 +424,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
       String internalClassName,
       String methodName,
       int encodedLineNumber,
-      @NullableDecl String sourceFileName);
+      @Nullable String sourceFileName);
 
   /**
    * Returns true if logging is enabled at the level implied for this API, according to the current
@@ -472,7 +473,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *     of {@code varargs}.
    * @param varargs the non-null array of arguments to be formatted.
    */
-  void logVarargs(String message, @NullableDecl Object[] varargs);
+  void logVarargs(String message, @Nullable Object[] varargs);
 
   /**
    * Terminal log statement when a message is not required. A {@code log} method must terminate all
@@ -508,102 +509,111 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    * Logs a formatted representation of the given parameter, using the specified message template.
    * The message string is expected to contain argument placeholder terms appropriate to the
    * logger's choice of parser.
-   * <p>
-   * Note that printf-style loggers are always expected to accept the standard Java printf
-   * formatting characters (e.g. "%s", "%d" etc...) and all flags unless otherwise stated.
-   * Null arguments are formatted as the literal string {@code "null"} regardless of
-   * formatting flags.
+   *
+   * <p>Note that printf-style loggers are always expected to accept the standard Java printf
+   * formatting characters (e.g. "%s", "%d" etc...) and all flags unless otherwise stated. Null
+   * arguments are formatted as the literal string {@code "null"} regardless of formatting flags.
    *
    * @param msg the message template string containing a single argument placeholder.
    */
-  void log(String msg, @NullableDecl Object p1);
+  void log(String msg, @Nullable Object p1);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, @NullableDecl Object p2);
+  void log(String msg, @Nullable Object p1, @Nullable Object p2);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, @NullableDecl Object p2, @NullableDecl Object p3);
-  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(
-      String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4);
+  void log(String msg, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
   void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5);
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
   void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6);
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
   void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7);
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
   void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7,
-      @NullableDecl Object p8);
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
   void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7,
-      @NullableDecl Object p8,
-      @NullableDecl Object p9);
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7,
+      @Nullable Object p8);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
   void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7,
-      @NullableDecl Object p8,
-      @NullableDecl Object p9,
-      @NullableDecl Object p10);
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7,
+      @Nullable Object p8,
+      @Nullable Object p9);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
   void log(
       String msg,
-      @NullableDecl Object p1,
-      @NullableDecl Object p2,
-      @NullableDecl Object p3,
-      @NullableDecl Object p4,
-      @NullableDecl Object p5,
-      @NullableDecl Object p6,
-      @NullableDecl Object p7,
-      @NullableDecl Object p8,
-      @NullableDecl Object p9,
-      @NullableDecl Object p10,
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7,
+      @Nullable Object p8,
+      @Nullable Object p9,
+      @Nullable Object p10);
+
+  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
+  void log(
+      String msg,
+      @Nullable Object p1,
+      @Nullable Object p2,
+      @Nullable Object p3,
+      @Nullable Object p4,
+      @Nullable Object p5,
+      @Nullable Object p6,
+      @Nullable Object p7,
+      @Nullable Object p8,
+      @Nullable Object p9,
+      @Nullable Object p10,
       Object... rest);
 
   // ---- Overloads for a single argument (to avoid auto-boxing and vararg array creation). ----
@@ -629,38 +639,52 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    */
 
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, boolean p2);
-  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, char p2);
-  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, byte p2);
-  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, short p2);
-  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, int p2);
-  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, long p2);
-  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, float p2);
-  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, @NullableDecl Object p1, double p2);
+  void log(String msg, @Nullable Object p1, boolean p2);
 
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, boolean p1, @NullableDecl Object p2);
+  void log(String msg, @Nullable Object p1, char p2);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, char p1, @NullableDecl Object p2);
+  void log(String msg, @Nullable Object p1, byte p2);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, byte p1, @NullableDecl Object p2);
+  void log(String msg, @Nullable Object p1, short p2);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, short p1, @NullableDecl Object p2);
+  void log(String msg, @Nullable Object p1, int p2);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, int p1, @NullableDecl Object p2);
+  void log(String msg, @Nullable Object p1, long p2);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, long p1, @NullableDecl Object p2);
+  void log(String msg, @Nullable Object p1, float p2);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, float p1, @NullableDecl Object p2);
+  void log(String msg, @Nullable Object p1, double p2);
+
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
-  void log(String msg, double p1, @NullableDecl Object p2);
+  void log(String msg, boolean p1, @Nullable Object p2);
+
+  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
+  void log(String msg, char p1, @Nullable Object p2);
+
+  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
+  void log(String msg, byte p1, @Nullable Object p2);
+
+  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
+  void log(String msg, short p1, @Nullable Object p2);
+
+  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
+  void log(String msg, int p1, @Nullable Object p2);
+
+  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
+  void log(String msg, long p1, @Nullable Object p2);
+
+  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
+  void log(String msg, float p1, @Nullable Object p2);
+
+  /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
+  void log(String msg, double p1, @Nullable Object p2);
 
   /** Logs a message with formatted arguments (see {@link #log(String, Object)} for details). */
   void log(String msg, boolean p1, boolean p2);
@@ -820,7 +844,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
         String internalClassName,
         String methodName,
         int encodedLineNumber,
-        @NullableDecl String sourceFileName) {
+        @Nullable String sourceFileName) {
       return noOp();
     }
 
@@ -830,7 +854,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     }
 
     @Override
-    public final <T> API with(MetadataKey<T> key, @NullableDecl T value) {
+    public final <T> API with(MetadataKey<T> key, @Nullable T value) {
       // Identical to the check in LogContext for consistency.
       checkNotNull(key, "metadata key");
       return noOp();
@@ -844,12 +868,12 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     }
 
     @Override
-    public <T> API per(@NullableDecl T key, LogPerBucketingStrategy<? super T> strategy) {
+    public <T> API per(@Nullable T key, LogPerBucketingStrategy<? super T> strategy) {
       return noOp();
     }
 
     @Override
-    public API per(@NullableDecl Enum<?> key) {
+    public API per(@Nullable Enum<?> key) {
       return noOp();
     }
 
@@ -859,7 +883,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     }
 
     @Override
-    public final API withCause(@NullableDecl Throwable cause) {
+    public final API withCause(@Nullable Throwable cause) {
       return noOp();
     }
 
@@ -896,105 +920,105 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     public final void log(String msg) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1) {}
+    public final void log(String msg, @Nullable Object p1) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, @NullableDecl Object p2) {}
-
-    @Override
-    public final void log(
-        String msg, @NullableDecl Object p1, @NullableDecl Object p2, @NullableDecl Object p3) {}
+    public final void log(String msg, @Nullable Object p1, @Nullable Object p2) {}
 
     @Override
     public final void log(
-        String msg,
-        @NullableDecl Object p1,
-        @NullableDecl Object p2,
-        @NullableDecl Object p3,
-        @NullableDecl Object p4) {}
+        String msg, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3) {}
 
     @Override
     public final void log(
         String msg,
-        @NullableDecl Object p1,
-        @NullableDecl Object p2,
-        @NullableDecl Object p3,
-        @NullableDecl Object p4,
-        @NullableDecl Object p5) {}
+        @Nullable Object p1,
+        @Nullable Object p2,
+        @Nullable Object p3,
+        @Nullable Object p4) {}
 
     @Override
     public final void log(
         String msg,
-        @NullableDecl Object p1,
-        @NullableDecl Object p2,
-        @NullableDecl Object p3,
-        @NullableDecl Object p4,
-        @NullableDecl Object p5,
-        @NullableDecl Object p6) {}
+        @Nullable Object p1,
+        @Nullable Object p2,
+        @Nullable Object p3,
+        @Nullable Object p4,
+        @Nullable Object p5) {}
 
     @Override
     public final void log(
         String msg,
-        @NullableDecl Object p1,
-        @NullableDecl Object p2,
-        @NullableDecl Object p3,
-        @NullableDecl Object p4,
-        @NullableDecl Object p5,
-        @NullableDecl Object p6,
-        @NullableDecl Object p7) {}
+        @Nullable Object p1,
+        @Nullable Object p2,
+        @Nullable Object p3,
+        @Nullable Object p4,
+        @Nullable Object p5,
+        @Nullable Object p6) {}
 
     @Override
     public final void log(
         String msg,
-        @NullableDecl Object p1,
-        @NullableDecl Object p2,
-        @NullableDecl Object p3,
-        @NullableDecl Object p4,
-        @NullableDecl Object p5,
-        @NullableDecl Object p6,
-        @NullableDecl Object p7,
-        @NullableDecl Object p8) {}
+        @Nullable Object p1,
+        @Nullable Object p2,
+        @Nullable Object p3,
+        @Nullable Object p4,
+        @Nullable Object p5,
+        @Nullable Object p6,
+        @Nullable Object p7) {}
 
     @Override
     public final void log(
         String msg,
-        @NullableDecl Object p1,
-        @NullableDecl Object p2,
-        @NullableDecl Object p3,
-        @NullableDecl Object p4,
-        @NullableDecl Object p5,
-        @NullableDecl Object p6,
-        @NullableDecl Object p7,
-        @NullableDecl Object p8,
-        @NullableDecl Object p9) {}
+        @Nullable Object p1,
+        @Nullable Object p2,
+        @Nullable Object p3,
+        @Nullable Object p4,
+        @Nullable Object p5,
+        @Nullable Object p6,
+        @Nullable Object p7,
+        @Nullable Object p8) {}
 
     @Override
     public final void log(
         String msg,
-        @NullableDecl Object p1,
-        @NullableDecl Object p2,
-        @NullableDecl Object p3,
-        @NullableDecl Object p4,
-        @NullableDecl Object p5,
-        @NullableDecl Object p6,
-        @NullableDecl Object p7,
-        @NullableDecl Object p8,
-        @NullableDecl Object p9,
-        @NullableDecl Object p10) {}
+        @Nullable Object p1,
+        @Nullable Object p2,
+        @Nullable Object p3,
+        @Nullable Object p4,
+        @Nullable Object p5,
+        @Nullable Object p6,
+        @Nullable Object p7,
+        @Nullable Object p8,
+        @Nullable Object p9) {}
 
     @Override
     public final void log(
         String msg,
-        @NullableDecl Object p1,
-        @NullableDecl Object p2,
-        @NullableDecl Object p3,
-        @NullableDecl Object p4,
-        @NullableDecl Object p5,
-        @NullableDecl Object p6,
-        @NullableDecl Object p7,
-        @NullableDecl Object p8,
-        @NullableDecl Object p9,
-        @NullableDecl Object p10,
+        @Nullable Object p1,
+        @Nullable Object p2,
+        @Nullable Object p3,
+        @Nullable Object p4,
+        @Nullable Object p5,
+        @Nullable Object p6,
+        @Nullable Object p7,
+        @Nullable Object p8,
+        @Nullable Object p9,
+        @Nullable Object p10) {}
+
+    @Override
+    public final void log(
+        String msg,
+        @Nullable Object p1,
+        @Nullable Object p2,
+        @Nullable Object p3,
+        @Nullable Object p4,
+        @Nullable Object p5,
+        @Nullable Object p6,
+        @Nullable Object p7,
+        @Nullable Object p8,
+        @Nullable Object p9,
+        @Nullable Object p10,
         Object... rest) {}
 
     @Override
@@ -1013,52 +1037,52 @@ public interface LoggingApi<API extends LoggingApi<API>> {
     public final void log(String msg, long p1) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, boolean p2) {}
+    public final void log(String msg, @Nullable Object p1, boolean p2) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, char p2) {}
+    public final void log(String msg, @Nullable Object p1, char p2) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, byte p2) {}
+    public final void log(String msg, @Nullable Object p1, byte p2) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, short p2) {}
+    public final void log(String msg, @Nullable Object p1, short p2) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, int p2) {}
+    public final void log(String msg, @Nullable Object p1, int p2) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, long p2) {}
+    public final void log(String msg, @Nullable Object p1, long p2) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, float p2) {}
+    public final void log(String msg, @Nullable Object p1, float p2) {}
 
     @Override
-    public final void log(String msg, @NullableDecl Object p1, double p2) {}
+    public final void log(String msg, @Nullable Object p1, double p2) {}
 
     @Override
-    public final void log(String msg, boolean p1, @NullableDecl Object p2) {}
+    public final void log(String msg, boolean p1, @Nullable Object p2) {}
 
     @Override
-    public final void log(String msg, char p1, @NullableDecl Object p2) {}
+    public final void log(String msg, char p1, @Nullable Object p2) {}
 
     @Override
-    public final void log(String msg, byte p1, @NullableDecl Object p2) {}
+    public final void log(String msg, byte p1, @Nullable Object p2) {}
 
     @Override
-    public final void log(String msg, short p1, @NullableDecl Object p2) {}
+    public final void log(String msg, short p1, @Nullable Object p2) {}
 
     @Override
-    public final void log(String msg, int p1, @NullableDecl Object p2) {}
+    public final void log(String msg, int p1, @Nullable Object p2) {}
 
     @Override
-    public final void log(String msg, long p1, @NullableDecl Object p2) {}
+    public final void log(String msg, long p1, @Nullable Object p2) {}
 
     @Override
-    public final void log(String msg, float p1, @NullableDecl Object p2) {}
+    public final void log(String msg, float p1, @Nullable Object p2) {}
 
     @Override
-    public final void log(String msg, double p1, @NullableDecl Object p2) {}
+    public final void log(String msg, double p1, @Nullable Object p2) {}
 
     @Override
     public final void log(String msg, boolean p1, boolean p2) {}

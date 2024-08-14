@@ -18,7 +18,7 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Used by Scope/LogSiteMap and in response to "per()" or "perUnique()" (which is an implicitly
@@ -41,7 +41,7 @@ final class SpecializedLogSiteKey implements LogSiteKey {
   // Equals is dependent on the order in which specialization occurred, even though conceptually it
   // needn't be.
   @Override
-  public boolean equals(@NullableDecl Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (!(obj instanceof SpecializedLogSiteKey)) {
       return false;
     }

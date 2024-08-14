@@ -22,7 +22,7 @@ import static com.google.common.flogger.util.Checks.checkState;
 
 import com.google.common.flogger.backend.Platform;
 import java.util.Iterator;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Key for logging semi-structured metadata values.
@@ -95,7 +95,7 @@ public class MetadataKey<T> {
    */
   public interface KeyValueHandler {
     /** Handle a single key/value pair of contextual metadata for a log statement. */
-    void handle(String key, @NullableDecl Object value);
+    void handle(String key, @Nullable Object value);
   }
 
   /**

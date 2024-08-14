@@ -18,7 +18,7 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A value type which representing the location of a single log statement. This class is similar to
@@ -101,8 +101,7 @@ public abstract class LogSite implements LogSiteKey {
    * href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.10">JVM class
    * file format specification</a> for more details).
    */
-  @NullableDecl
-  public abstract String getFileName();
+  public abstract @Nullable String getFileName();
 
   // Provide a common toString() implementation for only the public attributes.
   @Override
@@ -123,28 +122,27 @@ public abstract class LogSite implements LogSiteKey {
 
   /**
    * Creates a log site injected from constants held a class' constant pool.
-   * <p>
-   * Used for compile-time log site injection, and by the agent.
+   *
+   * <p>Used for compile-time log site injection, and by the agent.
    *
    * @param internalClassName Slash separated class name obtained from the class constant pool.
    * @param methodName Method name obtained from the class constant pool.
    * @param encodedLineNumber line number and per-line log statement index encoded as a single
-   *     32-bit value. The low 16-bits is the line number (0 to 0xFFFF inclusive) and the high
-   *     16 bits is a log statement index to distinguish multiple statements on the same line
-   *     (this becomes important if line numbers are stripped from the class file and everything
-   *     appears to be on the same line).
+   *     32-bit value. The low 16-bits is the line number (0 to 0xFFFF inclusive) and the high 16
+   *     bits is a log statement index to distinguish multiple statements on the same line (this
+   *     becomes important if line numbers are stripped from the class file and everything appears
+   *     to be on the same line).
    * @param sourceFileName Optional base name of the source file (this value is strictly for
    *     debugging and does not contribute to either equals() or hashCode() behavior).
-   *
    * @deprecated this method is only be used for log-site injection and should not be called
-   * directly.
+   *     directly.
    */
   @Deprecated
   public static LogSite injectedLogSite(
       String internalClassName,
       String methodName,
       int encodedLineNumber,
-      @NullableDecl String sourceFileName) {
+      @Nullable String sourceFileName) {
     return new InjectedLogSite(internalClassName, methodName, encodedLineNumber, sourceFileName);
   }
 
@@ -156,14 +154,14 @@ public abstract class LogSite implements LogSiteKey {
     /** Bare method name (no signature information). */
     private final String methodName;
     private final int encodedLineNumber;
-    @NullableDecl private final String sourceFileName;
+    private final @Nullable String sourceFileName;
     private int hashcode = 0;
 
     private InjectedLogSite(
         String internalClassName,
         String methodName,
         int encodedLineNumber,
-        @NullableDecl String sourceFileName) {
+        @Nullable String sourceFileName) {
       this.internalClassName = checkNotNull(internalClassName, "class name");
       this.methodName = checkNotNull(methodName, "method name");
       this.encodedLineNumber = encodedLineNumber;
@@ -191,8 +189,7 @@ public abstract class LogSite implements LogSiteKey {
     }
 
     @Override
-    @NullableDecl
-    public String getFileName() {
+    public @Nullable String getFileName() {
       return sourceFileName;
     }
 

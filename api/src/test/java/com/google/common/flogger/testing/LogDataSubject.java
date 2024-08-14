@@ -26,7 +26,7 @@ import com.google.common.truth.LongSubject;
 import com.google.common.truth.Subject;
 import java.util.Arrays;
 import java.util.List;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /** A <a href="https://github.com/google/truth">Truth</a> subject for {@link LogData}. */
 public final class LogDataSubject extends Subject {
@@ -37,13 +37,13 @@ public final class LogDataSubject extends Subject {
     return LOG_DATA_SUBJECT_FACTORY;
   }
 
-  public static LogDataSubject assertThat(@NullableDecl LogData logData) {
+  public static LogDataSubject assertThat(@Nullable LogData logData) {
     return assertAbout(logData()).that(logData);
   }
 
   private final LogData actual;
 
-  private LogDataSubject(FailureMetadata failureMetadata, @NullableDecl LogData subject) {
+  private LogDataSubject(FailureMetadata failureMetadata, @Nullable LogData subject) {
     super(failureMetadata, subject);
     this.actual = subject;
   }

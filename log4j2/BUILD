@@ -21,9 +21,10 @@ java_library(
     deps = [
         "//api",
         "//api:system_backend",
+        # TODO(cpovirk): Why do we use a mix of google_bazel_common and "direct" deps?
         "@com_google_errorprone_error_prone_annotations",
         "@google_bazel_common//third_party/java/log4j2",
-        "@org_checkerframework_checker_compat_qual",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
     ],
 )
 

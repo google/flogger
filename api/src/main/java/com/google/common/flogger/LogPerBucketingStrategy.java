@@ -20,7 +20,7 @@ import static com.google.common.flogger.util.Checks.checkArgument;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import java.util.HashMap;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides a strategy for "bucketing" a potentially unbounded set of log aggregation keys used by
@@ -142,8 +142,7 @@ public abstract class LogPerBucketingStrategy<T> {
     name.append(")");
     return new LogPerBucketingStrategy<Object>(name.toString()) {
       @Override
-      @NullableDecl
-      protected Object apply(Object key) {
+      protected @Nullable Object apply(Object key) {
         return keyMap.get(key);
       }
     };
@@ -222,8 +221,7 @@ public abstract class LogPerBucketingStrategy<T> {
    *     internal Flogger data structures as part of the log aggregation feature. If {@code null} is
    *     returned, the corresponding call to {@code per(key, STRATEGY)} has no effect.
    */
-  @NullableDecl
-  protected abstract Object apply(T key);
+  protected abstract @Nullable Object apply(T key);
 
   @Override
   public final String toString() {

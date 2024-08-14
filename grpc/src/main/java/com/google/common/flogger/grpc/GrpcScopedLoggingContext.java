@@ -25,7 +25,7 @@ import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.Tags;
 import io.grpc.Context;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A gRPC context based implementation of Flogger's scoped logging context API. This is a lazily
@@ -53,7 +53,7 @@ final class GrpcScopedLoggingContext extends ScopedLoggingContext {
     return newBuilder(scopeType);
   }
 
-  private ScopedLoggingContext.Builder newBuilder(@NullableDecl ScopeType scopeType) {
+  private ScopedLoggingContext.Builder newBuilder(@Nullable ScopeType scopeType) {
     return new ScopedLoggingContext.Builder() {
       @Override
       public LoggingContextCloseable install() {

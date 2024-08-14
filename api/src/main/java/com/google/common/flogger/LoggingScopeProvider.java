@@ -16,7 +16,7 @@
 
 package com.google.common.flogger;
 
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides a scope to a log statement via the {@link LogContext#per(LoggingScopeProvider)} method.
@@ -31,6 +31,5 @@ public interface LoggingScopeProvider {
    * Returns the current scope (most likely via global or thread local state) or {@code null} if
    * there is no current scope.
    */
-  @NullableDecl
-  LoggingScope getCurrentScope();
+  @Nullable LoggingScope getCurrentScope();
 }

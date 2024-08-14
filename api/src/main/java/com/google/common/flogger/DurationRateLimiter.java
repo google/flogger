@@ -26,7 +26,7 @@ import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.Metadata;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Rate limiter to support {@code atMostEvery(N, units)} functionality.
@@ -59,8 +59,8 @@ final class DurationRateLimiter extends RateLimitStatus {
    * Returns whether the log site should log based on the value of the {@code LOG_AT_MOST_EVERY}
    * metadata value and the current log site timestamp.
    */
-  @NullableDecl
-  static RateLimitStatus check(Metadata metadata, LogSiteKey logSiteKey, long timestampNanos) {
+  static @Nullable RateLimitStatus check(
+      Metadata metadata, LogSiteKey logSiteKey, long timestampNanos) {
     RateLimitPeriod rateLimitPeriod = metadata.findValue(LOG_AT_MOST_EVERY);
     if (rateLimitPeriod == null) {
       // Without rate limiter specific metadata, this limiter has no effect.

@@ -21,7 +21,7 @@ import static com.google.common.flogger.RateLimitStatus.DISALLOW;
 
 import com.google.common.flogger.backend.Metadata;
 import java.util.concurrent.atomic.AtomicLong;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Rate limiter to support {@code every(N)} functionality.
@@ -49,8 +49,7 @@ final class CountingRateLimiter extends RateLimitStatus {
    * and then the limiter switches to its pending state and returns an allow status until it is
    * reset.
    */
-  @NullableDecl
-  static RateLimitStatus check(Metadata metadata, LogSiteKey logSiteKey) {
+  static @Nullable RateLimitStatus check(Metadata metadata, LogSiteKey logSiteKey) {
     Integer rateLimitCount = metadata.findValue(LOG_EVERY_N);
     if (rateLimitCount == null) {
       // Without rate limiter specific metadata, this limiter has no effect.

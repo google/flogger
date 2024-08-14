@@ -18,7 +18,7 @@ package com.google.common.flogger.backend;
 
 import com.google.common.flogger.LogSite;
 import java.util.logging.Level;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A backend API for determining metadata associated with a log statement.
@@ -47,8 +47,7 @@ public interface LogData {
    * Returns the logger name (which is usually a canonicalized class name) or {@code null} if not
    * given.
    */
-  @NullableDecl
-  String getLoggerName();
+  @Nullable String getLoggerName();
 
   /**
    * Returns the log site data for the current log statement.
@@ -100,8 +99,7 @@ public interface LogData {
    * require formatting (in which case the message to be logged can be determined by calling* {@link
    * #getLiteralArgument()}).
    */
-  @NullableDecl
-  TemplateContext getTemplateContext();
+  @Nullable TemplateContext getTemplateContext();
 
   /**
    * Returns the arguments to be formatted with the message. Arguments exist when a {@code log()}

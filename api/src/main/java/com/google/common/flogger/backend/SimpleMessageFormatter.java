@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper class for formatting LogData as text. This class is useful for any logging backend which
@@ -226,7 +226,7 @@ public final class SimpleMessageFormatter {
      * Handles a single formatted log statement with the given level, message and "cause". This is
      * called back exactly once, from the same thread, for every call made to {@link #format}.
      */
-    void handleFormattedLogMessage(Level level, String message, @NullableDecl Throwable thrown);
+    void handleFormattedLogMessage(Level level, String message, @Nullable Throwable thrown);
   }
 
   private SimpleMessageFormatter() {}
