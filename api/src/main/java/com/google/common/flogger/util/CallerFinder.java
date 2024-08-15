@@ -43,7 +43,7 @@ public final class CallerFinder {
     return new ThrowableStackGetter();
   }
 
-  private static StackGetter maybeCreateStackGetter(String className) {
+  private static @Nullable StackGetter maybeCreateStackGetter(String className) {
     try {
       return Class.forName(className)
           .asSubclass(StackGetter.class)

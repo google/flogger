@@ -404,8 +404,8 @@ public final class Tags {
         new SortedArraySet<Entry<String, Set<Object>>>(-1);
 
     // Cache these if anyone needs them (not likely in normal usage).
-    private Integer hashCode = null;
-    private String toString = null;
+    private @Nullable Integer hashCode = null;
+    private @Nullable String toString = null;
 
     // ---- Singleton constructor ----
 
@@ -641,7 +641,7 @@ public final class Tags {
     }
 
     @SuppressWarnings("unchecked") // Safe when the index is in range.
-    private Map.Entry<String, SortedArraySet<Object>> getEntryOrNull(int index) {
+    private Map.@Nullable Entry<String, SortedArraySet<Object>> getEntryOrNull(int index) {
       return index < offsets[0] ? (Map.Entry<String, SortedArraySet<Object>>) array[index] : null;
     }
 

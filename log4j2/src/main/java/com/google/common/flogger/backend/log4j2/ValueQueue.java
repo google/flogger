@@ -101,6 +101,7 @@ final class ValueQueue implements Iterable<Object> {
    * but you see "id=abcd" because someone else added "id=abcd" in a context you weren't aware of).
    *
    * <p>Given three tag mappings:
+   *
    * <ul>
    *   <li>{@code "baz"} (no value)
    *   <li>{@code "foo" -> true}
@@ -108,6 +109,7 @@ final class ValueQueue implements Iterable<Object> {
    * </ul>
    *
    * the value queue is going to store the mappings as:
+   *
    * <pre>{@code
    * tags=[baz, foo=false, foo=true]
    * }</pre>
@@ -115,7 +117,7 @@ final class ValueQueue implements Iterable<Object> {
    * <p>Reusing the label 'tags' is intentional as this allows us to store the flatten tags in
    * Log4j2's ContextMap.
    */
-  static void emit(String label, Object value, MetadataKey.KeyValueHandler kvh) {
+  static void emit(@Nullable String label, Object value, MetadataKey.KeyValueHandler kvh) {
     if (value instanceof Tags) {
       // Flatten tags to treat them as keys or key/value pairs, e.g. tags=[baz=bar, baz=bar2, foo]
       ((Tags) value)
@@ -173,7 +175,7 @@ final class ValueQueue implements Iterable<Object> {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (this == o) {
       return true;
     }

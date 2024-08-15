@@ -107,7 +107,7 @@ final class DurationRateLimiter extends RateLimitStatus {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       if (obj instanceof RateLimitPeriod) {
         RateLimitPeriod that = (RateLimitPeriod) obj;
         return this.n == that.n && this.unit == that.unit;

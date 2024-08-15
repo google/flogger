@@ -329,15 +329,19 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   private final long timestampNanos;
 
   /** Additional metadata for this log statement (added via fluent API methods). */
-  private MutableMetadata metadata = null;
+  private @Nullable MutableMetadata metadata = null;
+
   /** The log site information for this log statement (set immediately prior to post-processing). */
-  private LogSite logSite = null;
+  private @Nullable LogSite logSite = null;
+
   /** Rate limit status (only set if rate limiting occurs). */
-  private RateLimitStatus rateLimitStatus = null;
+  private @Nullable RateLimitStatus rateLimitStatus = null;
+
   /** The template context if formatting is required (set only after post-processing). */
-  private TemplateContext templateContext = null;
+  private @Nullable TemplateContext templateContext = null;
+
   /** The log arguments (set only after post-processing). */
-  private Object[] args = null;
+  private Object @Nullable [] args = null;
 
   /**
    * Creates a logging context with the specified level, and with a timestamp obtained from the
@@ -758,7 +762,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   // ---- Log site injection (used by pre-processors and special cases) ----
 
   @Override
-  public final API withInjectedLogSite(LogSite logSite) {
+  public final API withInjectedLogSite(@Nullable LogSite logSite) {
     // First call wins (since auto-injection will typically target the log() method at the end of
     // the chain and might not check for previous explicit injection). In particular it MUST be
     // allowed for a caller to specify the "INVALID" log site, and have that set the field here to

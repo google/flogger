@@ -44,11 +44,11 @@ public abstract class LogSite implements LogSiteKey {
   /**
    * An singleton LogSite instance used to indicate that valid log site information cannot be
    * determined. This can be used to indicate that log site information is not available by
-   * injecting it via {@link LoggingApi#withInjectedLogSite} which will suppress any further
-   * log site analysis for that log statement. This is also returned if stack trace analysis
-   * fails for any reason.
-   * <p>
-   * If a log statement does end up with invalid log site information, then any fluent logging
+   * injecting it via {@link LoggingApi#withInjectedLogSite} which will suppress any further log
+   * site analysis for that log statement. This is also returned if stack trace analysis fails for
+   * any reason.
+   *
+   * <p>If a log statement does end up with invalid log site information, then any fluent logging
    * methods which rely on being able to look up site specific metadata will be disabled and
    * essentially become "no ops".
    */
@@ -70,7 +70,7 @@ public abstract class LogSite implements LogSiteKey {
         }
 
         @Override
-        public String getFileName() {
+        public @Nullable String getFileName() {
           return null;
         }
         // No need to implement equals() or hashCode() for a singleton instance.
@@ -194,7 +194,7 @@ public abstract class LogSite implements LogSiteKey {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       if (obj instanceof InjectedLogSite) {
         InjectedLogSite other = (InjectedLogSite) obj;
         // Probably not worth optimizing for "this == obj" because all strings should be interned.

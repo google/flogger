@@ -29,6 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -208,7 +209,7 @@ public class GoogleLoggerTest {
   }
 
   private static class AssertingHandler extends Handler {
-    private List<LogRecord> logRecords = new ArrayList<>();
+    private @Nullable List<LogRecord> logRecords = new ArrayList<>();
 
     @Override
     public void publish(LogRecord record) {

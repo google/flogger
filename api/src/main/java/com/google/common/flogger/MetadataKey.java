@@ -277,7 +277,7 @@ public class MetadataKey<T> {
   }
 
   @Override
-  public final boolean equals(Object obj) {
+  public final boolean equals(@Nullable Object obj) {
     return super.equals(obj);
   }
 

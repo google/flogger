@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiFunction;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -218,13 +219,14 @@ public class MetadataProcessorTest {
     scope.add(REP_1, "two");
 
     MetadataProcessor metadata = factory.apply(scope, Metadata.empty());
-    MetadataHandler<Void> handler =
-        new MetadataHandler<Void>() {
+    MetadataHandler<@Nullable Void> handler =
+        new MetadataHandler<@Nullable Void>() {
           @Override
-          protected <T> void handle(MetadataKey<T> key, T value, Void context) {}
+          protected <T> void handle(MetadataKey<T> key, T value, @Nullable Void context) {}
 
           @Override
-          protected <T> void handleRepeated(MetadataKey<T> key, Iterator<T> values, Void context) {
+          protected <T> void handleRepeated(
+              MetadataKey<T> key, Iterator<T> values, @Nullable Void context) {
             assertThat(values.hasNext()).isTrue();
             assertThat(values.next()).isEqualTo("one");
             values.remove();

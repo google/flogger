@@ -19,6 +19,7 @@ package com.google.common.flogger.backend;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
 import com.google.common.flogger.parser.MessageParser;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A context object for templates that allows caches to validate existing templates or create new
@@ -49,7 +50,7 @@ public final class TemplateContext {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (obj instanceof TemplateContext) {
       TemplateContext other = (TemplateContext) obj;
       return parser.equals(other.parser) && message.equals(other.message);

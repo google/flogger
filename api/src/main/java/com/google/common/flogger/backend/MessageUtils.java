@@ -29,6 +29,7 @@ import java.util.Formattable;
 import java.util.FormattableFlags;
 import java.util.Formatter;
 import java.util.Locale;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Static utilities for classes wishing to implement their own log message formatting. None of the
@@ -82,7 +83,7 @@ public final class MessageUtils {
    * @param value the value to be formatted (possibly null).
    * @return a non-null string representation of the given value (possibly "null").
    */
-  private static String toNonNullString(Object value) {
+  private static String toNonNullString(@Nullable Object value) {
     if (value == null) {
       return "null";
     }

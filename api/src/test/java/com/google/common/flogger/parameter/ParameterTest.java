@@ -21,6 +21,7 @@ import static org.junit.Assert.fail;
 
 import com.google.common.flogger.backend.FormatOptions;
 import com.google.common.flogger.parser.ParseException;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -29,7 +30,7 @@ import org.junit.runners.JUnit4;
 public class ParameterTest {
   // We just need a concrete class here.
   private static class TestParameter extends Parameter {
-    public TestParameter(FormatOptions options, int index) {
+    public TestParameter(@Nullable FormatOptions options, int index) {
       super(options, index);
     }
 

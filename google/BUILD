@@ -60,6 +60,7 @@ gen_java_tests(
         "//grpc:grpc_context",
         "@google_bazel_common//third_party/java/guava",
         "@google_bazel_common//third_party/java/guava:testlib",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
         "@google_bazel_common//third_party/java/junit",
         "@google_bazel_common//third_party/java/truth",
     ],

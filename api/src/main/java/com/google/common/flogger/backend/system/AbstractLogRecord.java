@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Abstract base class for {@code java.util.logging} compatible log records produced by Flogger
@@ -157,7 +158,7 @@ public abstract class AbstractLogRecord extends LogRecord {
   }
 
   @Override
-  public final void setParameters(Object[] parameters) {
+  public final void setParameters(Object @Nullable [] parameters) {
     // IMPORTANT: We call getMessage() to cache the internal formatted message if someone indicates
     // they want to change the parameters. This is to avoid a situation in which parameters are set,
     // but the underlying message is still null. Do this first to switch internal states.
@@ -170,7 +171,7 @@ public abstract class AbstractLogRecord extends LogRecord {
   }
 
   @Override
-  public final void setMessage(String message) {
+  public final void setMessage(@Nullable String message) {
     if (message == null) {
       message = "";
     }

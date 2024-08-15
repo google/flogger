@@ -70,12 +70,13 @@ public final class KeyValueFormatter implements KeyValueHandler {
               Double.class));
 
   /**
-   * Helper method to emit metadata key/value pairs in a format consistent with JSON. String
-   * values which need to be quoted are JSON escaped, while other values are appended without
-   * quoting or escaping. Labels are expected to be JSON "safe", and are never quoted. This format
-   * is compatible with various "lightweight" JSON representations.
+   * Helper method to emit metadata key/value pairs in a format consistent with JSON. String values
+   * which need to be quoted are JSON escaped, while other values are appended without quoting or
+   * escaping. Labels are expected to be JSON "safe", and are never quoted. This format is
+   * compatible with various "lightweight" JSON representations.
    */
-  public static void appendJsonFormattedKeyAndValue(String label, Object value, StringBuilder out) {
+  public static void appendJsonFormattedKeyAndValue(
+      String label, @Nullable Object value, StringBuilder out) {
     out.append(label).append('=');
     // We could also consider enums as safe if we used name() rather than toString().
     if (value == null) {

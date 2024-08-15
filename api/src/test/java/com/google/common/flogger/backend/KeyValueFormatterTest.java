@@ -18,6 +18,7 @@ package com.google.common.flogger.backend;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -117,7 +118,7 @@ public class KeyValueFormatterTest {
     return new KeyValueFormatter("<< ", " >>", out);
   }
 
-  private static String format(String key, Object value) {
+  private static String format(String key, @Nullable Object value) {
     StringBuilder out = new StringBuilder();
     KeyValueFormatter kvf = new KeyValueFormatter("", "", out);
     kvf.handle(key, value);

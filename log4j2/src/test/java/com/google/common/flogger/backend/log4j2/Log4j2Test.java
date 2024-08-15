@@ -42,6 +42,7 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.DefaultConfiguration;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -126,7 +127,8 @@ public final class Log4j2Test {
     assertThat(event.getThrown()).isNull();
   }
 
-  void assertLogSite(int index, String className, String methodName, int line, String file) {
+  void assertLogSite(
+      int index, String className, String methodName, int line, @Nullable String file) {
     LogEvent event = events.get(index);
     StackTraceElement source = event.getSource();
     assertThat(source.getClassName()).isEqualTo(className);

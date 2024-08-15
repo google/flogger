@@ -19,6 +19,7 @@ package com.google.common.flogger.testing;
 import com.google.common.flogger.LogSite;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 
 /** A simplified LogSite implementation used for testing. */
 public final class FakeLogSite extends LogSite {
@@ -68,7 +69,7 @@ public final class FakeLogSite extends LogSite {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (!(obj instanceof FakeLogSite)) {
       return false;
     }

@@ -26,6 +26,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper class for testing system backends, which need to mimic the JDK's log record.
@@ -45,7 +46,7 @@ public class AssertingLogger extends Logger {
     }
 
     private final String message;
-    private final Object[] parameters;
+    private final Object @Nullable [] parameters;
     private final Level level;
     private final Throwable thrown;
   }

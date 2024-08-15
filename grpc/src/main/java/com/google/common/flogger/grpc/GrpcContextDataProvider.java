@@ -59,7 +59,7 @@ public final class GrpcContextDataProvider extends ContextDataProvider {
   // GrpcContextDataProvider (which is created as the Platform instance is initialized). By doing
   // this we break any initialization cycles and allow the config API perform its own logging if
   // necessary.
-  private volatile GrpcScopedLoggingContext configInstance = null;
+  private volatile @Nullable GrpcScopedLoggingContext configInstance = null;
 
   // When this is false we can skip some work for every log statement. This is set to true if _any_
   // context adds a log level map at any point (this is generally rare and only used for targeted

@@ -19,6 +19,7 @@ package com.google.common.flogger.util;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.flogger.util.StackGetterTestUtil.LoggerCode;
+import org.jspecify.annotations.Nullable;
 
 final class StackGetterTestUtil {
 
@@ -45,7 +46,7 @@ final class StackGetterTestUtil {
   static class LoggerCode {
     final int skipCount;
     final StackGetter stackGetter;
-    StackTraceElement caller = null;
+    @Nullable StackTraceElement caller = null;
 
     public LoggerCode(int skipCount, StackGetter stackGetter) {
       this.skipCount = skipCount;

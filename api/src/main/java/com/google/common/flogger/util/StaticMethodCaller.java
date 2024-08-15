@@ -111,7 +111,7 @@ public final class StaticMethodCaller {
     return null;
   }
 
-  private static String readProperty(String propertyName, @Nullable String defaultValue) {
+  private static @Nullable String readProperty(String propertyName, @Nullable String defaultValue) {
     Checks.checkNotNull(propertyName, "property name");
     try {
       return System.getProperty(propertyName, defaultValue);

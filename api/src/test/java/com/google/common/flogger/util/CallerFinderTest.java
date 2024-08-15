@@ -18,6 +18,7 @@ package com.google.common.flogger.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -66,7 +67,7 @@ public class CallerFinderTest {
   /** Fake class that emulates the logging library which eventually calls 'findCallerOf()'. */
   private static class LoggerCode {
     final int skipCount;
-    StackTraceElement caller = null;
+    @Nullable StackTraceElement caller = null;
 
     public LoggerCode(int skipCount) {
       this.skipCount = skipCount;

@@ -18,11 +18,13 @@ package com.google.common.flogger.util;
 
 import static com.google.common.flogger.util.Checks.checkArgument;
 
+import org.jspecify.annotations.Nullable;
+
 /** Default implementation of {@link StackGetter} using {@link Throwable#getStackTrace}. */
 final class ThrowableStackGetter implements StackGetter {
 
   @Override
-  public StackTraceElement callerOf(Class<?> target, int skipFrames) {
+  public @Nullable StackTraceElement callerOf(Class<?> target, int skipFrames) {
     checkArgument(skipFrames >= 0, "skipFrames must be >= 0");
     StackTraceElement[] stack = new Throwable().getStackTrace();
     int callerIndex = findCallerIndex(stack, target, skipFrames + 1);

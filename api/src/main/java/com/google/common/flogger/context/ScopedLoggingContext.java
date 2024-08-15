@@ -132,9 +132,9 @@ public abstract class ScopedLoggingContext {
    * reference to a builder instance for any length of time is not recommended.
    */
   public abstract static class Builder {
-    private Tags tags = null;
-    private ContextMetadata.Builder metadata = null;
-    private LogLevelMap logLevelMap = null;
+    private @Nullable Tags tags = null;
+    private ContextMetadata.@Nullable Builder metadata = null;
+    private @Nullable LogLevelMap logLevelMap = null;
     private boolean hasLogLevelMap = false;
 
     protected Builder() {}

@@ -112,7 +112,10 @@ java_library(
     name = "stack_getter_common",
     srcs = STACK_GETTER_COMMON_SRCS,
     javacopts = ["-source 8 -target 8"],
-    deps = [":checks"],
+    deps = [
+        ":checks",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
+    ],
 )
 
 java_library(

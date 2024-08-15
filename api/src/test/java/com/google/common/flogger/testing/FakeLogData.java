@@ -65,9 +65,9 @@ public final class FakeLogData implements LogData {
   }
 
   private Level level = Level.INFO;
-  private TemplateContext context = null;
-  private Object[] arguments = null;
-  private Object literalArgument = null;
+  private @Nullable TemplateContext context = null;
+  private Object @Nullable [] arguments = null;
+  private @Nullable Object literalArgument = null;
   private long timestampNanos = 0L;
   private FakeMetadata metadata = new FakeMetadata();
   private LogSite logSite = FAKE_LOG_SITE;

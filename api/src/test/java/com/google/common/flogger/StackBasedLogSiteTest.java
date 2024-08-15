@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -94,7 +95,7 @@ public class StackBasedLogSiteTest {
 
   // Helper to keep callers a bit less cluttered and make tests a bit more readable.
   private static StackBasedLogSite stackBasedLogSite(
-      String className, String methodName, String fileName, int lineNumber) {
+      String className, String methodName, @Nullable String fileName, int lineNumber) {
     return new StackBasedLogSite(
         new StackTraceElement(className, methodName, fileName, lineNumber));
   }

@@ -24,6 +24,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Callback API for logger backend implementations to handle metadata keys/values. The API methods
@@ -150,7 +151,7 @@ public abstract class MetadataHandler<C> {
     private final Map<MetadataKey<?>, RepeatedValueHandler<?, ? super C>> repeatedValueHandlers =
         new HashMap<MetadataKey<?>, RepeatedValueHandler<?, ? super C>>();
     private final ValueHandler<Object, ? super C> defaultHandler;
-    private RepeatedValueHandler<Object, ? super C> defaultRepeatedHandler = null;
+    private @Nullable RepeatedValueHandler<Object, ? super C> defaultRepeatedHandler = null;
 
     private Builder(ValueHandler<Object, ? super C> defaultHandler) {
       this.defaultHandler = checkNotNull(defaultHandler, "default handler");
@@ -289,7 +290,7 @@ public abstract class MetadataHandler<C> {
     private final Map<MetadataKey<?>, RepeatedValueHandler<?, ? super C>> repeatedValueHandlers =
         new HashMap<MetadataKey<?>, RepeatedValueHandler<?, ? super C>>();
     private final ValueHandler<Object, ? super C> defaultHandler;
-    private final RepeatedValueHandler<Object, ? super C> defaultRepeatedHandler;
+    private final @Nullable RepeatedValueHandler<Object, ? super C> defaultRepeatedHandler;
 
     private MapBasedhandler(Builder<C> builder) {
       this.singleValueHandlers.putAll(builder.singleValueHandlers);

@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Processor combining scope and log-site metadata into a single view. This is necessary when
@@ -53,28 +54,29 @@ import java.util.Set;
  */
 public abstract class MetadataProcessor {
   // Immutable empty processor which never handles any metadata.
-  private static final MetadataProcessor EMPTY_PROCESSOR = new MetadataProcessor() {
-    @Override
-    public <C> void process(MetadataHandler<C> handler, C context) {}
+  private static final MetadataProcessor EMPTY_PROCESSOR =
+      new MetadataProcessor() {
+        @Override
+        public <C> void process(MetadataHandler<C> handler, C context) {}
 
-    @Override
-    public <C> void handle(MetadataKey<?> key, MetadataHandler<C> handler, C context) {}
+        @Override
+        public <C> void handle(MetadataKey<?> key, MetadataHandler<C> handler, C context) {}
 
-    @Override
-    public <T> T getSingleValue(MetadataKey<T> key) {
-      return null;
-    }
+        @Override
+        public <T> @Nullable T getSingleValue(MetadataKey<T> key) {
+          return null;
+        }
 
-    @Override
-    public int keyCount() {
-      return 0;
-    }
+        @Override
+        public int keyCount() {
+          return 0;
+        }
 
-    @Override
-    public Set<MetadataKey<?>> keySet() {
-      return Collections.emptySet();
-    }
-  };
+        @Override
+        public Set<MetadataKey<?>> keySet() {
+          return Collections.emptySet();
+        }
+      };
 
   /**
    * Returns a new processor for the combined scope and log-site metadata. Note that this returned
@@ -220,7 +222,7 @@ public abstract class MetadataProcessor {
     }
 
     @Override
-    public <T> T getSingleValue(MetadataKey<T> key) {
+    public <T> @Nullable T getSingleValue(MetadataKey<T> key) {
       checkArgument(!key.canRepeat(), "key must be single valued");
       int index = indexOf(key, keyMap, keyCount);
       // For single keys, the keyMap values are just the value index.
@@ -446,7 +448,7 @@ public abstract class MetadataProcessor {
     // It's safe to ignore warnings since single keys are only ever 'T' when added to the map.
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T getSingleValue(MetadataKey<T> key) {
+    public <T> @Nullable T getSingleValue(MetadataKey<T> key) {
       checkArgument(!key.canRepeat(), "key must be single valued");
       Object value = map.get(key);
       return (value != null) ? (T) value : null;

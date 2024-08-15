@@ -23,6 +23,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -78,8 +79,8 @@ public class AbstractBackendTest {
   }
 
   private static final class TestLogger extends Logger {
-    private String captured = null;
-    private String published = null;
+    private @Nullable String captured = null;
+    private @Nullable String published = null;
 
     TestLogger(String name, Level level) {
       super(name, null);
@@ -101,12 +102,12 @@ public class AbstractBackendTest {
       super.log(record);
     }
 
-    void assertLogged(String expectedLogMessage) {
+    void assertLogged(@Nullable String expectedLogMessage) {
       assertThat(captured).isEqualTo(expectedLogMessage);
       captured = null;
     }
 
-    void assertPublished(String expectedLogMessage) {
+    void assertPublished(@Nullable String expectedLogMessage) {
       assertThat(published).isEqualTo(expectedLogMessage);
       published = null;
     }

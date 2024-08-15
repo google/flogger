@@ -16,6 +16,8 @@
 
 package com.google.common.flogger.backend;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * An enum representing the printf-like formatting characters that must be supported by all logging
  * backends. It is important to note that while backends must accept any of these format specifiers,
@@ -129,10 +131,10 @@ public enum FormatChar {
   }
 
   /**
-   * Returns the FormatChar instance associated with the given printf format specifier. If the
-   * given character is not an ASCII letter, a runtime exception is thrown.
+   * Returns the FormatChar instance associated with the given printf format specifier. If the given
+   * character is not an ASCII letter, a runtime exception is thrown.
    */
-  public static FormatChar of(char c) {
+  public static @Nullable FormatChar of(char c) {
     // Get from the map by converting the char to lower-case (which is the most common case by far).
     // If the given value wasn't an ASCII letter then the index will be out-of-range, but when
     // called by the parser, it's always guaranteed to be an ASCII letter (but perhaps not a valid
