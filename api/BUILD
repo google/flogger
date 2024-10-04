@@ -81,8 +81,7 @@ $$JAVABASE/bin/javac -d $$TMPDIR -source 8 -target 8 -cp $${STACK_GETTER_COMMON}
     $(location src/main/java/com/google/common/flogger/util/JavaLangAccessStackGetter.java)
 cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
     """,
-    toolchains = ["@openjdk8//:runtime"],
-    tools = ["@openjdk8//:runtime"],
+    toolchains = ["@rules_java//toolchains:jdk_8"],
 )
 
 genrule(
@@ -104,8 +103,7 @@ $$JAVABASE/bin/javac -d $$TMPDIR -source 8 -target 8 -cp $${STACK_GETTER_COMMON}
     $(location src/main/java/com/google/common/flogger/util/StackWalkerStackGetter.java)
 cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
     """,
-    toolchains = ["@openjdk11//:runtime"],
-    tools = ["@openjdk11//:runtime"],
+    toolchains = ["@rules_java//toolchains:remote_jdk11"],
 )
 
 java_library(
