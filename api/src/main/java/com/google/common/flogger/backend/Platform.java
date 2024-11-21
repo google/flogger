@@ -87,11 +87,12 @@ public abstract class Platform {
           return (Platform) Class.forName(clazz).getConstructor().newInstance();
         } catch (Throwable e) {
           // Catch errors so if we can't find _any_ implementations, we can report something useful.
-          // Unwrap any generic wrapper exceptions for readability here (extend this as needed).
-          if (e instanceof InvocationTargetException) {
-            e = e.getCause();
-          }
-          errorMessage.append('\n').append(clazz).append(": ").append(e);
+          errorMessage
+              .append('\n')
+              .append(clazz)
+              .append(": ")
+              // Unwrap any wrapper exceptions for readability here (extend as needed).
+              .append(e instanceof InvocationTargetException ? e.getCause() : e);
         }
       }
       throw new IllegalStateException(

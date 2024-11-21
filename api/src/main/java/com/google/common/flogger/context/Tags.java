@@ -513,8 +513,12 @@ public final class Tags {
       int newEntryIndex = 0;
       while (lhsEntry != null || rhsEntry != null) {
         // Nulls count as being *bigger* than anything (since they indicate the end of the array).
-        int signum = (lhsEntry == null) ? 1 : (rhsEntry == null) ? -1 : 0;
-        if (signum == 0) {
+        int signum;
+        if (lhsEntry == null) {
+          signum = 1;
+        } else if (rhsEntry == null) {
+          signum = -1;
+        } else {
           // Both entries exist and must be compared.
           signum = lhsEntry.getKey().compareTo(rhsEntry.getKey());
           if (signum == 0) {
@@ -528,6 +532,7 @@ public final class Tags {
             continue;
           }
         }
+
         // Signum is non-zero and indicates which entry to process next (without merging).
         if (signum < 0) {
           valueStart = copyEntryAndValues(lhsEntry, newEntryIndex++, valueStart, array, offsets);

@@ -16,6 +16,7 @@
 
 package com.google.common.flogger.backend;
 
+import static java.util.Objects.requireNonNull;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -108,7 +109,7 @@ public final class PlatformProviderGenerator {
 
     // Write the class to the output file.
     Path path = Paths.get(args[0]);
-    Files.createDirectories(path.getParent());
+    Files.createDirectories(requireNonNull(path.getParent(), "path must have a parent: " + path));
     try (JarOutputStream jar =
         new JarOutputStream(Files.newOutputStream(path, StandardOpenOption.CREATE_NEW))) {
       ZipEntry entry = new ZipEntry("com/google/common/flogger/backend/PlatformProvider.class");

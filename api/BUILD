@@ -89,6 +89,7 @@ genrule(
     srcs = STACK_GETTER_STACK_WALKER_IMPL_SRCS + [
         ":stack_getter_common",
         ":checks",
+        "@google_bazel_common//third_party/java/jspecify_annotations",
     ],
     outs = ["stack_getter_stack_walker_impl.jar"],
     cmd = """
@@ -97,9 +98,11 @@ TMPDIR=$$(mktemp -d)
 OUTPUT=$$PWD/$@
 STACK_GETTER_COMMON=$(location :stack_getter_common)
 CHECKS=$(location :checks)
+JSPECIFY_ANNOTATIONS=$(location @google_bazel_common//third_party/java/jspecify_annotations)
 JAVABASE=$$PWD/$(JAVABASE)
 JAR=$$PWD/$(JAVABASE)/bin/jar
-$$JAVABASE/bin/javac -d $$TMPDIR -source 8 -target 8 -cp $${STACK_GETTER_COMMON}:$${CHECKS} -implicit:none \
+$$JAVABASE/bin/javac -d $$TMPDIR -source 8 -target 8 \
+    -cp $${STACK_GETTER_COMMON}:$${CHECKS}:$${JSPECIFY_ANNOTATIONS} -implicit:none \
     $(location src/main/java/com/google/common/flogger/util/StackWalkerStackGetter.java)
 cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
     """,

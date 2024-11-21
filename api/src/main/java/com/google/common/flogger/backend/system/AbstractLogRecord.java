@@ -171,6 +171,12 @@ public abstract class AbstractLogRecord extends LogRecord {
   }
 
   @Override
+  @SuppressWarnings("nullness") // setParameters() above guarantees this is never null.
+  public final Object[] getParameters() {
+    return super.getParameters();
+  }
+
+  @Override
   public final void setMessage(@Nullable String message) {
     if (message == null) {
       message = "";

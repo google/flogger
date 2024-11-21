@@ -60,6 +60,12 @@ final class SamplingRateLimiter extends RateLimitStatus {
     }
   };
 
+  // Android annotates ThreadLocal.get() with @RecentlyNullable, but random.get() is never null.
+  @SuppressWarnings("nullness")
+  private static Random getRandom() {
+    return random.get();
+  }
+
   // Visible for testing.
   final AtomicInteger pendingCount = new AtomicInteger();
 
@@ -72,7 +78,7 @@ final class SamplingRateLimiter extends RateLimitStatus {
     // zero and the number of logs will end up statistically close to 1-in-N (even if at
     // times they can be "bursty" due to the action of other rate limiting mechanisms).
     int pending;
-    if (random.get().nextInt(rateLimitCount) == 0) {
+    if (getRandom().nextInt(rateLimitCount) == 0) {
       pending = pendingCount.incrementAndGet();
     } else {
       pending = pendingCount.get();

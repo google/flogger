@@ -22,7 +22,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Common backend to handle everything except formatting of log message and metadata. This is an
@@ -146,7 +145,7 @@ public abstract class AbstractBackend extends LoggerBackend {
   // would get a lot of extra stack frames to search through). However for Flogger, the LogSite
   // was already determined in the "shouldLog()" method because it's needed for things like
   // rate limiting. Thus we don't have to care about using iterative methods vs recursion here.
-  private static void publish(@Nullable Logger logger, LogRecord record) {
+  private static void publish(Logger logger, LogRecord record) {
     // Annoyingly this method appears to copy the array every time it is called, but there's
     // nothing much we can do about this (and there could be synchronization issues even if we
     // could access things directly because handlers can be changed at any time). Most of the
@@ -155,9 +154,9 @@ public abstract class AbstractBackend extends LoggerBackend {
       handler.publish(record);
     }
     if (logger.getUseParentHandlers()) {
-      logger = logger.getParent();
-      if (logger != null) {
-        publish(logger, record);
+      Logger parent = logger.getParent();
+      if (parent != null) {
+        publish(parent, record);
       }
     }
   }

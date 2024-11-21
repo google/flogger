@@ -21,6 +21,7 @@ import static com.google.common.flogger.util.Checks.checkArgument;
 import java.lang.StackWalker.StackFrame;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 
 /**
  * StackWalker based implementation of the {@link StackGetter} interface.
@@ -39,9 +40,9 @@ final class StackWalkerStackGetter implements StackGetter {
   }
 
   @Override
-  public StackTraceElement callerOf(Class<?> target, int skipFrames) {
+  public @Nullable StackTraceElement callerOf(Class<?> target, int skipFrames) {
     checkArgument(skipFrames >= 0, "skipFrames must be >= 0");
-    return STACK_WALKER.walk(
+    return STACK_WALKER.<@Nullable StackTraceElement>walk(
         s ->
             filterStackTraceAfterTarget(isTargetClass(target), skipFrames, s)
                 .findFirst()

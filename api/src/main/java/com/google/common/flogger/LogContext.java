@@ -18,6 +18,7 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.util.CallerFinder.getStackForCallerOf;
 import static com.google.common.flogger.util.Checks.checkNotNull;
+import static com.google.common.flogger.util.Checks.checkState;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import com.google.common.flogger.DurationRateLimiter.RateLimitPeriod;
@@ -435,16 +436,18 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
 
   @Override
   public final Object[] getArguments() {
-    if (templateContext == null) {
-      throw new IllegalStateException("cannot get arguments unless a template context exists");
+    checkState(templateContext != null, "cannot get arguments unless a template context exists");
+    if (args == null) {
+      throw new IllegalStateException("cannot get arguments before calling log()");
     }
     return args;
   }
 
   @Override
   public final Object getLiteralArgument() {
-    if (templateContext != null) {
-      throw new IllegalStateException("cannot get literal argument if a template context exists");
+    checkState(templateContext == null, "cannot get literal argument if a template context exists");
+    if (args == null) {
+      throw new IllegalStateException("cannot get literal argument before calling log()");
     }
     return args[0];
   }
@@ -683,7 +686,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     if (rateLimitStatus != null) {
       // We check rate limit status even if it is "DISALLOW" to update the skipped logs count.
       int skippedLogs = RateLimitStatus.checkStatus(rateLimitStatus, logSiteKey, metadata);
-      if (shouldLog && skippedLogs > 0) {
+      if (shouldLog && skippedLogs > 0 && metadata != null) {
         metadata.addValue(Key.SKIPPED_LOG_COUNT, skippedLogs);
       }
       // checkStatus() returns -1 in two cases:

@@ -68,7 +68,7 @@ public final class SimpleParameter extends Parameter {
     // We can safely test FormatSpec with '==' because the factory methods always return the default
     // instance if applicable (and the class has no visible constructors).
     if (index < MAX_CACHED_PARAMETERS && options.isDefault()) {
-      return DEFAULT_PARAMETERS.get(formatChar)[index];
+      return checkNotNull(DEFAULT_PARAMETERS.get(formatChar), "default parameter")[index];
     }
     return new SimpleParameter(index, formatChar, options);
   }

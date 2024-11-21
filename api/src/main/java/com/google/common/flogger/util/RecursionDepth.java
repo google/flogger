@@ -36,9 +36,15 @@ public final class RecursionDepth implements Closeable {
     }
   };
 
+  // Android annotates ThreadLocal.get() with @RecentlyNullable, but holder.get() is never null.
+  @SuppressWarnings("nullness")
+  private static RecursionDepth getRecursionDepth() {
+    return holder.get();
+  }
+
   /** Do not call this method directly, use {@code Platform.getCurrentRecursionDepth()}. */
   public static int getCurrentDepth() {
-    return holder.get().value;
+    return getRecursionDepth().value;
   }
 
   /** Do not call this method directly, use {@code Platform.getCurrentRecursionDepth()}. */
@@ -48,7 +54,7 @@ public final class RecursionDepth implements Closeable {
 
   /** Internal API for use by core Flogger library. */
   public static RecursionDepth enterLogStatement() {
-    RecursionDepth depth = holder.get();
+    RecursionDepth depth = getRecursionDepth();
     // Can only reach 0 if it wrapped around completely or someone is manipulating the value badly.
     // We really don't expect 2^32 levels of recursion however, so assume it's a bug.
     if (++depth.value == 0) {
