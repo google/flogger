@@ -9,6 +9,7 @@ load("@google_bazel_common//tools/jarjar:jarjar.bzl", "jarjar_library")
 load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
 load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library")
 load("//tools:maven.bzl", "pom_file")
+load(":build_defs.bzl", "genjar")
 
 SYSTEM_BACKEND_SRCS = glob(["src/main/java/com/google/common/flogger/backend/system/**/*.java"])
 
@@ -62,51 +63,25 @@ java_import(
     deps = [":stack_getter_common"],
 )
 
-genrule(
-    name = "gen_stack_getter_java_lang_access_impl",
-    srcs = STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS + [
-        ":stack_getter_common",
-        ":checks",
-    ],
-    outs = ["stack_getter_java_lang_access_impl.jar"],
-    cmd = """
-set -eu
-TMPDIR=$$(mktemp -d)
-OUTPUT=$$PWD/$@
-STACK_GETTER_COMMON=$(location :stack_getter_common)
-CHECKS=$(location :checks)
-JAVABASE=$$PWD/$(JAVABASE)
-JAR=$$PWD/$(JAVABASE)/bin/jar
-$$JAVABASE/bin/javac -d $$TMPDIR -source 8 -target 8 -cp $${STACK_GETTER_COMMON}:$${CHECKS} -implicit:none \
-    $(location src/main/java/com/google/common/flogger/util/JavaLangAccessStackGetter.java)
-cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
-    """,
+genjar(
+    name = "stack_getter_java_lang_access_impl",
+    srcs = STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS,
     toolchains = ["@rules_java//toolchains:jdk_8"],
+    deps = [
+        ":checks",
+        ":stack_getter_common",
+    ],
 )
 
-genrule(
-    name = "gen_stack_getter_stack_walker_impl",
-    srcs = STACK_GETTER_STACK_WALKER_IMPL_SRCS + [
-        ":stack_getter_common",
+genjar(
+    name = "stack_getter_stack_walker_impl",
+    srcs = STACK_GETTER_STACK_WALKER_IMPL_SRCS,
+    toolchains = ["@rules_java//toolchains:remote_jdk11"],
+    deps = [
         ":checks",
+        ":stack_getter_common",
         "@google_bazel_common//third_party/java/jspecify_annotations",
     ],
-    outs = ["stack_getter_stack_walker_impl.jar"],
-    cmd = """
-set -eu
-TMPDIR=$$(mktemp -d)
-OUTPUT=$$PWD/$@
-STACK_GETTER_COMMON=$(location :stack_getter_common)
-CHECKS=$(location :checks)
-JSPECIFY_ANNOTATIONS=$(location @google_bazel_common//third_party/java/jspecify_annotations)
-JAVABASE=$$PWD/$(JAVABASE)
-JAR=$$PWD/$(JAVABASE)/bin/jar
-$$JAVABASE/bin/javac -d $$TMPDIR -source 8 -target 8 \
-    -cp $${STACK_GETTER_COMMON}:$${CHECKS}:$${JSPECIFY_ANNOTATIONS} -implicit:none \
-    $(location src/main/java/com/google/common/flogger/util/StackWalkerStackGetter.java)
-cd $$TMPDIR && $$JAR cf $$OUTPUT com/google/common/flogger/util/*StackGetter*.class
-    """,
-    toolchains = ["@rules_java//toolchains:remote_jdk11"],
 )
 
 java_library(
