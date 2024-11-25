@@ -174,6 +174,9 @@ public abstract class LogSite implements LogSiteKey {
       // earlier could cost work in cases where the log statement is dropped. We could cache the
       // result somewhere, but in the default Fluent Logger backend, this method is actually only
       // called once anyway when constructing the LogRecord instance.
+
+      // See implementation comments for internalNamesCompatible for more details when the internal
+      // class name is not in fact a slash-separated class name.
       return internalClassName.replace('/', '.');
     }
 
@@ -201,9 +204,37 @@ public abstract class LogSite implements LogSiteKey {
         return methodName.equals(other.methodName)
             && encodedLineNumber == other.encodedLineNumber
             // Check classname last because it isn't cached
-            && getClassName().equals(other.getClassName());
+            && internalNamesCompatible(internalClassName, other.internalClassName);
       }
       return false;
+    }
+
+    // The compile-time injection mechanism uses a slash-separated class name, but
+    // unfortunately some users have been using dot-separated class names. We need to be able to
+    // make these equivalent, but want to avoid allocating/copying strings.
+    @SuppressWarnings("ReferenceEquality")
+    private static boolean internalNamesCompatible(String s1, String s2) {
+      if (s1 == s2) { // We expect most internal class names to be interned.
+        return true;
+      }
+
+      if (s1.length() != s2.length()) {
+        return false;
+      }
+
+      for (int i = 0; i < s1.length(); i++) {
+        if (s1.charAt(i) == s2.charAt(i)) {
+          continue;
+        }
+        if (s1.charAt(i) == '/' && s2.charAt(i) == '.') {
+          continue;
+        }
+        if (s1.charAt(i) == '.' && s2.charAt(i) == '/') {
+          continue;
+        }
+        return false;
+      }
+      return true;
     }
 
     @Override
