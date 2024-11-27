@@ -223,16 +223,15 @@ public abstract class LogSite implements LogSiteKey {
       }
 
       for (int i = 0; i < s1.length(); i++) {
-        if (s1.charAt(i) == s2.charAt(i)) {
-          continue;
+        char c1 = s1.charAt(i);
+        char c2 = s2.charAt(i);
+        if (c1 != c2) {
+          // If the characters are not equal, but the slash/dot difference is accounted for, then
+          // consider them equivalent.
+          if (!(c1 == '/' && c2 == '.') && !(c1 == '.' && c2 == '/')) {
+            return false;
+          }
         }
-        if (s1.charAt(i) == '/' && s2.charAt(i) == '.') {
-          continue;
-        }
-        if (s1.charAt(i) == '.' && s2.charAt(i) == '/') {
-          continue;
-        }
-        return false;
       }
       return true;
     }
