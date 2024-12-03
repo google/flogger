@@ -44,6 +44,17 @@ public final class LogSiteTest {
     assertThat(logSite(internalClassName).getClassName()).isEqualTo(className);
   }
 
+  @Test
+  public void injectedLogSite_distinguishesWhenDifferentOnPackageSeparator() {
+    String className = "com.google.common.flogger.LogSiteTest";
+    String sneakyClassName = "combgoogle/common/flogger/LogSiteTest";
+
+    new EqualsTester()
+        .addEqualityGroup(logSite(className))
+        .addEqualityGroup(logSite(sneakyClassName))
+        .testEquals();
+  }
+
   // This technically passes, but is not what we want, since the botched name isn't a real class
   // identifier. The complexity of tracking the separator is not worth it, however.
   @Test

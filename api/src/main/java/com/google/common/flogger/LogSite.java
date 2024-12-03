@@ -204,9 +204,36 @@ public abstract class LogSite implements LogSiteKey {
         return methodName.equals(other.methodName)
             && encodedLineNumber == other.encodedLineNumber
             // Check classname last because it isn't cached
-            && getClassName().equals(other.getClassName());
+            && internalNamesCompatible(internalClassName, other.internalClassName);
       }
       return false;
+    }
+
+    // The compile-time injection mechanism uses a slash-separated class name, but
+    // unfortunately some users have been using dot-separated class names. We need to be able to
+    // make these equivalent, but want to avoid allocating/copying strings.
+    @SuppressWarnings("ReferenceEquality")
+    private static boolean internalNamesCompatible(String s1, String s2) {
+      if (s1 == s2) { // We expect most internal class names to be interned.
+        return true;
+      }
+
+      if (s1.length() != s2.length()) {
+        return false;
+      }
+
+      for (int i = 0; i < s1.length(); i++) {
+        char c1 = s1.charAt(i);
+        char c2 = s2.charAt(i);
+        if (c1 != c2)  {
+          // Account for '.' (0x2E) and '/' (0x2F) being equivalent by using the fact they differ
+          // only in the lowest bit.
+          if ((c1 & ~0x1) != 0x2E || (c1 ^ c2) != 0x1) {
+            return false;
+          }
+        }
+      }
+      return true;
     }
 
     @Override
