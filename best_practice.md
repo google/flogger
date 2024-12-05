@@ -94,6 +94,8 @@ if (logger.atFine().isEnabled()) {
 Note also that this approach only guards log statements by level and does not
 help with rate-limited log statements.
 
+Instead, extract the conditional logic to a helper method to wrap with `lazy`.
+
 [`LazyArgs`]: https://github.com/google/flogger/blob/master/api/src/main/java/com/google/common/flogger/LazyArgs.java
 
 ## Don't be afraid to add fine-grained logging to your code {#fine-grained}
