@@ -169,7 +169,7 @@ public class MetadataKey<T> {
 
   /**
    * Emits one or more key/value pairs for the given metadata value. Call this method in preference
-   * to using {@link #emitRepeated} directly to protect against unbounded reentrant logging.
+   * to using {@link #emit} directly to protect against unbounded reentrant logging.
    */
   public final void safeEmit(T value, KeyValueHandler kvh) {
     if (isCustom && Platform.getCurrentRecursionDepth() > MAX_CUSTOM_METADATAKEY_RECURSION_DEPTH) {
