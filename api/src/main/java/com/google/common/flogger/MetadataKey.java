@@ -171,7 +171,7 @@ public class MetadataKey<T> {
    * Emits one or more key/value pairs for the given metadata value. Call this method in preference
    * to using {@link #emit} directly to protect against unbounded reentrant logging.
    */
-  public final void safeEmit(T value, KeyValueHandler kvh) {
+  public final void safeEmit(@Nullable T value, KeyValueHandler kvh) {
     if (isCustom && Platform.getCurrentRecursionDepth() > MAX_CUSTOM_METADATAKEY_RECURSION_DEPTH) {
       // Recursive logging detected, possibly caused by custom metadata keys triggering reentrant
       // logging. To halt recursion, emit the keys in the default non-custom format without invoking
@@ -187,7 +187,7 @@ public class MetadataKey<T> {
    * in preference to using {@link #emitRepeated} directly to protect against unbounded reentrant
    * logging.
    */
-  public final void safeEmitRepeated(Iterator<T> values, KeyValueHandler kvh) {
+  public final void safeEmitRepeated(Iterator<? extends @Nullable T> values, KeyValueHandler kvh) {
     checkState(canRepeat, "non repeating key");
     if (isCustom && Platform.getCurrentRecursionDepth() > MAX_CUSTOM_METADATAKEY_RECURSION_DEPTH) {
       // Recursive logging detected, possibly caused by custom metadata keys triggering reentrant
@@ -236,7 +236,7 @@ public class MetadataKey<T> {
    *
    * <p>By default this method just calls {@code out.handle(getLabel(), value)}.
    */
-  protected void emit(T value, KeyValueHandler kvh) {
+  protected void emit(@Nullable T value, KeyValueHandler kvh) {
     kvh.handle(getLabel(), value);
   }
 
@@ -253,7 +253,7 @@ public class MetadataKey<T> {
    * <p>See the {@link #emit(Object,KeyValueHandler)} method for additional caveats for custom
    * implementations.
    */
-  protected void emitRepeated(Iterator<T> values, KeyValueHandler kvh) {
+  protected void emitRepeated(Iterator<? extends @Nullable T> values, KeyValueHandler kvh) {
     while (values.hasNext()) {
       emit(values.next(), kvh);
     }

@@ -31,6 +31,7 @@ import com.google.common.flogger.testing.FakeMetadata;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -42,7 +43,7 @@ public class SimpleLogRecordTest {
   private static final MetadataKey<String> PATH_KEY =
       new MetadataKey<String>("path", String.class, true) {
         @Override
-        public void emitRepeated(Iterator<String> values, KeyValueHandler out) {
+        public void emitRepeated(Iterator<? extends @Nullable String> values, KeyValueHandler out) {
           out.handle(getLabel(), Joiner.on('/').join(values));
         }
       };

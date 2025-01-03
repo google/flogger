@@ -106,7 +106,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     public static final MetadataKey<Object> LOG_SITE_GROUPING_KEY =
         new MetadataKey<Object>("group_by", Object.class, true) {
           @Override
-          public void emitRepeated(Iterator<Object> keys, KeyValueHandler out) {
+          public void emitRepeated(Iterator<?> keys, KeyValueHandler out) {
             if (keys.hasNext()) {
               Object first = keys.next();
               if (!keys.hasNext()) {
@@ -175,7 +175,10 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
     public static final MetadataKey<Tags> TAGS =
         new MetadataKey<Tags>("tags", Tags.class, false) {
           @Override
-          public void emit(Tags tags, KeyValueHandler out) {
+          public void emit(@Nullable Tags tags, KeyValueHandler out) {
+            if (tags == null) {
+              return;
+            }
             for (Map.Entry<String, ? extends Set<Object>> e : tags.asMap().entrySet()) {
               Set<Object> values = e.getValue();
               if (!values.isEmpty()) {

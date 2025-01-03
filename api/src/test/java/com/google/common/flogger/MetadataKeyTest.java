@@ -51,7 +51,7 @@ public class MetadataKeyTest {
         }
 
         @Override
-        protected void emitRepeated(Iterator<Object> values, KeyValueHandler kvh) {
+        protected void emitRepeated(Iterator<?> values, KeyValueHandler kvh) {
           // Hack for test to preserve the given values past a single use. In normal logging there
           // would be a new Metadata instance created for each of the reentrant logging calls.
           ImmutableList<Object> copy = ImmutableList.copyOf(values);
