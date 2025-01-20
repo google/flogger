@@ -18,6 +18,7 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkNotNull;
 
+import java.io.File;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -132,8 +133,8 @@ public abstract class LogSite implements LogSiteKey {
    *     bits is a log statement index to distinguish multiple statements on the same line (this
    *     becomes important if line numbers are stripped from the class file and everything appears
    *     to be on the same line).
-   * @param sourceFileName Optional base name of the source file (this value is strictly for
-   *     debugging and does not contribute to either equals() or hashCode() behavior).
+   * @param sourceFilePath Optional path of the source file (this value is strictly for debugging
+   *     and does not contribute to either equals() or hashCode() behavior).
    * @deprecated this method is only be used for log-site injection and should not be called
    *     directly.
    */
@@ -142,8 +143,8 @@ public abstract class LogSite implements LogSiteKey {
       String internalClassName,
       String methodName,
       int encodedLineNumber,
-      @Nullable String sourceFileName) {
-    return new InjectedLogSite(internalClassName, methodName, encodedLineNumber, sourceFileName);
+      @Nullable String sourceFilePath) {
+    return new InjectedLogSite(internalClassName, methodName, encodedLineNumber, sourceFilePath);
   }
 
   private static final class InjectedLogSite extends LogSite {
@@ -161,11 +162,19 @@ public abstract class LogSite implements LogSiteKey {
         String internalClassName,
         String methodName,
         int encodedLineNumber,
-        @Nullable String sourceFileName) {
+        @Nullable String sourceFilePath) {
       this.internalClassName = checkNotNull(internalClassName, "class name");
       this.methodName = checkNotNull(methodName, "method name");
       this.encodedLineNumber = encodedLineNumber;
-      this.sourceFileName = sourceFileName;
+      this.sourceFileName = sourceFileName(sourceFilePath);
+    }
+
+    // TODO: b/390497738 - support retrieving full file paths
+    private static @Nullable String sourceFileName(@Nullable String sourceFilePath) {
+      if (sourceFilePath == null) {
+        return null;
+      }
+      return sourceFilePath.substring(sourceFilePath.lastIndexOf(File.separatorChar) + 1);
     }
 
     @Override

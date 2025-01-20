@@ -417,14 +417,14 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *     bits is a log statement index to distinguish multiple statements on the same line (this
    *     becomes important if line numbers are stripped from the class file and everything appears
    *     to be on the same line).
-   * @param sourceFileName Optional base name of the source file (this value is strictly for
+   * @param sourceFilePath Optional path of the source file (this value is strictly for debugging
    *     debugging and does not contribute to either equals() or hashCode() behavior).
    */
   API withInjectedLogSite(
       String internalClassName,
       String methodName,
       int encodedLineNumber,
-      @Nullable String sourceFileName);
+      @Nullable String sourceFilePath);
 
   /**
    * Returns true if logging is enabled at the level implied for this API, according to the current

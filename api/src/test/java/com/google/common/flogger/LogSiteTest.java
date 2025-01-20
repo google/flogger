@@ -69,6 +69,16 @@ public final class LogSiteTest {
   }
 
   @SuppressWarnings("deprecation") // Intentionally calling injectedLogSite to test it.
+  @Test
+  public void injectedLogSite_sourceFilePath() {
+    String className = "com.google.common.flogger.LogSiteTest";
+    LogSite logSite =
+        LogSite.injectedLogSite(
+            className, "someMethod", 42, "com/google/common/flogger/MyFile.java");
+    assertThat(logSite.getFileName()).isEqualTo("MyFile.java");
+  }
+
+  @SuppressWarnings("deprecation") // Intentionally calling injectedLogSite to test it.
   private static LogSite logSite(String className) {
     return LogSite.injectedLogSite(className, "someMethod", 42, "MyFile.java");
   }
