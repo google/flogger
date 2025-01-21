@@ -418,7 +418,7 @@ public interface LoggingApi<API extends LoggingApi<API>> {
    *     becomes important if line numbers are stripped from the class file and everything appears
    *     to be on the same line).
    * @param sourceFilePath Optional path of the source file (this value is strictly for debugging
-   *     debugging and does not contribute to either equals() or hashCode() behavior).
+   *     and does not contribute to either equals() or hashCode() behavior).
    */
   API withInjectedLogSite(
       String internalClassName,

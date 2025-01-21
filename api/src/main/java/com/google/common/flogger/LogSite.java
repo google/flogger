@@ -155,7 +155,7 @@ public abstract class LogSite implements LogSiteKey {
     /** Bare method name (no signature information). */
     private final String methodName;
     private final int encodedLineNumber;
-    private final @Nullable String sourceFileName;
+    private final @Nullable String sourceFilePath;
     private int hashcode = 0;
 
     private InjectedLogSite(
@@ -166,15 +166,7 @@ public abstract class LogSite implements LogSiteKey {
       this.internalClassName = checkNotNull(internalClassName, "class name");
       this.methodName = checkNotNull(methodName, "method name");
       this.encodedLineNumber = encodedLineNumber;
-      this.sourceFileName = sourceFileName(sourceFilePath);
-    }
-
-    // TODO: b/390497738 - support retrieving full file paths
-    private static @Nullable String sourceFileName(@Nullable String sourceFilePath) {
-      if (sourceFilePath == null) {
-        return null;
-      }
-      return sourceFilePath.substring(sourceFilePath.lastIndexOf(File.separatorChar) + 1);
+      this.sourceFilePath = sourceFilePath;
     }
 
     @Override
@@ -202,7 +194,11 @@ public abstract class LogSite implements LogSiteKey {
 
     @Override
     public @Nullable String getFileName() {
-      return sourceFileName;
+      // TODO: b/390497738 - support retrieving full file paths
+      if (sourceFilePath == null) {
+        return null;
+      }
+      return sourceFilePath.substring(sourceFilePath.lastIndexOf(File.separatorChar) + 1);
     }
 
     @Override
