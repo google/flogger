@@ -18,20 +18,20 @@ jobs:
     steps:
       # Cancel any previous runs for the same branch that are still running.
       - name: 'Cancel previous runs'
-        uses: styfle/cancel-workflow-action@b173b6ec0100793626c2d9e6b90435061f4fc3e5
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
         with:
           access_token: ${{ github.token }}
       - name: 'Check out repository'
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: 'Cache Bazel dependencies'
-        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ~/.cache/bazel/*/*/external
           key: bazel-${{ hashFiles('MODULE.bazel') }}
           restore-keys: |
             bazel-
       - name: 'Set up JDK ${{ matrix.java }}'
-        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
