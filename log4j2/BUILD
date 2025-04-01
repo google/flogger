@@ -15,7 +15,6 @@ LOG4J2_BACKEND_RESOURCES = glob(["src/main/resources/**"])
 java_library(
     name = "log4j2_backend",
     srcs = LOG4J2_BACKEND_SRCS,
-    javacopts = ["-source 8 -target 8"],
     resources = LOG4J2_BACKEND_RESOURCES,
     tags = ["maven_coordinates=com.google.flogger:flogger-log4j2-backend:${project.version}"],
     deps = [

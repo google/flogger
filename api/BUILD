@@ -40,7 +40,6 @@ java_library(
                   STACK_GETTER_JAVA_LANG_ACCESS_IMPL_SRCS +
                   STACK_GETTER_COMMON_SRCS + CHECKS,
     ),
-    javacopts = ["-source 8 -target 8"],
     tags = ["maven_coordinates=com.google.flogger:flogger:${project.version}"],
     visibility = ["//visibility:public"],
     exports = [":checks"],
@@ -87,7 +86,6 @@ genjar(
 java_library(
     name = "stack_getter_common",
     srcs = STACK_GETTER_COMMON_SRCS,
-    javacopts = ["-source 8 -target 8"],
     deps = [
         ":checks",
         "@google_bazel_common//third_party/java/jspecify_annotations",
@@ -97,7 +95,6 @@ java_library(
 java_library(
     name = "checks",
     srcs = CHECKS,
-    javacopts = ["-source 8 -target 8"],
     deps = [
         "@google_bazel_common//third_party/java/error_prone:annotations",
     ],
@@ -138,7 +135,6 @@ javadoc_library(
 java_library(
     name = "system_backend",
     srcs = SYSTEM_BACKEND_SRCS,
-    javacopts = ["-source 8 -target 8"],
     tags = ["maven_coordinates=com.google.flogger:flogger-system-backend:${project.version}"],
     visibility = ["//visibility:public"],
     deps = [

@@ -54,10 +54,9 @@ public final class CallerFinder {
       // exmaple on Android. This is not a problem because we have ThrowableStackGetter as a
       // fallback.
       // Note, this Throwable is replacing ClassNotFoundException, NoSuchMethodException,
-      // InstantiationException, IllegalAccessException, InvocationTargetException, LinkageError,
-      // because multi-catch is not available with -source 6 and we would need a separate empty
-      // catch clause for all of those. Also, we generally don't want this method to throw any kind
-      // of Exception.
+      // InstantiationException, IllegalAccessException, InvocationTargetException, LinkageError. We
+      // could instead use multi-catch now that we no longer use -source 6, but we generally don't
+      // want this method to throw any kind of Exception.
     }
     return null;
   }
