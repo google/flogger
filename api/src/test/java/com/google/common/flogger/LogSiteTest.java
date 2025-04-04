@@ -76,6 +76,7 @@ public final class LogSiteTest {
         LogSite.injectedLogSite(
             className, "someMethod", 42, "com/google/common/flogger/MyFile.java");
     assertThat(logSite.getFileName()).isEqualTo("MyFile.java");
+    assertThat(logSite.getFileName()).isEqualTo("MyFile.java");
   }
 
   @SuppressWarnings("deprecation") // Intentionally calling injectedLogSite to test it.

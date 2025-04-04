@@ -115,8 +115,7 @@ public abstract class LogSite implements LogSiteKey {
         .append(", line=")
         .append(getLineNumber());
     if (getFileName() != null) {
-        out.append(", file=")
-            .append(getFileName());
+      out.append(", file=").append(getFileName());
     }
     return out.append(" }").toString();
   }
