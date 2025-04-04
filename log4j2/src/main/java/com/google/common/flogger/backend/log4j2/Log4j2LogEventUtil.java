@@ -44,7 +44,6 @@ import org.apache.logging.log4j.core.impl.ContextDataFactory;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.core.time.Instant;
 import org.apache.logging.log4j.core.time.MutableInstant;
-import org.apache.logging.log4j.core.util.Throwables;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.util.StringMap;
 
@@ -122,7 +121,7 @@ final class Log4j2LogEventUtil {
         .setMessage(new SimpleMessage(message))
         .setThreadName(Thread.currentThread().getName())
         .setInstant(getInstant(logData.getTimestampNanos()))
-        .setThrown(thrown != null ? Throwables.getRootCause(thrown) : null)
+        .setThrown(thrown)
         .setIncludeLocation(true)
         .setSource(locationInfo)
         .setContextData(createContextMap(logData))
