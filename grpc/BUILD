@@ -6,6 +6,7 @@
 
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 load("@google_bazel_common//tools/javadoc:javadoc.bzl", "javadoc_library")
+load("@rules_java//java:java_library.bzl", "java_library")
 load("//tools:maven.bzl", "pom_file")
 
 GRPC_CONTEXT_SRCS = glob(["src/main/java/**/*.java"])
