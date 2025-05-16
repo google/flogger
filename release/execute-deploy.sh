@@ -60,12 +60,6 @@ deploy_library \
   google/google_logger_pom.xml
 
 deploy_library \
-  log4j/liblog4j_backend.jar \
-  log4j/liblog4j_backend-src.jar \
-  log4j/javadoc.jar \
-  log4j/pom.xml
-
-deploy_library \
   log4j2/liblog4j2_backend.jar \
   log4j2/liblog4j2_backend-src.jar \
   log4j2/javadoc.jar \
