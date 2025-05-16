@@ -38,3 +38,7 @@ jobs:
       - name: 'Test'
         shell: bash
         run: bazelisk test --lockfile_mode=error --test_output=errors //...
+      - name: 'Test Deploy Script'
+        if: matrix.java == 22
+        shell: bash
+        run: release/install-local-snapshot.sh
