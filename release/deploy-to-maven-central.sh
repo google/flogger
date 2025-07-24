@@ -15,7 +15,7 @@ if [[ "$version_name" =~ " " ]]; then
   exit 3
 fi
 
-bazel test //...
+bazelisk test //...
 
 bash $(dirname $0)/execute-deploy.sh \
   "gpg:sign-and-deploy-file" \

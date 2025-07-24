@@ -24,7 +24,7 @@ deploy_library() {
   srcjar=$2
   javadoc=$3
   pomfile=$4
-  bazel build --define=pom_version="$VERSION_NAME" \
+  bazelisk build --define=pom_version="$VERSION_NAME" \
     $library $srcjar $javadoc $pomfile
 
   mvn $MVN_GOAL \
