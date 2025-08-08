@@ -21,7 +21,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.WARNING;
 
 import com.google.common.flogger.LogContext;
-import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.BaseMessageFormatter;
 import com.google.common.flogger.backend.LogData;
@@ -57,6 +56,9 @@ import org.apache.logging.log4j.util.StringMap;
  * documentation.
  */
 final class Log4j2LogEventUtil {
+  private static final ThreadLocal<Log4jLogEvent.Builder> newBuilder = ThreadLocal.withInitial(Log4jLogEvent::newBuilder);
+  private static final ThreadLocal<MutableInstant> newMutableInstant = ThreadLocal.withInitial(MutableInstant::new);
+  private static final ThreadLocal<StringBuilder> newStringBuilder = ThreadLocal.withInitial(StringBuilder::new);
 
   private Log4j2LogEventUtil() {}
 
@@ -85,8 +87,10 @@ final class Log4j2LogEventUtil {
     if (config instanceof DefaultConfiguration) {
       message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
     } else {
+      StringBuilder sb = newStringBuilder.get();
+      sb.setLength(0);
       message =
-          BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder()).toString();
+          BaseMessageFormatter.appendFormattedMessage(logData, sb).toString();
     }
 
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
@@ -107,15 +111,9 @@ final class Log4j2LogEventUtil {
       org.apache.logging.log4j.Level level,
       Throwable thrown) {
 
-    LogSite logSite = logData.getLogSite();
-    StackTraceElement locationInfo =
-        new StackTraceElement(
-            logSite.getClassName(),
-            logSite.getMethodName(),
-            logSite.getFileName(),
-            logSite.getLineNumber());
+    StackTraceElement locationInfo = logData.getLogSite().getStackTraceElement();
 
-    return Log4jLogEvent.newBuilder()
+    return newBuilder.get()
         .setLoggerName(loggerName)
         .setLoggerFqcn(logData.getLoggerName())
         .setLevel(level) // this might be different from logData.getLevel() for errors.
@@ -131,7 +129,7 @@ final class Log4j2LogEventUtil {
 
   @SuppressWarnings({"NanosTo_Seconds", "SecondsTo_Nanos"})
   private static Instant getInstant(long timestampNanos) {
-    MutableInstant instant = new MutableInstant();
+    MutableInstant instant = newMutableInstant.get();
     // Don't use Duration here as (a) it allocates and (b) we can't allow error on overflow.
     long epochSeconds = NANOSECONDS.toSeconds(timestampNanos);
     int remainingNanos = (int) (timestampNanos - SECONDS.toNanos(epochSeconds));
