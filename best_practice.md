@@ -42,7 +42,7 @@ levels or rate limiting.
 
 Here's how to fix this problem, **in order of preference**.
 
-### 1. Use `lazy` (Java 8+):
+### 1. Use `lazy`
 
 Import this method from the [`LazyArgs`] class.
 
