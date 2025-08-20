@@ -18,6 +18,7 @@ package com.google.common.flogger;
 
 import static com.google.common.flogger.util.Checks.checkArgument;
 import static com.google.common.flogger.util.Checks.checkNotNull;
+import static java.lang.Math.floorMod;
 
 import java.util.HashMap;
 import org.jspecify.annotations.Nullable;
@@ -179,12 +180,7 @@ public abstract class LogPerBucketingStrategy<T> {
       @Override
       protected Object apply(Object key) {
         // Modulo can return -ve values and we want a value in the range (0 <= modulo < maxBuckets).
-        // Note: Math.floorMod() is Java 8, so cannot be used here (yet) otherwise we would just do:
-        // return Math.floorMod(key.hashCode(), maxBuckets) - 128;
-        int modulo = key.hashCode() % maxBuckets;
-        // Can only be -ve if the hashcode was negative, and if so (-maxBuckets < modulo < 0).
-        // The following adds maxBuckets if modulo was negative, or zero (saves a branch).
-        modulo += (modulo >> 31) & maxBuckets;
+        int modulo = floorMod(key.hashCode(), maxBuckets);
         // Subtract 128 from the modulo in order to take full advantage of the promised Integer
         // cache in the JVM (ensuring up to 256 cached values). From java.lang.Integer#valueOf():
         // ""This method will always cache values in the range -128 to 127 ...""

@@ -76,8 +76,8 @@ final class GrpcContextData {
       return value.get();
     }
 
-    // Note: If we could use Java 1.8 runtime libraries, this would just be "accumulateAndGet()",
-    // but gRPC is Java 1.7 compatible: https://github.com/grpc/grpc-java/blob/master/README.md
+    // Note: If we could use Android 24 libraries, this would just be "accumulateAndGet()",
+    // but gRPC supports Android 21: https://github.com/grpc/grpc-java/blob/master/README.md
     final void mergeFrom(@Nullable T delta) {
       if (delta != null) {
         T current;

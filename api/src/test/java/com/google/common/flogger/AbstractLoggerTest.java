@@ -42,8 +42,8 @@ import org.junit.runners.JUnit4;
 /* See LogContextTest.java for the vast majority of tests related to base logging behaviour. */
 @RunWith(JUnit4.class)
 public final class AbstractLoggerTest {
-  // Matches ISO 8601 date/time format.
-  // See: https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
+  // Matches ISO 8601 date/time format. See:
+  // https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/text/SimpleDateFormat.html
   private static final Pattern ISO_TIMESTAMP_PREFIX =
       Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}\\:\\d{2}\\.\\d{3}[-+]\\d{4}: .*");
 

@@ -82,7 +82,7 @@ import org.jspecify.annotations.Nullable;
  */
 public abstract class ScopedLoggingContext {
   /** A logging context which must be closed in the reverse order to which it was created. */
-  // If Flogger is bumped to JDK 1.7, this should be switched to AutoCloseable.
+  // TODO(cpovirk): Switch to AutoCloseable now that we require new enough versions of JDK+Android?
   public interface LoggingContextCloseable extends Closeable {
     // Overridden to remove the throws clause allowing simple try-with-resources use.
     @Override
@@ -260,8 +260,8 @@ public abstract class ScopedLoggingContext {
     /**
      * Installs a new context based on the state of the builder. The caller is <em>required</em> to
      * invoke {@link LoggingContextCloseable#close() close()} on the returned instances in the
-     * reverse order to which they were obtained. For JDK 1.7 and above, this is best achieved by
-     * using a try-with-resources construction in the calling code.
+     * reverse order to which they were obtained. This is best achieved by using a
+     * try-with-resources construction in the calling code.
      *
      * <pre>{@code
      * try (LoggingContextCloseable ctx = ScopedLoggingContext.getInstance()

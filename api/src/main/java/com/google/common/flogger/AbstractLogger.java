@@ -198,15 +198,17 @@ public abstract class AbstractLogger<API extends LoggingApi<API>> {
     System.err.flush();
   }
 
-  @SuppressWarnings({"GoodTime", "JavaUtilDate", "SimpleDateFormat"})  // JDK7, no Joda-Time.
+  @SuppressWarnings({"GoodTime", "JavaUtilDate", "SimpleDateFormat"}) // Android, no Joda-Time.
   private static String formatTimestampIso8601(LogData data) {
-    // Sadly in JDK7, we don't have access to java.time and can't depend on things like Joda-Time.
+    // Sadly, external Android users might not have access to java.time.
+    // Also, we can't depend on things like Joda-Time.
     Date timestamp = new Date(NANOSECONDS.toMillis(data.getTimestampNanos()));
     // Use the system timezone here since we don't know how logger backends want to format dates.
     // The only alternative is to always use UTC, but that may cause confusion to some users, and
     // if users really want UTC, they can set that as the system timezone.
     //
-    // ISO format from https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html.
+    // ISO format from
+    // https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/text/SimpleDateFormat.html.
     // Note that ending with "SSSXXX" would be more correct, but Android does not support this until
     // v24+ (https://developer.android.com/reference/java/text/SimpleDateFormat.html).
     //
