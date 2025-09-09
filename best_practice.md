@@ -374,7 +374,7 @@ Or you can add a helper method to return the log period if used in many places.
 ## Use LogSite to implement non-trivial logging helper methods {#log-site}
 
 While it is generally unnecessary and bad practice to implement lots of logging
-helper methods, one legitimate use-case (which has lead to people wanting to
+helper methods, one legitimate use-case (which has led to people wanting to
 split the logging API out) is the desire to implement project specific logging
 behaviour. The naïve way to write such a method might be:
 
