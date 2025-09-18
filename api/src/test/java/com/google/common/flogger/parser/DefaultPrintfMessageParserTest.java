@@ -42,7 +42,9 @@ public class DefaultPrintfMessageParserTest {
 
     // Capture the parameter created by the parsing of the printf term.
     ArgumentCaptor<Parameter> param = ArgumentCaptor.forClass(Parameter.class);
-    verify(builder).addParameterImpl(eq(6), eq(15), param.capture());
+    verify(builder)
+        .addParameter(
+            eq(6), eq(15), param.capture());
     assertThat(param.getValue().getIndex()).isEqualTo(1);
 
     // Now visit the parameter and capture its state (doing it this way avoids needing to open up

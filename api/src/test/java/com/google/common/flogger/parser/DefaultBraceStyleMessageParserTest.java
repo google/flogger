@@ -47,7 +47,9 @@ public class DefaultBraceStyleMessageParserTest {
 
     // Capture the parameter created by the parsing of the printf term.
     ArgumentCaptor<Parameter> param = ArgumentCaptor.forClass(Parameter.class);
-    verify(builder).addParameterImpl(eq(6), eq(9), param.capture());
+    verify(builder)
+        .addParameter(
+            eq(6), eq(9), param.capture());
     assertThat(param.getValue().getIndex()).isEqualTo(1);
 
     // Now visit the parameter and verify the expected callback occurred (doing it this way avoids
