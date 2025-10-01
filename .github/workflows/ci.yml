@@ -34,7 +34,7 @@ jobs:
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'zulu'
+          distribution: 'temurin'
       - name: 'Test'
         shell: bash
         run: bazelisk test --lockfile_mode=error --test_output=errors //...
