@@ -29,6 +29,10 @@ import org.jspecify.annotations.Nullable;
  * <p>Note, that since this is using Java 9 api, it is being compiled separately from the rest of
  * the source code.
  */
+// We load this class reflectively, and we fall back to another implementation under older versions.
+// However, it's possible that we should avoid even trying it under Android until API Level 36:
+// https://r.android.com/3548340
+@SuppressWarnings("NewApi")
 final class StackWalkerStackGetter implements StackGetter {
   private static final StackWalker STACK_WALKER =
       StackWalker.getInstance(StackWalker.Option.SHOW_REFLECT_FRAMES);
