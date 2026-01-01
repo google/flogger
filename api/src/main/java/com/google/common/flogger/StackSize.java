@@ -17,8 +17,8 @@
 package com.google.common.flogger;
 
 /**
- * Enum values to be passed into {@link GoogleLoggingApi#withStackTrace} to control the maximum
- * number of stack trace elements created.
+ * Enum values to be passed into {@link LoggingApi#withStackTrace} to control the maximum number of
+ * stack trace elements created.
  *
  * <p>Note that the precise value returned by {@link #getMaxDepth()} may change over time, but it
  * can be assumed that {@code SMALL <= MEDIUM <= LARGE <= FULL}.
@@ -28,15 +28,15 @@ public enum StackSize {
    * Produces a small stack suitable for more fine grained debugging. For performance reasons, this
    * is the only stack size suitable for log statements at level {@code INFO} or finer, but is may
    * also be useful for {@code WARNING} level log statements in cases where context is not as
-   * important. For {@code SEVERE} log statements, it is advised to use a stack size of
-   * {@link #MEDIUM} or above.
-   * <p>
-   * Requesting a small stack trace for log statements which occur under normal circumstances is
-   * acceptable, but may affect performance. Consider using
-   * {@link GoogleLoggingApi#withStackTrace(StackSize)} in conjunction with rate limiting methods,
-   * such as {@link LoggingApi#atMostEvery(int, TimeUnit)}, to mitigate performance issues.
-   * <p>
-   * The current maximum size of a {@code SMALL} stack trace is 10 elements, but this may change.
+   * important. For {@code SEVERE} log statements, it is advised to use a stack size of {@link
+   * #MEDIUM} or above.
+   *
+   * <p>Requesting a small stack trace for log statements which occur under normal circumstances is
+   * acceptable, but may affect performance. Consider using {@link
+   * LoggingApi#withStackTrace(StackSize)} in conjunction with rate limiting methods, such as {@link
+   * LoggingApi#atMostEvery(int, TimeUnit)}, to mitigate performance issues.
+   *
+   * <p>The current maximum size of a {@code SMALL} stack trace is 10 elements, but this may change.
    */
   SMALL(10),
 
