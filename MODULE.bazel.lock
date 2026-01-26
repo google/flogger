@@ -324,7 +324,7 @@
     },
     "@@rules_python+//python/private/pypi:pip.bzl%pip_internal": {
       "general": {
-        "bzlTransitiveDigest": "eKW1vnc9g8YJQKBpDDzvtxJODdY/aH5uuqqhzGKHTxI=",
+        "bzlTransitiveDigest": "anASvAkWS5wGbz+zaQH8N0I1ur1YXgSn33VE0ZscHzg=",
         "usagesDigest": "OLoIStnzNObNalKEMRq99FqenhPGLFZ5utVLV4sz7OI=",
         "recordedFileInputs": {
           "@@rules_python+//tools/publish/requirements_darwin.txt": "2994136eab7e57b083c3de76faf46f70fad130bc8e7360a7fed2b288b69e79dc",
