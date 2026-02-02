@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-bazel_dep(name = "rules_java", version = "8.15.2")
+bazel_dep(name = "rules_java", version = "9.3.0")
 bazel_dep(name = "google_bazel_common")
 git_override(
     module_name = "google_bazel_common",
