@@ -13,7 +13,7 @@
 # limitations under the License.
 
 bazel_dep(name = "rules_android", version = "0.7.1")
-bazel_dep(name = "rules_java", version = "9.5.0")
+bazel_dep(name = "rules_java", version = "9.6.1")
 bazel_dep(name = "google_bazel_common")
 git_override(
     module_name = "google_bazel_common",
