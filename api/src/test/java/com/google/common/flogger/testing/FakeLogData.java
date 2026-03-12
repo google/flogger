@@ -17,7 +17,6 @@
 package com.google.common.flogger.testing;
 
 import static com.google.common.flogger.util.Checks.checkState;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import com.google.common.flogger.LogContext;
 import com.google.common.flogger.LogSite;
@@ -109,12 +108,6 @@ public final class FakeLogData implements LogData {
   @Override
   public Level getLevel() {
     return level;
-  }
-
-  @Deprecated
-  @Override
-  public long getTimestampMicros() {
-    return NANOSECONDS.toMicros(timestampNanos);
   }
 
   @Override
