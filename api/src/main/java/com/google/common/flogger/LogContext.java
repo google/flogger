@@ -19,7 +19,6 @@ package com.google.common.flogger;
 import static com.google.common.flogger.util.CallerFinder.getStackForCallerOf;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 import static com.google.common.flogger.util.Checks.checkState;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import com.google.common.flogger.DurationRateLimiter.RateLimitPeriod;
 import com.google.common.flogger.backend.LogData;
@@ -406,12 +405,6 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
   @Override
   public final Level getLevel() {
     return level;
-  }
-
-  @Deprecated
-  @Override
-  public final long getTimestampMicros() {
-    return NANOSECONDS.toMicros(timestampNanos);
   }
 
   @Override

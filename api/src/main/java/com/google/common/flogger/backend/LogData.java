@@ -34,14 +34,11 @@ public interface LogData {
   /** Returns the log level for the current log statement. */
   Level getLevel();
 
-  /**
-   * @deprecated Use getTimestampNanos()
-   */
-  @Deprecated
-  long getTimestampMicros();
-
   /** Returns a nanosecond timestamp for the current log statement. */
+  @SuppressWarnings("GoodTime")
   long getTimestampNanos();
+
+  // TODO: consider adding getTimestamp() that returns an Instant, but be careful about performance!
 
   /**
    * Returns the logger name (which is usually a canonicalized class name) or {@code null} if not
