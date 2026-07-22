@@ -68,6 +68,11 @@ final class StackBasedLogSite extends LogSite {
   }
 
   @Override
+  public StackTraceElement getStackTraceElement() {
+    return this.stackElement;
+  }
+
+  @Override
   public boolean equals(@Nullable Object obj) {
     return (obj instanceof StackBasedLogSite)
         && stackElement.equals(((StackBasedLogSite) obj).stackElement);
