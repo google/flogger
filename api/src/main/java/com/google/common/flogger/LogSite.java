@@ -193,7 +193,7 @@ public abstract class LogSite implements LogSiteKey {
 
     @Override
     public @Nullable String getFileName() {
-      // TODO: b/390497738 - support retrieving full file paths
+      // TODO(b/390497738): support retrieving full file paths
       if (sourceFilePath == null) {
         return null;
       }
