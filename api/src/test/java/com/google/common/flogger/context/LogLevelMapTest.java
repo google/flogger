@@ -17,6 +17,7 @@
 package com.google.common.flogger.context;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
@@ -94,5 +95,25 @@ public class LogLevelMapTest {
     assertThat(levelMap.getLevel("com.google")).isEqualTo(Level.INFO);
     assertThat(levelMap.getLevel("java.lang")).isEqualTo(Level.WARNING);
     assertThat(levelMap.getLevel("java.lang.String")).isEqualTo(Level.FINE);
+  }
+
+  @Test
+  public void testSetDefaultRejectsNull() {
+    assertThrows(NullPointerException.class, () -> LogLevelMap.builder().setDefault(null));
+  }
+
+  // Annoyingly Bazel does not support a sufficiently recent version of JUnit so we have to
+  // reimplement assertThrows() ourselves.
+  private static <T extends Throwable> T assertThrows(Class<T> clazz, Runnable code) {
+    try {
+      code.run();
+    } catch (Throwable t) {
+      if (!clazz.isInstance(t)) {
+        fail("expected " + clazz.getName() + " but got " + t.getClass().getName());
+      }
+      return clazz.cast(t);
+    }
+    fail("expected " + clazz.getName() + " was not thrown");
+    return null;
   }
 }

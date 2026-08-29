@@ -73,7 +73,7 @@ public final class LogLevelMap {
     /** Sets the default log level (use {@link Level#OFF} to disable. */
     @CanIgnoreReturnValue
     public Builder setDefault(Level level) {
-      checkNotNull(defaultLevel, "default log level must not be null");
+      checkNotNull(level, "default log level must not be null");
       this.defaultLevel = level;
       return this;
     }
