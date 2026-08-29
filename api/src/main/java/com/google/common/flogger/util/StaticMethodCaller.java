@@ -87,8 +87,10 @@ public final class StaticMethodCaller {
           // If the user explicitly specified a getInstance method via "ClassName#getInstance" and
           // that getInstance method doesn't exist, fall back to constructor invocation. This allows
           // system properties that were set for service types Flogger provides to continue to work
-          // even though we intentionally removed their getInstance() methods.
-        if (hashIndex == -1 || !methodName.equals("getInstance")) {
+          // even though we intentionally removed their getInstance() methods. This fallback also
+          // applies when just a class name was given and the default getInstance() method is not
+          // present, so that a class with only a public no-arg constructor still works.
+        if (!methodName.equals("getInstance")) {
           // Otherwise, error and return
           error("method '%s' does not exist: %s\n", property, e);
           return null;
