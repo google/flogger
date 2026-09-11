@@ -20,7 +20,7 @@ import java.io.Closeable;
 
 /**
  * A threal local counter, incremented whenever a log statement is being processed by the
- * backend. If this value is greater than 1, then reentrant logging has occured, and some code may
+ * backend. If this value is greater than 1, then reentrant logging has occurred, and some code may
  * behave differently to try and avoid issues such as unbounded recursion. Logging may even be
  * disabled completely if the depth gets too high.
  *
