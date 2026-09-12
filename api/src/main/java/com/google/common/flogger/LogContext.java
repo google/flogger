@@ -628,7 +628,7 @@ public abstract class LogContext<LOGGER extends AbstractLogger<API>, API extends
 
   /**
    * Callback to allow custom log contexts to apply additional rate limiting behaviour. This should
-   * be called from within an overriden {@code postProcess()} method. Typically this is invoked
+   * be called from within an overridden {@code postProcess()} method. Typically this is invoked
    * after calling {@code super.postProcess(logSiteKey)}, such as:
    *
    * <pre>{@code protected boolean postProcess(@Nullable LogSiteKey logSiteKey) {
