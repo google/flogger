@@ -64,10 +64,10 @@ functionality, there will always be cases where a team has a special requirement
 that is not covered. In this case it is possible to locally extend the logging
 API and add methods in the fluent chain.
 
-For example, consider a mechanism for emitting per-user log statements
-which get written out separately from the main logs. Currently this requires a
-separate supporting class. With Flogger a `UserLogger` class could be written
-with an extended API:
+For example, consider a mechanism for emitting per-user log statements which get
+written out separately from the main logs. Currently this requires a separate
+supporting class. With Flogger a `UserLogger` class could be written with an
+extended API:
 
 ```java
 logger.at(INFO).forUserId(id).log("Message: %s", param);

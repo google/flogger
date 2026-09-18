@@ -282,8 +282,8 @@ void log(String message, int arg);
 void log(String message, long arg);
 ```
 
-This brings the total number of overrides needed to `(N + 5)` (where `N` was
-the number of additional methods required to avoid varargs array allocation).
+This brings the total number of overrides needed to `(N + 5)` (where `N` was the
+number of additional methods required to avoid varargs array allocation).
 
 If we now go back and consider applying this technique to avoid varargs and
 auto-boxing in our original logging API, we need to multiply the number of

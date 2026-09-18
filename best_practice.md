@@ -52,8 +52,8 @@ logger.atFine().log("stats=%s", lazy(() -> createSummaryOf(stats)));
 ```
 
 With this simple change, almost no work is done at the log site (just instance
-creation for the lambda expression). Flogger will only evaluate this lambda
-if it intends to actually log the message.
+creation for the lambda expression). Flogger will only evaluate this lambda if
+it intends to actually log the message.
 
 ### 2. Use the `toString()` method of the logged value:
 
@@ -65,7 +65,8 @@ it like this:
 logger.atFine().log("stats=%s", stats);
 ```
 
-You might even *create* a wrapper so as to have the `toString` behavior you want:
+You might even *create* a wrapper so as to have the `toString` behavior you
+want:
 
 ```java
 // Almost no work done at the log site, but structure is lost.
@@ -334,13 +335,13 @@ api.log("message");
 
 Splitting a log statement causes several issues such as:
 
-* Incorrect timestamps in log statements
-* Incorrect or even broken log site injection
-* Errors due to accidental reuse (the `Api` is a one-use instance)
-* Errors due to concurrent logging in different threads
+*   Incorrect timestamps in log statements
+*   Incorrect or even broken log site injection
+*   Errors due to accidental reuse (the `Api` is a one-use instance)
+*   Errors due to concurrent logging in different threads
 
-Flogger's API is designed to never need you to split the `Api` out like this,
-so if you think you really need to do it, please contact g/flogger-discuss.
+Flogger's API is designed to never need you to split the `Api` out like this, so
+if you think you really need to do it, please contact g/flogger-discuss.
 
 One misconception is that you need to do this to make conditional calls on
 fluent methods, such as:
@@ -393,9 +394,9 @@ same location, and the rate limiting happens across all calls.
 
 Developers sometimes attempt to work around this problem by splitting the log
 statement and returning the logging `Api` from the helper so the `log()` method
-can be invoked on the caller's side. This works only by accident, since log
-site determination is currently done in the `log()` method, but that's not
-guaranteed and it could easily enough be implemented in the logger.
+can be invoked on the caller's side. This works only by accident, since log site
+determination is currently done in the `log()` method, but that's not guaranteed
+and it could easily enough be implemented in the logger.
 
 Relying on specific implementation details like this makes code very fragile
 (which is why splitting log statements is such a bad idea).
