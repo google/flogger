@@ -55,11 +55,11 @@ final class Log4j2LoggerBackend extends LoggerBackend {
   public void log(LogData logData) {
     // The caller is responsible to call isLoggable() before calling this method to ensure that only
     // messages above the given threshold are logged.
-    logger.get().log(toLog4jLogEvent(logger.getName(), logData));
+    logger.get().log(toLog4jLogEvent(logger, logData));
   }
 
   @Override
   public void handleError(RuntimeException error, LogData badData) {
-    logger.get().log(toLog4jLogEvent(logger.getName(), error, badData));
+    logger.get().log(toLog4jLogEvent(logger, error, badData));
   }
 }
