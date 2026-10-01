@@ -95,6 +95,7 @@ java_library(
 java_library(
     name = "checks",
     srcs = CHECKS,
+    visibility = ["//visibility:private"],
     deps = [
         "@google_bazel_common//third_party/java/error_prone:annotations",
     ],
