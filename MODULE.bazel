@@ -17,6 +17,6 @@ bazel_dep(name = "rules_java", version = "9.9.0")
 bazel_dep(name = "google_bazel_common")
 git_override(
     module_name = "google_bazel_common",
-    commit = "52ef5d65f715032e682cbcbe6e72849f15a67776",
+    commit = "3af0219202168b1e988307fdbadc7a477d2f1f5a",
     remote = "https://github.com/google/bazel-common",
 )
