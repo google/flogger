@@ -16,6 +16,8 @@
 
 package com.google.common.flogger.backend.slf4j;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
+import static com.google.common.truth.TruthJUnit.assume;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -46,6 +48,7 @@ public class Slf4jBackendLoggerTest {
 
   @Test
   public void testMessage() {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     Logger logger = mock(Logger.class);
     LoggerBackend backend = newBackend(logger);
 
@@ -60,6 +63,7 @@ public class Slf4jBackendLoggerTest {
 
   @Test
   public void testMetadata() {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     Logger logger = mock(Logger.class);
     LoggerBackend backend = newBackend(logger);
 
@@ -74,6 +78,7 @@ public class Slf4jBackendLoggerTest {
 
   @Test
   public void testLevels() {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     Logger logger = mock(Logger.class);
     LoggerBackend backend = newBackend(logger);
 
@@ -98,6 +103,7 @@ public class Slf4jBackendLoggerTest {
 
   @Test
   public void testErrorHandling() {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     Logger logger = mock(Logger.class);
     LoggerBackend backend = newBackend(logger);
 
@@ -130,6 +136,7 @@ public class Slf4jBackendLoggerTest {
 
   @Test
   public void testWithThrown() {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     Logger logger = mock(Logger.class);
     LoggerBackend backend = newBackend(logger);
 
@@ -137,5 +144,9 @@ public class Slf4jBackendLoggerTest {
     backend.log(FakeLogData.of("Hello World").addMetadata(LogContext.Key.LOG_CAUSE, cause));
 
     verify(logger).info("Hello World", cause);
+  }
+
+  private static boolean jvmTooOldForMockito5() {
+    return JAVA_SPECIFICATION_VERSION.value().equals("1.8");
   }
 }

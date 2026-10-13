@@ -16,7 +16,9 @@
 
 package com.google.common.flogger.backend.system;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 
 import com.google.common.flogger.backend.LoggerBackend;
 import com.google.common.flogger.backend.Platform.LogCallerFinder;
@@ -25,9 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 /**
  * These tests check that the internal implementation of the configured platform "plugins" works as
@@ -61,17 +61,25 @@ public class DefaultPlatformTest {
     }
   }
 
-  @Mock BackendFactory mockBackendFactory;
-  @Mock ContextDataProvider mockContext;
-  @Mock Clock mockClock;
-  @Mock LogCallerFinder mockCallerFinder;
+  /*
+   * We avoid `@Mock` so that we defer loading Mockito classes (which require Java 11+) until we
+   * know we're not running under Java 8.
+   */
+  BackendFactory mockBackendFactory;
+  ContextDataProvider mockContext;
+  Clock mockClock;
+  LogCallerFinder mockCallerFinder;
 
   // The fake platform doesn't attempt to look up any real services, they are just injected mocks.
   private FakeDefaultPlatform platform;
 
   @Before
   public void initializeMocks() {
-    MockitoAnnotations.initMocks(this);
+    assume().that(jvmTooOldForMockito5()).isFalse();
+    mockBackendFactory = Mockito.mock(BackendFactory.class);
+    mockContext = Mockito.mock(ContextDataProvider.class);
+    mockClock = Mockito.mock(Clock.class);
+    mockCallerFinder = Mockito.mock(LogCallerFinder.class);
     Mockito.when(mockBackendFactory.toString()).thenReturn("Mock Backend Factory");
     Mockito.when(mockContext.toString()).thenReturn("Mock Logging Context");
     Mockito.when(mockClock.toString()).thenReturn("Mock Clock");
@@ -110,5 +118,9 @@ public class DefaultPlatformTest {
     assertThat(platform.getConfigInfoImpl()).contains("BackendFactory: Mock Backend Factory");
     assertThat(platform.getConfigInfoImpl()).contains("ContextDataProvider: Mock Logging Context");
     assertThat(platform.getConfigInfoImpl()).contains("LogCallerFinder: Mock Caller Finder");
+  }
+
+  private static boolean jvmTooOldForMockito5() {
+    return JAVA_SPECIFICATION_VERSION.value().equals("1.8");
   }
 }

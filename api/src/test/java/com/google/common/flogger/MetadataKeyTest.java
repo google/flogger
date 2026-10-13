@@ -16,7 +16,9 @@
 
 package com.google.common.flogger;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 
@@ -107,6 +109,7 @@ public class MetadataKeyTest {
 
   @Test
   public void testDefaultEmit() {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     MetadataKey<String> k = MetadataKey.single("foo", String.class);
     KeyValueHandler handler = Mockito.mock(KeyValueHandler.class);
     k.safeEmit("123", handler);
@@ -115,6 +118,7 @@ public class MetadataKeyTest {
 
   @Test
   public void testDefaultEmitRepeated() {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     MetadataKey<String> k = MetadataKey.repeated("foo", String.class);
     KeyValueHandler handler = Mockito.mock(KeyValueHandler.class);
     k.safeEmitRepeated(iterate("123", "abc"), handler);
@@ -124,6 +128,7 @@ public class MetadataKeyTest {
 
   @Test
   public void testDefaultEmitRepeated_singleKeyFails() {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     MetadataKey<String> k = MetadataKey.single("foo", String.class);
     KeyValueHandler handler = Mockito.mock(KeyValueHandler.class);
     try {
@@ -202,5 +207,9 @@ public class MetadataKeyTest {
       fail("expected NullPointerException");
     } catch (NullPointerException expected) {
     }
+  }
+
+  private static boolean jvmTooOldForMockito5() {
+    return JAVA_SPECIFICATION_VERSION.value().equals("1.8");
   }
 }

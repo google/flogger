@@ -16,7 +16,9 @@
 
 package com.google.common.flogger.parser;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -37,6 +39,7 @@ public class DefaultPrintfMessageParserTest {
 
   @Test
   public void testParsePrintf() throws ParseException {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     MessageBuilder<?> builder = mock(MessageBuilder.class);
     int unused = PARSER.parsePrintfTerm(builder, 1, "Hello %2$+06.2f World", 6, 9, 14);
 
@@ -79,5 +82,9 @@ public class DefaultPrintfMessageParserTest {
     } catch (ParseException expected) {
       assertThat(expected.getMessage()).contains("[%0s]");
     }
+  }
+
+  private static boolean jvmTooOldForMockito5() {
+    return JAVA_SPECIFICATION_VERSION.value().equals("1.8");
   }
 }

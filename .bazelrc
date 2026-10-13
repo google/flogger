@@ -1,5 +1,9 @@
-# Include debug info in the compiled jars
-build --javacopt=-g
-build --host_javacopt=-g
+build --java_language_version=8 --tool_java_language_version=25
+build --java_runtime_version=25 --tool_java_runtime_version=25
 
-build --java_runtime_version=21 --javacopt='-source 8 -target 8'
+build --experimental_one_version_enforcement=error
+
+test --test_env=TZ=UTC
+
+# TODO(cpovirk): Remove after bumping version of ByteBuddy to support Java-25 class files by default.
+test --jvmopt=-Dnet.bytebuddy.experimental=true

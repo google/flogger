@@ -16,7 +16,9 @@
 
 package com.google.common.flogger.parser;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -40,6 +42,7 @@ public class DefaultBraceStyleMessageParserTest {
 
   @Test
   public void testParseBraceFormat() throws ParseException {
+    assume().that(jvmTooOldForMockito5()).isFalse();
     MessageBuilder<?> builder = mock(MessageBuilder.class);
     // Parse just the 3 characters representing the brace format specifier between position 6 and 9.
     // The -1 indicates that there's no additional formatting information after the index.
@@ -68,5 +71,9 @@ public class DefaultBraceStyleMessageParserTest {
     } catch (ParseException expected) {
       assertThat(expected.getMessage()).contains("[:x]");
     }
+  }
+
+  private static boolean jvmTooOldForMockito5() {
+    return JAVA_SPECIFICATION_VERSION.value().equals("1.8");
   }
 }

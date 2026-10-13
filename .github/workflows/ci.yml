@@ -21,7 +21,7 @@ jobs:
     name: "JDK ${{ matrix.java }}"
     strategy:
       matrix:
-        java: [8, 11, 22]
+        java: [8, 11, 25]
     runs-on: ubuntu-latest
     steps:
       - name: 'Check out repository'
@@ -31,19 +31,19 @@ jobs:
       - name: 'Cache Bazel dependencies'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.cache/bazel/*/*/external
+          path: ~/.cache/bazel/*/cache
           key: bazel-${{ hashFiles('MODULE.bazel') }}
           restore-keys: |
             bazel-
-      - name: 'Set up JDK ${{ matrix.java }}'
+      - name: 'Set up JDK 27'
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 27
           distribution: 'temurin'
       - name: 'Test'
         shell: bash
-        run: bazelisk test --lockfile_mode=error --test_output=errors //...
+        run: bazelisk test --java_runtime_version=${{ matrix.java }} --lockfile_mode=error --test_output=errors //...
       - name: 'Test Deploy Script'
-        if: matrix.java == 22
+        if: matrix.java == 25
         shell: bash
         run: release/install-local-snapshot.sh
