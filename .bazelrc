@@ -1,5 +1,7 @@
 build --java_language_version=8 --tool_java_language_version=25
 build --java_runtime_version=25 --tool_java_runtime_version=25
+build --@rules_java//toolchains:incompatible_language_version_bootclasspath
+build --javacopt="-Xlint:-options"
 
 build --experimental_one_version_enforcement=error
 
