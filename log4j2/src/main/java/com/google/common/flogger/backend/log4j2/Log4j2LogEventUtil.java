@@ -21,7 +21,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.WARNING;
 
 import com.google.common.flogger.LogContext;
-import com.google.common.flogger.LogSite;
 import com.google.common.flogger.MetadataKey;
 import com.google.common.flogger.backend.BaseMessageFormatter;
 import com.google.common.flogger.backend.LogData;
@@ -37,6 +36,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.DefaultConfiguration;
@@ -56,10 +56,13 @@ import org.apache.logging.log4j.util.StringMap;
  * documentation.
  */
 final class Log4j2LogEventUtil {
+  private static final ThreadLocal<Log4jLogEvent.Builder> newBuilder = ThreadLocal.withInitial(Log4jLogEvent::newBuilder);
+  private static final ThreadLocal<MutableInstant> newMutableInstant = ThreadLocal.withInitial(MutableInstant::new);
+  private static final ThreadLocal<StringBuilder> newStringBuilder = ThreadLocal.withInitial(StringBuilder::new);
 
   private Log4j2LogEventUtil() {}
 
-  static LogEvent toLog4jLogEvent(String loggerName, LogData logData) {
+  static LogEvent toLog4jLogEvent(Logger logger, LogData logData) {
     MetadataProcessor metadata =
         MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata());
 
@@ -78,25 +81,27 @@ final class Log4j2LogEventUtil {
      * which can perhaps be installed as default if nothing else is present. Then, we would not rely
      * on Log4j2 internals.
      */
-    LoggerContext ctx = LoggerContext.getContext(false);
+    LoggerContext ctx = logger.getContext();
     Configuration config = ctx.getConfiguration();
     String message;
     if (config instanceof DefaultConfiguration) {
       message = SimpleMessageFormatter.getDefaultFormatter().format(logData, metadata);
     } else {
+      StringBuilder sb = newStringBuilder.get();
+      sb.setLength(0);
       message =
-          BaseMessageFormatter.appendFormattedMessage(logData, new StringBuilder()).toString();
+          BaseMessageFormatter.appendFormattedMessage(logData, sb).toString();
     }
 
     Throwable thrown = metadata.getSingleValue(LogContext.Key.LOG_CAUSE);
-    return toLog4jLogEvent(loggerName, logData, message, toLog4jLevel(logData.getLevel()), thrown);
+    return toLog4jLogEvent(logger.getName(), logData, message, toLog4jLevel(logData.getLevel()), thrown);
   }
 
-  static LogEvent toLog4jLogEvent(String loggerName, RuntimeException error, LogData badData) {
+  static LogEvent toLog4jLogEvent(Logger logger, RuntimeException error, LogData badData) {
     String message = formatBadLogData(error, badData);
     // Re-target this log message as a warning (or above) since it indicates a real bug.
     Level level = badData.getLevel().intValue() < WARNING.intValue() ? WARNING : badData.getLevel();
-    return toLog4jLogEvent(loggerName, badData, message, toLog4jLevel(level), error);
+    return toLog4jLogEvent(logger.getName(), badData, message, toLog4jLevel(level), error);
   }
 
   private static LogEvent toLog4jLogEvent(
@@ -106,15 +111,9 @@ final class Log4j2LogEventUtil {
       org.apache.logging.log4j.Level level,
       Throwable thrown) {
 
-    LogSite logSite = logData.getLogSite();
-    StackTraceElement locationInfo =
-        new StackTraceElement(
-            logSite.getClassName(),
-            logSite.getMethodName(),
-            logSite.getFileName(),
-            logSite.getLineNumber());
+    StackTraceElement locationInfo = logData.getLogSite().getStackTraceElement();
 
-    return Log4jLogEvent.newBuilder()
+    return newBuilder.get()
         .setLoggerName(loggerName)
         .setLoggerFqcn(logData.getLoggerName())
         .setLevel(level) // this might be different from logData.getLevel() for errors.
@@ -130,7 +129,7 @@ final class Log4j2LogEventUtil {
 
   @SuppressWarnings({"NanosTo_Seconds", "SecondsTo_Nanos"})
   private static Instant getInstant(long timestampNanos) {
-    MutableInstant instant = new MutableInstant();
+    MutableInstant instant = newMutableInstant.get();
     // Don't use Duration here as (a) it allocates and (b) we can't allow error on overflow.
     long epochSeconds = NANOSECONDS.toSeconds(timestampNanos);
     int remainingNanos = (int) (timestampNanos - SECONDS.toNanos(epochSeconds));
@@ -246,13 +245,19 @@ final class Log4j2LogEventUtil {
     MetadataProcessor metadataProcessor =
         MetadataProcessor.forScopeAndLogSite(Platform.getInjectedMetadata(), logData.getMetadata());
 
-    StringMap contextData = ContextDataFactory.createContextData(metadataProcessor.keyCount());
-    metadataProcessor.process(
-        HANDLER,
-        (key, value) ->
-            contextData.putValue(key, ValueQueue.maybeWrap(value, contextData.getValue(key))));
+    final StringMap contextData;
+    // don't allocate for the common case of no keys
+    if (metadataProcessor.keyCount() > 0) {
+      contextData = ContextDataFactory.createContextData(metadataProcessor.keyCount());
+      metadataProcessor.process(
+              HANDLER,
+              (key, value) ->
+                      contextData.putValue(key, ValueQueue.maybeWrap(value, contextData.getValue(key))));
 
-    contextData.freeze();
+      contextData.freeze();
+    } else {
+      contextData = ContextDataFactory.emptyFrozenContextData();
+    }
 
     return contextData;
   }
