@@ -55,6 +55,7 @@ public final class LogLevelMap {
     /** Adds the given classes at the specified log level. */
     @CanIgnoreReturnValue
     public Builder add(Level level, Class<?>... classes) {
+      checkNotNull(level, "log level must not be null");
       for (Class<?> cls : classes) {
         put(cls.getName(), level);
       }
@@ -64,6 +65,7 @@ public final class LogLevelMap {
     /** Adds the given packages at the specified log level. */
     @CanIgnoreReturnValue
     public Builder add(Level level, Package... packages) {
+      checkNotNull(level, "log level must not be null");
       for (Package pkg : packages) {
         put(pkg.getName(), level);
       }
@@ -73,8 +75,7 @@ public final class LogLevelMap {
     /** Sets the default log level (use {@link Level#OFF} to disable. */
     @CanIgnoreReturnValue
     public Builder setDefault(Level level) {
-      checkNotNull(defaultLevel, "default log level must not be null");
-      this.defaultLevel = level;
+      this.defaultLevel = checkNotNull(level, "default log level must not be null");
       return this;
     }
 

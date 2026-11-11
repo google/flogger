@@ -19,6 +19,7 @@ package com.google.common.flogger.context;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.testing.NullPointerTester;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -94,5 +95,12 @@ public class LogLevelMapTest {
     assertThat(levelMap.getLevel("com.google")).isEqualTo(Level.INFO);
     assertThat(levelMap.getLevel("java.lang")).isEqualTo(Level.WARNING);
     assertThat(levelMap.getLevel("java.lang.String")).isEqualTo(Level.FINE);
+  }
+
+  @Test
+  public void testNulls() {
+    NullPointerTester tester = new NullPointerTester();
+    tester.testAllPublicStaticMethods(LogLevelMap.class);
+    tester.testAllPublicInstanceMethods(LogLevelMap.builder());
   }
 }
