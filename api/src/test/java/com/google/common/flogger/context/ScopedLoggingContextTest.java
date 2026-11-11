@@ -17,7 +17,7 @@
 package com.google.common.flogger.context;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.flogger.context.ScopedLoggingContext.InvalidLoggingContextStateException;
 import com.google.common.flogger.context.ScopedLoggingContext.LoggingContextCloseable;
@@ -83,21 +83,5 @@ public class ScopedLoggingContextTest {
                           throw new IllegalArgumentException("User error");
                         }));
     assertThat(e).hasMessageThat().isEqualTo("User error");
-  }
-
-  // Annoyingly Bazel does not support a sufficiently recent version of JUnit so we have to
-  // reimplement assertThrows() ourselves.
-  private static <T extends Throwable> T assertThrows(Class<T> clazz, Runnable code) {
-    try {
-      code.run();
-    } catch (Throwable t) {
-      if (!clazz.isInstance(t)) {
-        fail("expected " + clazz.getName() + " but got " + t.getClass().getName());
-      }
-      return clazz.cast(t);
-    }
-    fail("expected " + clazz.getName() + " was not thrown");
-    // Unreachable code to keep the compiler happy.
-    return null;
   }
 }
