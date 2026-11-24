@@ -104,6 +104,18 @@ public abstract class LogSite implements LogSiteKey {
    */
   public abstract @Nullable String getFileName();
 
+  /**
+   * This can be overridden to allow the StackTraceElement to be cached
+   * @return stack trace element for this
+   */
+  public StackTraceElement getStackTraceElement() {
+    return new StackTraceElement(
+            getClassName(),
+            getMethodName(),
+            getFileName(),
+            getLineNumber());
+  }
+
   // Provide a common toString() implementation for only the public attributes.
   @Override
   public final String toString() {
